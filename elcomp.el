@@ -367,8 +367,7 @@ the forms:
 	       ;; Compute each argument.
 	       (mapcar (lambda (arg)
 			 (if (or (numberp arg)
-				 (and (symbolp arg)
-				      (get arg :elcomp)))
+				 (symbolp arg))
 			     arg
 			   (let ((one-arg (elcomp--new-var compiler)))
 			     (elcomp--linearize compiler arg one-arg)
