@@ -5,6 +5,10 @@
 ** Currently we don't handle special-variable-p in let bindings
    Major bug!
 
+** Some special forms are still not handled
+
+** signals need help
+
 ** If a value is ignored we still emit a temporary
    Sometimes a value is only needed as a boolean, like (if (and ...)).
    This could be optimized as well
@@ -30,3 +34,6 @@
 
 ** vc-dir "i" gives an unhelpful error if any other file is marked
    this seems somewhat useless
+
+** it seems strange for elisp to have both defstruct and defclass
+   given that it isn't really planning to be CL
