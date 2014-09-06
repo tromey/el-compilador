@@ -13,22 +13,12 @@
 
 ;; * Why doesn't mapconcat let the lambda return chars?
 
-;; We need a macro for 'declare' that expands
-;; so we can see types.
-;; The plan is to use the type to change the type in the C code.
-;; So:  (let ((i value)) (declare (type fixnum i)) ...)
-;; If VALUE is a lisp object this will expand to
-;;    EMACS_INT i = XINT (value)
-;; If VALUE is a fixnum it will be simply:
-;;    EMACS_INT i = value;
-
-;; We should also allow a declaration that allows a direct C
-;; call, not allowing symbol redefinition.
-;; (declare (direct FUNC))
-
 ;; Notes
 ;; * I wonder if progv is implemented correctly now that
 ;;   macroexpand is done eagerly
+
+(require 'cl-macs)
+(require 'eieio)
 
 (cl-defstruct (elcomp (:conc-name elcomp--))
   ;; An alist holding symbol rewrites.  The car of each element is a
@@ -40,10 +30,10 @@
   variables
   ;; Next label value.
   (next-label 0) 
-  ;; Linearized code.
-  code
-  ;; Last link of linearized code.
-  code-link
+  ;; The entry block.
+  entry-block
+  ;; The current basic block.
+  current-block
   ;; The current defun being compiled.
   ;; This is a list (NAME ARGLIST DOC INTERACTIVE).
   defun
@@ -53,8 +43,27 @@
 (cl-defstruct elcomp--basic-block
   ;; Block number.
   number
-  ;; Instructions.
-  insns)
+  ;; The code for this basic block.
+  code
+  ;; Last link of linearized code.
+  code-link)
+
+(defclass elcomp--set nil
+  ((sym :initform nil :initarg :sym)
+   (value :initform nil :initarg :value)))
+
+(defclass elcomp--call nil
+  ((sym :initform nil :initarg :sym)
+   (func :initform nil :initarg :func)
+   (args :initform nil :initarg :args)))
+
+(defclass elcomp--goto nil
+  ((block :initform nil :initarg :block)))
+
+(defclass elcomp--if nil
+  ((sym :initform nil :initarg :sym)
+   (block-true :initform nil :initarg :block-true)
+   (block-false :initform nil :initarg :block-false)))
 
 (defun elcomp--declare (&rest specs)
   (cons 'declare specs))
@@ -89,60 +98,67 @@ Or REF can be a constant, in which case it is returned unchanged."
 
 (defun elcomp--label (compiler)
   (prog1
-      (elcomp--next-label compiler)
+      (make-elcomp--basic-block :number (elcomp--next-label compiler))
     (cl-incf (elcomp--next-label compiler))))
 
-(defun elcomp--set-type (var type-name)
-  (let ((found-type (get var :type)))
-    (if found-type
-	(if (not (eq found-type type-name))
-	    (error "variable already has a type"))))
-  (put var :type type-name))
+(defun elcomp--add-basic (compiler obj)
+  (let ((new-cell (cons obj nil))
+	(block (elcomp--current-block compiler)))
+    (if (elcomp--basic-block-code-link block)
+	(setf (cdr (elcomp--basic-block-code-link block)) new-cell)
+      (setf (elcomp--basic-block-code block) new-cell))
+    (setf (elcomp--basic-block-code-link block) new-cell)))
 
-;; FIXME: should do type promotion.
-(defun elcomp--any-argument-typed-p (args)
-  "Returns the type."
-  (let ((found-type nil))
-    (while args
-      (if (and (symbolp (car args))
-	       (memq (get (car args) :type) '(float fixnum)))
-	  (progn
-	    (setf found-type (get (car args) :type))
-	    (setf args nil))
-	(setf args (cdr args))))
-    found-type))
+(defun elcomp--add-set (compiler sym value)
+  (elcomp--add-basic compiler (elcomp--set "set" :sym sym :value value)))
 
-(defun elcomp--append (compiler code result-location &rest refs)
-  "Append ARGS to the linearized code."
-  (let ((args (list (apply #'list code result-location refs))))
-    (if (elcomp--code-link compiler)
-	(setcdr (elcomp--code-link compiler) args)
-      (setf (elcomp--code compiler) args))
-    (setf (elcomp--code-link compiler) args)
-    ;; Type promotion.
-    (if result-location
-	(cond
-	 ((and (eq code 'set)
-	       (symbolp (car refs)))
-	  (let ((found-type (get (car refs) :type)))
-	    (if found-type
-		(elcomp--set-type result-location found-type))))
-	 ((eq code 'call)
-	  (let ((found-type (elcomp--any-argument-typed-p refs)))
-	    (if found-type
-		(elcomp--set-type result-location found-type))))))))
+(defun elcomp--add-call (compiler sym func args)
+  (elcomp--add-basic compiler (elcomp--call "call" :sym sym
+					    :func func :args args)))
 
-(defconst elcomp--simple-math
-  '(< <= > >= /= + - * / 1+))
+(defun elcomp--add-goto (compiler block)
+  (elcomp--add-basic compiler (elcomp--goto "goto" :block block))
+  ;; Push a new block.
+  (setf (elcomp--current-block compiler) (elcomp--label compiler)))
 
-(defun elcomp--check-simple-math (form)
-  (and (eq (car form) 'call)
-       (memq (nth 2 form) elcomp--simple-math)
-       (let ((found-type (elcomp--any-argument-typed-p (nthcdr 3 form))))
-	 (if found-type
-	     (dolist (arg (nthcdr 3 form))
-	       (if (symbolp arg)
-		   (elcomp--set-type arg found-type)))))))
+(defun elcomp--add-if (compiler sym block-true block-false)
+  (cl-assert (or block-true block-false))
+  (let ((next-block))
+    (unless block-true
+      (setf block-true (elcomp--label compiler))
+      (setf next-block block-true))
+    (unless block-false
+      (setf block-false (elcomp--label compiler))
+      (setf next-block block-false))
+    (elcomp--add-basic compiler (elcomp--if "if"
+					    :sym sym
+					    :block-true block-true
+					    :block-false block-false))
+    ;; Push a new block.
+    (setf (elcomp--current-block compiler) next-block)))
+
+(defun elcomp--last-instruction (block)
+  (car (elcomp--basic-block-code-link block)))
+
+(gv-define-setter elcomp--last-instruction (val block)
+  `(setcar (elcomp--basic-block-code-link ,block) ,val))
+
+(defun elcomp--first-instruction (block)
+  (car (elcomp--basic-block-code block)))
+
+(gv-define-setter elcomp--first-instruction (val block)
+  `(setcar (elcomp--basic-block-code ,block) ,val))
+
+(defun elcomp--terminator-p (obj)
+  (or (elcomp--goto-child-p obj)
+      (elcomp--if-child-p obj)))
+
+(defun elcomp--make-block-current (compiler block)
+  ;; Terminate the previous basic block.
+  (let ((insn (elcomp--last-instruction (elcomp--current-block compiler))))
+    (if (not (elcomp--terminator-p insn))
+	(elcomp--add-basic compiler (elcomp--goto "goto" :block block)))
+    (setf (elcomp--current-block compiler) block)))
 
 (defun elcomp--linearize-body (compiler body result-location
 					&optional result-index)
@@ -172,19 +188,19 @@ the forms:
 
    (set LOC RESULT)
    (call SYM FUNC [ARG]...)
-   (label N)
-   (goto N)
-   (if SYM [N-TRUE | nil] [N-FALSE])
+   (label BB)
+   (goto BB)
+   (if SYM [BB-TRUE | nil] [BB-FALSE])
 "
   (if (not (consp form))
       (if result-location
-	  (elcomp--append compiler 'set result-location
-			 (elcomp--rewrite-one-ref compiler form)))
+	  (elcomp--add-set compiler result-location
+			   (elcomp--rewrite-one-ref compiler form)))
     (let ((fn (car form)))
       (cond
        ((eq fn 'quote)
 	(if result-location
-	    (elcomp--append compiler 'set result-location form)))
+	    (elcomp--add-set compiler result-location form)))
        ((eq 'lambda (car-safe fn))
 	(error "lambda not supported"))
        ((eq fn 'let)
@@ -239,8 +255,7 @@ the forms:
 	    (setf form (cddr form)))
 	  ;; Return the value.
 	  (if result-location
-	      (elcomp--append compiler
-			      'set result-location last-rewritten-sym))))
+	      (elcomp--add-set compiler result-location last-rewritten-sym))))
 
        ((eq fn 'cond)
 	(let ((label-done (elcomp--label compiler)))
@@ -252,18 +267,16 @@ the forms:
 	      ;; Emit the condition.
 	      (elcomp--linearize compiler (car clause) this-cond-var)
 	      ;; The test.
-	      (elcomp--append compiler 'if this-cond-var nil next-label)
+	      (elcomp--add-if compiler this-cond-var nil next-label)
 	      ;; The body.
 	      (if (cdr clause)
 		  (elcomp--linearize-body compiler
 					  (cdr clause) result-location))
-	      ;; Done.
-	      ;; We could emit this goto for the last clause,
-	      ;; but the C compiler will zap it anyway, so we
-	      ;; are just lazy here.
-	      (elcomp--append compiler 'goto label-done)
-	      (elcomp--append compiler 'label next-label)))
-	  (elcomp--append compiler 'label label-done)))
+	      ;; Done.  Cleaning up unnecessary labels happens in
+	      ;; another pass, so we can be a bit lazy here.
+	      (elcomp--add-goto compiler label-done)
+	      (elcomp--make-block-current compiler next-label)))
+	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'progn)
 	(elcomp--linearize-body compiler (cdr form) result-location))
@@ -285,16 +298,16 @@ the forms:
 	      (label-done (elcomp--label compiler))
 	      (cond-var (elcomp--new-var compiler)))
 	  (if result-location
-	      (elcomp--append compiler 'set result-location 'nil))
+	      (elcomp--add-set compiler result-location nil))
 	  ;; FIXME: set the result-location
-	  (elcomp--append compiler 'label label-top)
+	  (elcomp--make-block-current compiler label-top)
 	  ;; The condition expression and goto.
 	  (elcomp--linearize compiler (cadr form) cond-var)
-	  (elcomp--append compiler 'if cond-var nil label-done)
+	  (elcomp--add-if compiler cond-var nil label-done)
 	  ;; The body.
 	  (elcomp--linearize-body compiler (cddr form) nil)
-	  (elcomp--append compiler 'goto label-top)
-	  (elcomp--append compiler 'label label-done)))
+	  (elcomp--add-goto compiler label-top)
+	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'if)
 	(let ((label-false (elcomp--label compiler))
@@ -302,17 +315,17 @@ the forms:
 	      (cond-var (elcomp--new-var compiler)))
 	  ;; The condition expression and goto.
 	  (elcomp--linearize compiler (cadr form) cond-var)
-	  (elcomp--append compiler 'if cond-var nil label-false)
+	  (elcomp--add-if compiler cond-var nil label-false)
 	  ;; The true branch.
 	  (elcomp--linearize compiler (caddr form) result-location)
 	  ;; The end of the true branch.
-	  (elcomp--append compiler 'goto label-done)
+	  (elcomp--add-goto compiler label-done)
 	  ;; The false branch.
-	  (elcomp--append compiler 'label label-false)
+	  (elcomp--make-block-current compiler label-false)
 	  (if (cdddr form)
 	      (elcomp--linearize-body compiler (cdddr form) result-location))
 	  ;; The end of the statement.
-	  (elcomp--append compiler 'label label-done)))
+	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'and)
 	(let ((label-done (elcomp--label compiler)))
@@ -320,15 +333,15 @@ the forms:
 	    (elcomp--linearize compiler condition result-location)
 	    ;; FIXME: don't need this "if" for the last iteration.
 	    ;; FIXME: "and" in conditionals could be handled better.
-	    (elcomp--append compiler 'if result-location label-done nil))
-	  (elcomp--append compiler 'label label-done)))
+	    (elcomp--add-if compiler result-location label-done nil))
+	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'or)
 	(let ((label-done (elcomp--label compiler)))
 	  (dolist (condition (cdr form))
 	    (elcomp--linearize compiler condition result-location)
-	    (elcomp--append compiler 'if result-location label-done nil))
-	  (elcomp--append compiler 'label label-done)))
+	    (elcomp--add-if compiler result-location label-done nil))
+	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'interactive)
 	nil)
@@ -345,15 +358,6 @@ the forms:
        ;; Needed as long as we run byte-optimize-form after cconv.
        ((eq fn 'internal-make-closure)
 	(error "not supported"))
-
-       ((eq fn 'declare)
-	(dolist (spec (cdr form))
-	  ;; FIXME this should also examine direct-calls
-	  (pcase spec
-	      (`(type ,type-name . ,variables)
-	       (dolist (var variables)
-		 (setf var (elcomp--rewrite-one-ref compiler var))
-		 (elcomp--set-type var type-name))))))
 
        ((not (symbolp fn))
 	;; FIXME - lambda or the like
@@ -374,9 +378,7 @@ the forms:
 			     one-arg)))
 		       (cdr form))))
 	  ;; Make the call.
-	  (apply #'elcomp--append compiler
-		 'call result-location fn these-args)))
-       ))))
+	  (elcomp--add-call compiler result-location fn these-args)))))))
 
 (defun elcomp--extract-defun (compiler form)
   (unless (eq 'defun (car form))
@@ -406,7 +408,7 @@ the forms:
     (setf (elcomp--defun compiler) (nconc (elcomp--defun compiler) nil)))
   (cons 'progn form))
 
-(defun elcomp--translate (form buffer)
+(defun elcomp--translate (form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
 	   (cons '(declare . elcomp--declare)
@@ -414,6 +416,8 @@ the forms:
 	  (compiler (make-elcomp))
 	  (result-var (elcomp--new-var compiler))
 	  (code nil))
+     (setf (elcomp--entry-block compiler) (elcomp--label compiler))
+     (setf (elcomp--current-block compiler) (elcomp--entry-block compiler))
      (setf form (elcomp--extract-defun compiler form))
      (elcomp--linearize compiler
       (byte-optimize-form (macroexpand-all form
@@ -421,10 +425,19 @@ the forms:
       result-var)
      compiler)))
 
-;; Temporary function for hacking.
-(defun elcomp--do (form)
-  (let ((buf (get-buffer-create "*ELCOMP*")))
-    (with-current-buffer buf
-      (erase-buffer)
-      (pp (elcomp--code (elcomp--translate form buf)) (current-buffer)))
-    (pop-to-buffer buf)))
+(defun elcomp--do-iterate (hash callback bb)
+  (unless (gethash bb hash)
+    (puthash bb t hash)
+    (funcall callback block)
+    (let ((obj (elcomp--last-instruction bb)))
+      (cond
+       ;; FIXME why is the -child- variant needed here?
+       ((elcomp--goto-child-p obj)
+	(elcomp--do-iterate hash (oref obj :block)))
+       ((elcomp--if-child-p obj)
+	(elcomp--do-iterate hash (oref obj :block-true))
+	(elcomp--do-iterate hash (oref obj :block-false)))))))
+
+(defun elcomp--iterate-over-bbs (compiler callback)
+  (elcomp--do-iterate (make-hash-table) callback
+		      (elcomp--entry-block compiler)))
