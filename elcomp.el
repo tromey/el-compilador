@@ -1,13 +1,5 @@
 ;; TO DO:
 
-;; Must respect special-variable-p
-;; for now just reject it
-;; when we handle these the expansion of 'let' must be
-;; trickier
-
-;; Jump threading
-;; rework how labels are stored
-
 ;; Ideas:
 ;; * always inline mapcar &c
 
@@ -65,6 +57,9 @@
    (block-true :initform nil :initarg :block-true)
    (block-false :initform nil :initarg :block-false)))
 
+(defclass elcomp--return nil
+  ((sym :initform nil :initarg :sym)))
+
 (defun elcomp--declare (&rest specs)
   (cons 'declare specs))
 
@@ -116,6 +111,9 @@ Or REF can be a constant, in which case it is returned unchanged."
   (elcomp--add-basic compiler (elcomp--call "call" :sym sym
 					    :func func :args args)))
 
+(defun elcomp--add-return (compiler sym)
+  (elcomp--add-basic compiler (elcomp--return "return" :sym sym)))
+
 (defun elcomp--add-goto (compiler block)
   (elcomp--add-basic compiler (elcomp--goto "goto" :block block))
   ;; Push a new block.
@@ -149,9 +147,14 @@ Or REF can be a constant, in which case it is returned unchanged."
 (gv-define-setter elcomp--first-instruction (val block)
   `(setcar (elcomp--basic-block-code ,block) ,val))
 
-(defun elcomp--terminator-p (obj)
+(defun elcomp--nonreturn-terminator-p (obj)
   (or (elcomp--goto-child-p obj)
       (elcomp--if-child-p obj)))
+
+(defun elcomp--terminator-p (obj)
+  (or (elcomp--goto-child-p obj)
+      (elcomp--if-child-p obj)
+      (elcomp--return-child-p obj)))
 
 (defun elcomp--make-block-current (compiler block)
   ;; Terminate the previous basic block.
@@ -423,20 +426,28 @@ the forms:
       (byte-optimize-form (macroexpand-all form
 				       byte-compile-macro-environment))
       result-var)
+     (elcomp--add-return compiler result-var)
      compiler)))
+
+(defun elcomp--optimize (form)
+  (let ((result (elcomp--translate form)))
+    (elcomp--thread-jumps-pass result)
+    result))
+
+
 
 (defun elcomp--do-iterate (hash callback bb)
   (unless (gethash bb hash)
     (puthash bb t hash)
-    (funcall callback block)
+    (funcall callback bb)
     (let ((obj (elcomp--last-instruction bb)))
       (cond
        ;; FIXME why is the -child- variant needed here?
        ((elcomp--goto-child-p obj)
-	(elcomp--do-iterate hash (oref obj :block)))
+	(elcomp--do-iterate hash callback (oref obj :block)))
        ((elcomp--if-child-p obj)
-	(elcomp--do-iterate hash (oref obj :block-true))
-	(elcomp--do-iterate hash (oref obj :block-false)))))))
+	(elcomp--do-iterate hash callback (oref obj :block-true))
+	(elcomp--do-iterate hash callback (oref obj :block-false)))))))
 
 (defun elcomp--iterate-over-bbs (compiler callback)
   (elcomp--do-iterate (make-hash-table) callback

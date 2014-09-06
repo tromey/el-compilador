@@ -1,0 +1,32 @@
+* Plan
+
+* To Do
+
+** Currently we don't handle special-variable-p in let bindings
+   Major bug!
+
+** If a value is ignored we still emit a temporary
+   Sometimes a value is only needed as a boolean, like (if (and ...)).
+   This could be optimized as well
+
+** Quoting is totally mishandled
+
+** Probably need more passes, pass infrastructure, SSA, type inference, etc
+
+** Various code-gen bits need thinking through
+
+* Emacs Bugs
+
+** Some code uses the CLASS-child-p form, since the CLASS-p form didn't seem to work.
+
+** There doesn't seem to be a way to fetch an object's name
+
+** The *-list-p functions are generated but not documented
+
+** defmethod's eldoc is messed up
+
+** concat and mapconcat don't allow characters
+   this seems unfriendly and pointless
+
+** vc-dir "i" gives an unhelpful error if any other file is marked
+   this seems somewhat useless
