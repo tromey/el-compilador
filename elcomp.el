@@ -409,6 +409,9 @@ the forms:
     (setf (elcomp--defun compiler) (nconc (elcomp--defun compiler) nil)))
   (cons 'progn form))
 
+(defun elcomp--optimize (compiler)
+  (elcomp--thread-jumps-pass compiler))
+
 (defun elcomp--translate (form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
@@ -425,12 +428,8 @@ the forms:
 				       byte-compile-macro-environment))
       result-var)
      (elcomp--add-return compiler result-var)
+     (elcomp--optimize compiler)
      compiler)))
-
-(defun elcomp--optimize (form)
-  (let ((result (elcomp--translate form)))
-    (elcomp--thread-jumps-pass result)
-    result))
 
 
 

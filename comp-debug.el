@@ -45,6 +45,6 @@
   (let ((buf (get-buffer-create "*ELCOMP*")))
     (with-current-buffer buf
       (erase-buffer)
-      (elcomp--iterate-over-bbs (elcomp--optimize form)
+      (elcomp--iterate-over-bbs (elcomp--translate form)
 				#'elcomp--pp-basic-block))
     (pop-to-buffer buf)))
