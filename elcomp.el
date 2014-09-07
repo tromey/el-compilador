@@ -71,8 +71,6 @@
 		   (or symname
 		       (cl-gensym)))))
     (push result (elcomp--variables compiler))
-    (put result :elcomp t)
-    ;; (put result :original FIXME)
     result))
 
 (defun elcomp--rewrite-one-ref (compiler ref)
