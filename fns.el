@@ -13,11 +13,9 @@ Elements of ALIST that are not conses are also shared."
   ;; FIXME.
   (mapcar #'identity alist))
 
-(defun nthcdr (n list)
+(defun nthcdr (num list)
   (check-type n integer)
-  (let ((num (the integer n))
-	(i 0))
-    (declare (type integer) i)
+  (let ((i 0))
     (while (and (< i num) list)
       (check-type list list)
       (setq list (cdr list))

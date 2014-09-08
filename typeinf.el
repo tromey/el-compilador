@@ -14,64 +14,71 @@
 ;; call, not allowing symbol redefinition.
 ;; (declare (direct FUNC))
 
-
 (defun elcomp--set-type (var type-name)
-  (let ((found-type (get var :type)))
-    (if found-type
-	(if (not (eq found-type type-name))
-	    (error "variable already has a type"))))
-  (put var :type type-name))
+  (when type-name
+    (let ((found-type (get var :elcomp-type)))
+      (if found-type
+	  (if (not (eq found-type type-name))
+	      (error "variable already has a type"))))
+    (put var :elcomp-type type-name)))
 
-;; this was in the old elcomp--append,
-;; which added to the instruction list
+(defun elcomp--get-type (var)
+  (get var :elcomp-type))
 
-    ;; Type promotion.
-    (if result-location
-	(cond
-	 ((and (eq code 'set)
-	       (symbolp (car refs)))
-	  (let ((found-type (get (car refs) :type)))
-	    (if found-type
-		(elcomp--set-type result-location found-type))))
-	 ((eq code 'call)
-	  (let ((found-type (elcomp--any-argument-typed-p refs)))
-	    (if found-type
-		(elcomp--set-type result-location found-type))))))
+(defun elcomp--check-simple-numeric (compiler call)
+  (when (elcomp-simple-numeric-p (oref call :func))
+    (let ((type 'unknown))
+      (dolist (arg (oref call :args))
+	(let ((arg-type (elcomp--get-type arg)))
+	  ;; Float overrides integer
+	  (when (and (eq type 'integer)
+		     (eq arg-type 'float))
+	    (setf type arg-type))
+	  ;; Unknown overrides anything.
+	  (unless arg-type
+	    (setf type arg-type))
+	  ;; If TYPE is still unknown, take it from the argument.
+	  (when (eq type 'unknown)
+	    (setf type arg-type))))
+      (unless (memq type '(unknown nil))
+	(elcomp--set-type (oref call :sym) type)))))
+
+(defgeneric elcomp--infer-type (insn)
+  nil)
+
+(defmethod elcomp--infer-type ((insn elcomp--set))
+  (if (symbolp (oref insn :value))
+      ;; A symbol argument is just a name.  So take its type.
+      (elcomp--set-type (oref insn :sym)
+			(elcomp--get-type (oref insn :value)))
+    ;; If the argument to SET is not a symbol, then it is a
+    ;; constant of some kind.
+    ;; FIXME this area is still super broken
+    (elcomp--set-type (oref insn :sym)
+		      ;; Here's the broken spot.
+		      (type-of (oref insn :value)))))
+
+(defmethod elcomp--infer-type ((insn elcomp--call))
+  (let ((type (elcomp-type (oref insn :func))))
+    ;; If the function has a known type, use it.
+    (if type
+	(elcomp--set-type (oref insn :sym) type)
+      ;; Otherwise, handle a possible "simple numeric" call.
+      (elcomp--check-simple-numeric insn))))
+
+(defun elcomp--infer-types (compiler)
+  (elcomp--iterate-over-bbs
+   compiler
+   (lambda (bb)
+     (dolist (insn (elcomp--basic-block-code bb))
+       (elcomp--infer-types insn)))))
 
 ;; this was in elcomp--linearize
-       ((eq fn 'declare)
-	(dolist (spec (cdr form))
-	  ;; FIXME this should also examine direct-calls
-	  (pcase spec
-	      (`(type ,type-name . ,variables)
-	       (dolist (var variables)
-		 (setf var (elcomp--rewrite-one-ref compiler var))
-		 (elcomp--set-type var type-name))))))
-
-;; was used by c translation
-;; FIXME: should do type promotion.
-(defun elcomp--any-argument-typed-p (args)
-  "Returns the type."
-  (let ((found-type nil))
-    (while args
-      (if (and (symbolp (car args))
-	       (memq (get (car args) :type) '(float fixnum)))
-	  (progn
-	    (setf found-type (get (car args) :type))
-	    (setf args nil))
-	(setf args (cdr args))))
-    found-type))
-
-(defconst elcomp--simple-math
-  '(< <= > >= /= + - * / 1+))
-
-;; used by eltoc
-(defun elcomp--check-simple-math (form)
-  (and (eq (car form) 'call)
-       (memq (nth 2 form) elcomp--simple-math)
-       (let ((found-type (elcomp--any-argument-typed-p (nthcdr 3 form))))
-	 (if found-type
-	     (dolist (arg (nthcdr 3 form))
-	       (if (symbolp arg)
-		   (elcomp--set-type arg found-type)))))))
-
+       ;; ((eq fn 'declare)
+       ;; 	(dolist (spec (cdr form))
+       ;; 	  ;; FIXME this should also examine direct-calls
+       ;; 	  (pcase spec
+       ;; 	      (`(type ,type-name . ,variables)
+       ;; 	       (dolist (var variables)
+       ;; 		 (setf var (elcomp--rewrite-one-ref compiler var))
+       ;; 		 (elcomp--set-type var type-name))))))

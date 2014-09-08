@@ -1,0 +1,18 @@
+* Futures
+
+** Ideally, emacs would itself be written in emacs lisp
+
+** This compiler can be used to bootstrap this process
+   With type declarations and inferencing it can be as efficient
+   as the C code
+
+** It can also JIT compile parts as needed
+
+** Type-generic operations like + would be better expressed
+   using defgeneric and defmethod.  then the compiler could
+   more easily optimize?  Not clear.
+
+** It is bad that Emacs has 3 interpreters in it:
+*** Emacs Lisp
+*** Regexp
+*** CCL

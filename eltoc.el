@@ -59,6 +59,9 @@
 	     args (concat " " (symbol-name func) " ")))
     (insert ";\n")))
 
+(defconst elcomp--simple-math
+  '(< <= > >= /= + - * / 1+))
+
 (defun eltoc--generate-code (linear)
   (dolist (item linear)
     (pcase item

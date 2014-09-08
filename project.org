@@ -37,3 +37,6 @@
 
 ** it seems strange for elisp to have both defstruct and defclass
    given that it isn't really planning to be CL
+
+** it seems that cl-nreconc would be more efficient as
+   (prog1 (nreverse x) (setcdr x y))
