@@ -433,19 +433,23 @@ the forms:
 
 
 
-(defun elcomp--do-iterate (hash callback bb)
+(defun elcomp--do-iterate (hash callback bb postorder)
   (unless (gethash bb hash)
     (puthash bb t hash)
-    (funcall callback bb)
+    (unless postorder
+      (funcall callback bb))
     (let ((obj (elcomp--last-instruction bb)))
       (cond
        ;; FIXME why is the -child- variant needed here?
        ((elcomp--goto-child-p obj)
-	(elcomp--do-iterate hash callback (oref obj :block)))
+	(elcomp--do-iterate hash callback (oref obj :block) postorder))
        ((elcomp--if-child-p obj)
-	(elcomp--do-iterate hash callback (oref obj :block-true))
-	(elcomp--do-iterate hash callback (oref obj :block-false)))))))
+	(elcomp--do-iterate hash callback (oref obj :block-true) postorder)
+	(elcomp--do-iterate hash callback (oref obj :block-false) postorder))))
+    (when postorder
+      (funcall callback bb))))
 
-(defun elcomp--iterate-over-bbs (compiler callback)
+(defun elcomp--iterate-over-bbs (compiler callback &optional postorder)
   (elcomp--do-iterate (make-hash-table) callback
-		      (elcomp--entry-block compiler)))
+		      (elcomp--entry-block compiler)
+		      postorder))
