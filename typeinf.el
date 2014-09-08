@@ -71,7 +71,7 @@
    compiler
    (lambda (bb)
      (dolist (insn (elcomp--basic-block-code bb))
-       (elcomp--infer-types insn)))))
+       (elcomp--infer-type insn)))))
 
 ;; this was in elcomp--linearize
        ;; ((eq fn 'declare)
