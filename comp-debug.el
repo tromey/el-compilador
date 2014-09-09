@@ -1,7 +1,8 @@
 ;; Debugging the compiler.
 
 (defgeneric elcomp--pp (obj stream)
-  "FIXME")
+  "FIXME"
+  (error "unrecognized instruction"))
 
 ;; FIXME eldoc for defmethod is messed up
 (defmethod elcomp--pp ((obj elcomp--set) stream)
