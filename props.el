@@ -39,7 +39,7 @@ Defined properties are:
   (get func :elcomp-const))
 
 (defun elcomp--type (func)
-  "Return the type of FUNC, if known, or otherwise nil."
+  "Return the type of FUNC, if known, or nil."
   (get func :elcomp-type))
 
 (defun elcomp--simple-numeric-p (func)
