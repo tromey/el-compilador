@@ -1,6 +1,47 @@
 ;;; Jump-threading pass.
 
+;;; Commentary:
+
+;; This implements a simple jump-threading pass.  See the doc string
+;; of elcomp--thread-jumps-pass for details.
+
+;;; Code:
+
 (defun elcomp--thread-jumps-pass (compiler)
+  "A pass to perform jump threading on COMPILER.
+
+This pass simplifies the CFG by eliminating redundant jumps.  In
+particular, it:
+
+* Converts redundant gotos like
+       GOTO A;
+    A: GOTO B;
+  =>
+       GOTO B;
+
+* Likewise for either branch of an IF:
+        IF E A; else B;
+     A: GOTO C;
+  =>
+        IF E C; else B;
+
+* Converts a redundant IF into a GOTO:
+        IF E A; else A;
+  =>
+        GOTO A
+
+* Threads jumps that have the same condition:
+        IF E A; else B;
+     A: IF E C; else D;
+  =>
+        IF E C; else B;
+     A: IF E C; else D;
+  This works for either branch of an IF.
+
+Note that nothing here explicitly removes blocks.  This is not
+needed because the only links to blocks are the various branches;
+when a block is not needed it will be reclaimed by the garbage
+collector."
   (let ((rewrote-one t))
     (while rewrote-one
       (setf rewrote-one nil)
