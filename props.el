@@ -25,6 +25,8 @@ Defined properties are:
                              follows the usual contagion rules."
   ;; add more?
   ;; :pure - like const but can refer to memory - e.g., car
+  ;;         this would be great for CSE but would require modeling
+  ;;         memory a bit more
   ;; :nothrow - can't signal or throw
   ;; :malloc - allocates new object
   ;; :primitive - assume this can never be rewritten, e.g. car
@@ -34,15 +36,15 @@ Defined properties are:
     (put func (car props) (cadr props))
     (setf props (cddr props))))
 
-(defun elcomp--const-p (func)
+(defun elcomp--func-const-p (func)
   "Return t if FUNC can be considered 'const'."
   (get func :elcomp-const))
 
-(defun elcomp--type (func)
+(defun elcomp--func-type (func)
   "Return the type of FUNC, if known, or nil."
   (get func :elcomp-type))
 
-(defun elcomp--simple-numeric-p (func)
+(defun elcomp--func-simple-numeric-p (func)
   "Return t if FUNC can be considered 'simple-numeric'."
   (get func :elcomp-simple-numeric))
 
