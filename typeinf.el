@@ -1,13 +1,14 @@
-;; bogus type inference code
+;;; Type inference code.
+
 
 
 ;; We need a macro for 'declare' that expands
 ;; so we can see types.
 ;; The plan is to use the type to change the type in the C code.
-;; So:  (let ((i value)) (declare (type fixnum i)) ...)
+;; So:  (let ((i value)) (declare (type integer i)) ...)
 ;; If VALUE is a lisp object this will expand to
 ;;    EMACS_INT i = XINT (value)
-;; If VALUE is a fixnum it will be simply:
+;; If VALUE is a integer it will be simply:
 ;;    EMACS_INT i = value;
 
 ;; We should also allow a declaration that allows a direct C
