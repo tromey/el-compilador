@@ -1,3 +1,15 @@
+;;; Function properties.
+
+;;; Commentary:
+
+;; This module has code to note properties of functions.  The
+;; properties in question are those which are of interest to the
+;; compiler, and which are considered immutable -- currently it is
+;; only possible for the compiler to handle properties of functions
+;; that the user cannot reasonably redefine.
+
+;;; Code:
+
 (defun elcomp-declare (func &rest props)
   "Apply PROPS, a plist of attributes, to FUNC, a symbol.
 
@@ -5,7 +17,12 @@ Defined properties are:
 
   :elcomp-const t|nil        If t, FUNC only examines its arguments, not memory.
   :elcomp-type TYPE          The return type of FUNC.
-  :elcomp-simple-numeric t|n If t, FUNC ..."
+  :elcomp-simple-numeric t|n If t, FUNC is a simple numeric function.  This
+
+                             means that it accepts a number of
+                             integer, marker, or float arguments,
+                             and that the type of the result
+                             follows the usual contagion rules."
   ;; add more?
   ;; :pure - like const but can refer to memory - e.g., car
   ;; :nothrow - can't signal or throw
@@ -18,12 +35,15 @@ Defined properties are:
     (setf props (cddr props))))
 
 (defun elcomp--const-p (func)
+  "Return t if FUNC can be considered 'const'."
   (get func :elcomp-const))
 
 (defun elcomp--type (func)
+  "Return the type of FUNC, if known, or otherwise nil."
   (get func :elcomp-type))
 
 (defun elcomp--simple-numeric-p (func)
+  "Return t if FUNC can be considered 'simple-numeric'."
   (get func :elcomp-simple-numeric))
 
 (dolist (func '(+ - * / % 1+ 1- mod max min abs expt))
