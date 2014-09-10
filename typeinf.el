@@ -44,6 +44,9 @@
 	(elcomp--set-type (oref call :sym) type)))))
 
 (defgeneric elcomp--infer-type (insn)
+  "")
+
+(defmethod elcomp--infer-type (insn)
   nil)
 
 (defmethod elcomp--infer-type ((insn elcomp--set))
@@ -59,7 +62,7 @@
 		      (type-of (oref insn :value)))))
 
 (defmethod elcomp--infer-type ((insn elcomp--call))
-  (let ((type (elcomp-type (oref insn :func))))
+  (let ((type (elcomp--type (oref insn :func))))
     ;; If the function has a known type, use it.
     (if type
 	(elcomp--set-type (oref insn :sym) type)
