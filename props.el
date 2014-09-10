@@ -7,7 +7,7 @@ Defined properties are:
   :elcomp-type TYPE          The return type of FUNC.
   :elcomp-simple-numeric t|n If t, FUNC ..."
   ;; add more?
-  ;; :pure - like const but can refer to memory
+  ;; :pure - like const but can refer to memory - e.g., car
   ;; :nothrow - can't signal or throw
   ;; :malloc - allocates new object
   ;; :primitive - assume this can never be rewritten, e.g. car
@@ -17,13 +17,13 @@ Defined properties are:
     (put func (car props) (cadr props))
     (setf props (cddr props))))
 
-(defun elcomp-const-p (func)
+(defun elcomp--const-p (func)
   (get func :elcomp-const))
 
-(defun elcomp-type (func)
+(defun elcomp--type (func)
   (get func :elcomp-type))
 
-(defun elcomp-simple-numeric-p (func)
+(defun elcomp--simple-numeric-p (func)
   (get func :elcomp-simple-numeric))
 
 (dolist (func '(+ - * / % 1+ 1- mod max min abs expt))
