@@ -70,6 +70,9 @@ collector."
 	   ;; A GOTO to a block holding just another branch (of any kind)
 	   ;; can be replaced by the instruction at the target.
 	   (when (and (elcomp--goto-child-p insn)
+		      ;; Exclude a self-goto.
+		      (not (eq block
+			       (oref insn :block)))
 		      (elcomp--nonreturn-terminator-p
 		       (elcomp--first-instruction (oref insn :block))))
 	     ;; Note we also set INSN for subsequent optimizations
