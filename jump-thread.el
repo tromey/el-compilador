@@ -7,6 +7,17 @@
 
 ;;; Code:
 
+(defun elcomp--get-not-argument (insn)
+  "Check if INSN uses a 'not' condition.
+
+INSN is an 'if' instruction.  If the condition was defined by a
+call to 'not' (or 'null'), return the argument to the 'not'.
+Otherwise return nil."
+  (let ((call (oref insn :sym)))
+    (if (and (elcomp--call-child-p call)
+	     (memq (oref call :func) '(not null)))
+	(car (oref call :args)))))
+
 (defun elcomp--thread-jumps-pass (compiler)
   "A pass to perform jump threading on COMPILER.
 
@@ -35,8 +46,15 @@ particular, it:
      A: IF E C; else D;
   =>
         IF E C; else B;
-     A: IF E C; else D;
-  This works for either branch of an IF.
+  This happens for either branch of an IF.
+
+* Eliminates dependencies on 'not':
+        E = (not X)
+        if E A; else B;
+  =>
+        if X B; else A;
+  Note that this leaves the computation of E in the code.  This may
+  be eliminated later by DCE.
 
 Note that nothing here explicitly removes blocks.  This is not
 needed because the only links to blocks are the various branches;
@@ -54,8 +72,10 @@ collector."
 	   (when (and (elcomp--goto-child-p insn)
 		      (elcomp--nonreturn-terminator-p
 		       (elcomp--first-instruction (oref insn :block))))
-	     (setf (elcomp--last-instruction block)
-		   (elcomp--first-instruction (oref insn :block)))
+	     ;; Note we also set INSN for subsequent optimizations
+	     ;; here.
+	     (setf insn (elcomp--first-instruction (oref insn :block)))
+	     (setf (elcomp--last-instruction block) insn)
 	     (setf rewrote-one t))
 
 	   ;; If a target of an IF is a GOTO, the destination can be
@@ -80,9 +100,23 @@ collector."
 	   (when (and (elcomp--if-child-p insn)
 		      (eq (oref insn :block-true)
 			  (oref insn :block-false)))
-	     (setf (elcomp--last-instruction block)
-		   (elcomp--goto "goto" :block (oref insn :block-true)))
+	     (setf insn (elcomp--goto "goto" :block (oref insn :block-true)))
+	     (setf (elcomp--last-instruction block) insn)
 	     (setf rewrote-one t))
+
+	   ;; If the condition for an IF was a call to 'not', then the
+	   ;; call can be bypassed and the targets swapped.
+	   (if nil
+	       ;; FIXME - this is not ready yet, as it relies on
+	       ;; really having SSA form.
+	       (when (elcomp--if-child-p insn)
+		 ;; Peel any number of 'not's.
+		 (let ((arg-to-not nil))
+		   (while (setf arg-to-not (elcomp--get-not-argument insn))
+		     (cl-rotatef (oref insn :block-true)
+				 (oref insn :block-false))
+		     (setf (oref insn :sym) arg-to-not))))
+	     )
 
 	   ;; If a target of an IF is another IF, and the conditions are the
 	   ;; same, then the target IF can be hoisted.
