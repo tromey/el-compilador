@@ -1,5 +1,9 @@
 ;;; Dominators.
 
+;;; Commentary:
+
+;;; Code:
+
 (defun elcomp--reverse-postorder (compiler)
   "Return a list of basic blocks from COMPILER, in reverse postorder."
   (let ((result))
