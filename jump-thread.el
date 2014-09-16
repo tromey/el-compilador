@@ -145,4 +145,7 @@ collector."
 	       (oset insn :block-false
 		     (oref (elcomp--first-instruction
 			    (oref insn :block-false))
-			   :block-false))))))))))
+			   :block-false)))))))
+
+      (when rewrote-one
+	(elcomp--invalidate-back-edges compiler)))))

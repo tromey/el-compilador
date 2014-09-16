@@ -12,7 +12,20 @@
 			      t)))
 
 (defun elcomp--first-processed-predecessor (bb doms)
-  fixme)
+  (catch 'found
+    (maphash
+     (lambda (pred _ignore)
+       (if (gethash pred doms)
+	   (throw 'found pred)))
+     (elcomp--basic-block-parents bb))))
+
+(defun elcomp--predecessors (bb)
+  (let ((result nil))
+    (maphash
+     (lambda (pred _ignore)
+       (push pred result))
+     (elcomp--basic-block-parents bb))
+    result))
 
 (defun elcomp--intersect (bb1 bb2 doms postorder-number)
   (let ((f1 (gethash postorder-number bb1))
@@ -27,6 +40,9 @@
     bb1))
 
 (defun elcomp--compute-dominators (compiler)
+  ;; Require back edges.
+  (elcomp--require-back-edges compiler)
+
   (let ((doms (make-hash-table))
 	(reversed (elcomp--reverse-postorder compiler))
 	(changed t)

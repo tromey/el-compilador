@@ -21,9 +21,14 @@
   (puthash block t (elcomp--basic-block-parents (oref insn :block-true)))
   (puthash block t (elcomp--basic-block-parents (oref insn :block-false))))
 
-(defun elcomp--compute-back-edges (compiler)
-  (elcomp--reset-back-edges compiler)
-  (elcomp--iterate-over-bbs
-   compiler
-   (lambda (bb)
-     (elcomp--add-links (elcomp--last-instruction bb) bb))))
+(defun elcomp--require-back-edges (compiler)
+  (unless (elcomp--back-edges-valid compiler)
+    (elcomp--reset-back-edges compiler)
+    (elcomp--iterate-over-bbs
+     compiler
+     (lambda (bb)
+       (elcomp--add-links (elcomp--last-instruction bb) bb)))
+    (setf (elcomp--back-edges-valid compiler) t)))
+
+(defun elcomp--invalidate-back-edges (compiler)
+  (setf (elcomp--back-edges-valid compiler) nil))

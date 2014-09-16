@@ -26,6 +26,8 @@
   entry-block
   ;; The current basic block.
   current-block
+  ;; True if the back-edges in the CFG are considered valid.
+  back-edges-valid
   ;; The current defun being compiled.
   ;; This is a list (NAME ARGLIST DOC INTERACTIVE).
   defun
@@ -432,7 +434,8 @@ sequence of objects.  FIXME ref the class docs"
 
 (defun elcomp--optimize (compiler)
   (elcomp--thread-jumps-pass compiler)
-  (elcomp--compute-back-edges compiler))
+  (elcomp--require-back-edges compiler)
+  (elcomp--compute-dominators compiler))
 
 (defun elcomp--translate (form)
   (byte-compile-close-variables
