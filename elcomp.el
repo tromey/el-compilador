@@ -60,6 +60,19 @@
 (defclass elcomp--return nil
   ((sym :initform nil :initarg :sym)))
 
+;; An SSA operand representing a constant.
+(defclass elcomp--constant nil
+  ((value :initform nil :initarg :value)))
+
+(defclass elcomp--phi nil
+  ((sym :initform nil :initarg :sym)
+   (args :initform nil :initarg :args)))
+
+(defun elcomp--ssa-name-p (arg)
+  (or
+   (elcomp--set-child-p arg)
+   (elcomp--phi-child-p arg)))
+
 (defun elcomp--declare (&rest specs)
   (cons 'declare specs))
 
@@ -78,16 +91,16 @@
 REF can be a symbol, in which case it is rewritten following
 `elcomp--rewrite-alist' and returned.
 Or REF can be a constant, in which case it is returned unchanged."
-  (if (symbolp ref)
-      (progn
-	;; Temporary.
-	(if (and (special-variable-p ref)
-		 (not (memq ref '(nil t))))
-	    (error "special variables not supported yet: %s" ref))))
-  (let ((tem (assq ref (elcomp--rewrite-alist compiler))))
-    (if tem
-	(cdr tem)
-      ref)))
+  (if (elcomp--constant-child-p ref)
+      ref
+    ;; Temporary.
+    (if (and (special-variable-p ref)
+	     (not (memq ref '(nil t))))
+	(error "special variables not supported yet: %s" ref))
+    (let ((tem (assq ref (elcomp--rewrite-alist compiler))))
+      (if tem
+	  (cdr tem)
+	ref))))
 
 (defun elcomp--label (compiler)
   (prog1
@@ -154,6 +167,12 @@ Or REF can be a constant, in which case it is returned unchanged."
       (elcomp--if-child-p obj)
       (elcomp--return-child-p obj)))
 
+(defun elcomp--variable-p (obj)
+  "Return t if OBJ is a variable when linearizing.
+A variable is a symbol that is not a keyword."
+  (and (symbolp obj)
+       (not (keywordp obj))))
+
 (defun elcomp--make-block-current (compiler block)
   ;; Terminate the previous basic block.
   (let ((insn (elcomp--last-instruction (elcomp--current-block compiler))))
@@ -183,25 +202,22 @@ Or REF can be a constant, in which case it is returned unchanged."
 (defun elcomp--linearize (compiler form result-location)
   "Linearize FORM and return the result.
 
-Linearization turns a form from an ordinary Lisp form into
-a sequence of simple objects.  Each object is of one of
-the forms:
-
-   (set LOC RESULT)
-   (call SYM FUNC [ARG]...)
-   (label BB)
-   (goto BB)
-   (if SYM [BB-TRUE | nil] [BB-FALSE])
-"
-  (if (not (consp form))
+Linearization turns a form from an ordinary Lisp form into a
+sequence of objects.  FIXME ref the class docs"
+  (if (atom form)
       (if result-location
 	  (elcomp--add-set compiler result-location
-			   (elcomp--rewrite-one-ref compiler form)))
+			   (if (elcomp--variable-p form)
+			       (elcomp--rewrite-one-ref compiler form)
+			     (elcomp--constant "constant"
+					       :value form))))
     (let ((fn (car form)))
       (cond
        ((eq fn 'quote)
 	(if result-location
-	    (elcomp--add-set compiler result-location form)))
+	    (elcomp--add-set compiler result-location
+			     (elcomp--constant "constant"
+					       :value form))))
        ((eq 'lambda (car-safe fn))
 	(error "lambda not supported"))
        ((eq fn 'let)
@@ -362,6 +378,7 @@ the forms:
 
        ((not (symbolp fn))
 	;; FIXME - lambda or the like
+	(error "not supported")
 	)
 
        (t
@@ -371,8 +388,7 @@ the forms:
 	(let ((these-args
 	       ;; Compute each argument.
 	       (mapcar (lambda (arg)
-			 (if (or (numberp arg)
-				 (symbolp arg))
+			 (if (atom arg)
 			     arg
 			   (let ((one-arg (elcomp--new-var compiler)))
 			     (elcomp--linearize compiler arg one-arg)

@@ -14,10 +14,22 @@
    This could be optimized as well
 
 ** Quoting is totally mishandled
+   We need to decide what valid SSA operands are
+
+*** Handle special-variable-p
+
+*** An SSA name can just be the defining SET or CALL
 
 ** Probably need more passes, pass infrastructure, SSA, type inference, etc
 
 ** Various code-gen bits need thinking through
+
+* Passes
+
+** Note that we can copy-propagate into a funcall or apply
+   For apply this is a bit like strength reduction
+
+** Type inference, including handling type predicates
 
 * Emacs Bugs
 

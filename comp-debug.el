@@ -36,6 +36,19 @@
   (princ "return " stream)
   (princ (oref obj :sym) stream))
 
+(defmethod elcomp--pp ((obj elcomp--constant) stream)
+  (princ "<< ")
+  (princ (oref obj :value) stream)
+  (princ " >>"))
+
+(defmethod elcomp--pp ((obj elcomp--phi) stream)
+  (princ "phi " stream)
+  (princ (oref obj :sym) stream)
+  (princ " =" stream)
+  (dolist (item (oref obj :args))
+    (princ " " stream)
+    (elcomp--pp item stream)))
+
 ;; Insert a single pretty-printed basic block into the current buffer.
 (defun elcomp--pp-basic-block (bb)
   (insert (format "\n[Basic block %d]\n" (elcomp--basic-block-number bb)))
