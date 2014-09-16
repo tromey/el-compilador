@@ -51,7 +51,15 @@
 
 ;; Insert a single pretty-printed basic block into the current buffer.
 (defun elcomp--pp-basic-block (bb)
-  (insert (format "\n[Basic block %d]\n" (elcomp--basic-block-number bb)))
+  (insert (format "\n[Basic block %d"
+		  (elcomp--basic-block-number bb)))
+  (when (> (hash-table-count (elcomp--basic-block-parents bb)) 0)
+    (insert " (parents:")
+    (maphash (lambda (parent-bb _ignore)
+	       (insert (format " %d" (elcomp--basic-block-number parent-bb))))
+	     (elcomp--basic-block-parents bb))
+    (insert ")"))
+  (insert "]\n")
   (dolist (item (elcomp--basic-block-code bb))
     (elcomp--pp item (current-buffer))
     (insert "\n")))

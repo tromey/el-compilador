@@ -38,7 +38,12 @@
   ;; The code for this basic block.
   code
   ;; Last link of linearized code.
-  code-link)
+  code-link
+  ;; A hash table holding back-links to parent nodes.
+  ;; Outgoing edges are represented directly by the last instruction
+  ;; in the code sequence.
+  ;; FIXME - exception edges.
+  parents)
 
 (defclass elcomp--set nil
   ((sym :initform nil :initarg :sym)
@@ -426,7 +431,8 @@ sequence of objects.  FIXME ref the class docs"
   (cons 'progn form))
 
 (defun elcomp--optimize (compiler)
-  (elcomp--thread-jumps-pass compiler))
+  (elcomp--thread-jumps-pass compiler)
+  (elcomp--compute-back-edges compiler))
 
 (defun elcomp--translate (form)
   (byte-compile-close-variables
