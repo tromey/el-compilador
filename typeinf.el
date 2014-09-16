@@ -1,21 +1,43 @@
 ;;; Type inference code.
 
+;;; Commentary:
 
+;; The type inference pass attempts to assign types to SSA names.
 
-;; We need a macro for 'declare' that expands
-;; so we can see types.
-;; The plan is to use the type to change the type in the C code.
-;; So:  (let ((i value)) (declare (type integer i)) ...)
-;; If VALUE is a lisp object this will expand to
-;;    EMACS_INT i = XINT (value)
-;; If VALUE is a integer it will be simply:
-;;    EMACS_INT i = value;
+;; A type is just a symbol as would be returned by 'type-of'.
+;; However, there is are some minor differences.  First, (type-of nil)
+;; and (type-of t) yield 'symbol, but we represent them as 'null and
+;; t.  It's nice to treat these specially as it enables some
+;; optimizations.  We also recognize a 'boolean type, which
+;; corresponds to the booleanp predicate.  Finally, it's important to
+;; know that an object can be of type 'list but have the value nil.
+;; That is, one cannot conclude that an object of type 'list is true.
+;; This is obviously also true for 'boolean.
+;; FIXME - what about 'symbol?  the same applies for symbolp.
+;; and (consp nil) is nil, though (listp nil) is t.
+;; so some confusion in the model here.
 
-;; We should also allow a declaration that allows a direct C
-;; call, not allowing symbol redefinition.
-;; (declare (direct FUNC))
+;; Types can be inferred in a few ways:
+
+;; 1. A constant's type is immediately known.
+;; 2. Some functions are annotated as returning a known type.
+;; 3. Some functions are annotated as being 'special-numeric' functions,
+;;    and have special treatment.  See props.el.
+;; 4. Type predicates such as integerp are used to annotate
+;;    variables.  For example in:
+;;        (if (integerp x) (1+ x))
+;;    the type of 'x' in the '1+' expression is known to be 'integer.
+;;    (This feature is actually not implemented yet.)
+;; 5. Type declarations can be used to annotate variables, e.g.:
+;;        (let ((x 0)) (declare (type integer i)) ...)
+;;    Note that these are not checked, so for argument checking it
+;;    is better to use cl-check-type, as its expansion falls under
+;;    case 4 above.
+
+;;; Code:
 
 (defun elcomp--set-type (var type-name)
+  "Set the type of VAR, an SSA name, to TYPE-NAME, a type."
   (when type-name
     (let ((found-type (get var :elcomp-type)))
       (if found-type
@@ -24,6 +46,7 @@
     (put var :elcomp-type type-name)))
 
 (defun elcomp--get-type (var)
+  "Return the type of VAR, if known, or nil."
   (get var :elcomp-type))
 
 (defun elcomp--check-simple-numeric (compiler call)
@@ -51,19 +74,19 @@
   nil)
 
 (defmethod elcomp--infer-type ((insn elcomp--set))
-  (if (symbolp (oref insn :value))
+  (if (elcomp--ssa-name-p (oref insn :value))
       ;; A symbol argument is just a name.  So take its type.
       (elcomp--set-type (oref insn :sym)
 			(elcomp--get-type (oref insn :value)))
     ;; If the argument to SET is not a symbol, then it is a
     ;; constant of some kind.
-    ;; FIXME this area is still super broken
-    (elcomp--set-type (oref insn :sym)
-		      ;; Here's the broken spot.
-		      (type-of (oref insn :value)))))
+    (let ((const (oref insn value)))
+      (cl-assert (elcomp--constant-child-p const))
+      (elcomp--set-type (oref insn :sym)
+			(type-of (oref insn const :value))))))
 
 (defmethod elcomp--infer-type ((insn elcomp--call))
-  (let ((type (elcomp--type (oref insn :func))))
+  (let ((type (elcomp--func-type (oref insn :func))))
     ;; If the function has a known type, use it.
     (if type
 	(elcomp--set-type (oref insn :sym) type)
