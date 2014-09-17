@@ -59,6 +59,9 @@
 	       (insert (format " %d" (elcomp--basic-block-number parent-bb))))
 	     (elcomp--basic-block-parents bb))
     (insert ")"))
+  (insert (format " (idom: %d)"
+		  (elcomp--basic-block-number
+		   (elcomp--basic-block-immediate-dominator bb))))
   (insert "]\n")
   (dolist (item (elcomp--basic-block-code bb))
     (elcomp--pp item (current-buffer))

@@ -27,6 +27,7 @@
   ;; The current basic block.
   current-block
   ;; True if the back-edges in the CFG are considered valid.
+  ;; FIXME - deal with IDOM being invalid too
   back-edges-valid
   ;; The current defun being compiled.
   ;; This is a list (NAME ARGLIST DOC INTERACTIVE).
@@ -45,7 +46,10 @@
   ;; Outgoing edges are represented directly by the last instruction
   ;; in the code sequence.
   ;; FIXME - exception edges.
-  parents)
+  parents
+  ;; The immediate dominator, or nil if not known.
+  immediate-dominator
+  )
 
 (defclass elcomp--set nil
   ((sym :initform nil :initarg :sym)
