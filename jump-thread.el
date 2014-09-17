@@ -148,4 +148,4 @@ collector."
 			   :block-false)))))))
 
       (when rewrote-one
-	(elcomp--invalidate-back-edges compiler)))))
+	(elcomp--invalidate-cfg compiler)))))

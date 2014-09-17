@@ -174,6 +174,9 @@ Or REF can be a constant, in which case it is returned unchanged."
       (elcomp--if-child-p obj)
       (elcomp--return-child-p obj)))
 
+(defun elcomp--invalidate-cfg (compiler)
+  (elcomp--invalidate-back-edges compiler))
+
 (defun elcomp--variable-p (obj)
   "Return t if OBJ is a variable when linearizing.
 A variable is a symbol that is not a keyword."
