@@ -39,6 +39,16 @@
 **** condition-case
 **** unwind-protect
 
+*** need a special block-terminator to follow signal, throw
+*** need to mark error, others as noreturn ?
+*** can turn throw->catch into a goto
+
+    (catch CONST (... (throw CONST val)))
+    =>
+    R = val; GOTO done
+
+    However this has to deal with unwind-protect as well
+
 ** If a value is ignored we still emit a temporary
    Sometimes a value is only needed as a boolean, like (if (and ...)).
    This could be optimized as well
