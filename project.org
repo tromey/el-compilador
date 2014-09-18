@@ -61,8 +61,6 @@
 ** There doesn't seem to be a way to fetch an object's name
    (there is - you can inherit from eieio-named)
 
-** defmethod's eldoc is messed up
-
 ** concat and mapconcat don't allow characters
    this seems unfriendly and pointless
 
