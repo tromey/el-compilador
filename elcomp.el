@@ -309,7 +309,7 @@ sequence of objects.  FIXME ref the class docs"
 	      (elcomp--make-block-current compiler next-label)))
 	  (elcomp--make-block-current compiler label-done)))
 
-       ((eq fn 'progn)
+       ((memq fn '(progn inline))
 	(elcomp--linearize-body compiler (cdr form) result-location))
        ((eq fn 'prog1)
 	(elcomp--linearize-body compiler (cdr form) result-location 1))
