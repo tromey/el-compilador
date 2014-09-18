@@ -316,14 +316,6 @@ sequence of objects.  FIXME ref the class docs"
        ((eq fn 'prog2)
 	(elcomp--linearize-body compiler (cdr form) result-location 2))
 
-       ((memq fn '(save-excursion save-restriction save-current-buffer))
-	(error "not supported")
-	)
-
-       ((eq fn 'with-output-to-temp-buffer)
-	(error "not supported")
-	)
-
        ((eq fn 'while)
 	(let ((label-top (elcomp--label compiler))
 	      (label-done (elcomp--label compiler))
@@ -377,27 +369,15 @@ sequence of objects.  FIXME ref the class docs"
        ((eq fn 'interactive)
 	nil)
 
-       ((memq fn '(function condition-case))
-	(error "not supported"))
-
-       ((eq fn 'unwind-protect)
-	(error "not supported"))
-
-       ((eq fn 'catch)
-	(error "not supported"))
-
-       ;; Needed as long as we run byte-optimize-form after cconv.
-       ((eq fn 'internal-make-closure)
-	(error "not supported"))
-
        ((not (symbolp fn))
 	;; FIXME - lambda or the like
 	(error "not supported")
 	)
 
+       ((special-form-p (symbol-function fn))
+	(error "unhandled special form"))
+
        (t
-	(if (special-form-p (symbol-function fn))
-	    (error "unhandled special form"))
 	;; An ordinary function call.
 	(let ((these-args
 	       ;; Compute each argument.
