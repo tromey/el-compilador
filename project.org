@@ -2,13 +2,20 @@
 
 * To Do
 
+** jump-thread can coalesce blocks
+   if a block has a single predecessor and that predecessor
+   has a single successor, and the exception regions are
+   the same, then the blocks can be merged
+
 ** Currently we don't handle special-variable-p in let bindings
    Major bug!
 
-*** We have to transform (let ((*V* value)))
+*** We have to transform (let ((*V* value)) BODY)
     into (let ((--new-sym-- *V*))
           (unwind-protect
-	      (setf *V* value)
+	      (progn
+	        (setf *V* value)
+	        BODY)
 	    (setf *V* --new-sym--)))
     Ditto for let* of course
 
@@ -53,8 +60,6 @@
 
 ** There doesn't seem to be a way to fetch an object's name
    (there is - you can inherit from eieio-named)
-
-** The *-list-p functions are generated but not documented
 
 ** defmethod's eldoc is messed up
 
