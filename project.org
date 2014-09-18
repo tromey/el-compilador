@@ -5,20 +5,36 @@
 ** Currently we don't handle special-variable-p in let bindings
    Major bug!
 
+*** We have to transform (let ((*V* value)))
+    into (let ((--new-sym-- *V*))
+          (unwind-protect
+	      (setf *V* value)
+	    (setf *V* --new-sym--)))
+    Ditto for let* of course
+
 ** Some special forms are still not handled
 
-** signals need help
+** "Ordinary special forms"
+
+    (let ((result nil))
+      (mapatoms (lambda (sym)
+		  (when (special-form-p (symbol-function sym))
+		    (push sym result))))
+      result)
+
+*** (track-mouse defconst defvar save-excursion setq-default 
+     interactive save-restriction save-current-buffer function)
+
+*** These require CFG improvements, probably Factored CFG
+**** catch
+**** throw
+**** signal
+**** condition-case
+**** unwind-protect
 
 ** If a value is ignored we still emit a temporary
    Sometimes a value is only needed as a boolean, like (if (and ...)).
    This could be optimized as well
-
-** Quoting is totally mishandled
-   We need to decide what valid SSA operands are
-
-*** Handle special-variable-p
-
-*** An SSA name can just be the defining SET or CALL
 
 ** Probably need more passes, pass infrastructure, SSA, type inference, etc
 
