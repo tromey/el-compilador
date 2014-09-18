@@ -375,7 +375,7 @@ sequence of objects.  FIXME ref the class docs"
 	)
 
        ((special-form-p (symbol-function fn))
-	(error "unhandled special form"))
+	(error "unhandled special form: %s" (symbol-name fn)))
 
        (t
 	;; An ordinary function call.
