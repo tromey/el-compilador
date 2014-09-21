@@ -1,16 +1,26 @@
 * Futures
 
-** Ideally, emacs would itself be written in emacs lisp
+** Emacs should itself be written in emacs lisp
+
+*** For every part this seems pretty hard!
+*** But:
 
 ** This compiler can be used to bootstrap this process
    With type declarations and inferencing it can be as efficient
    as the C code
+
+*** Plenty of examples, e.g. provide or copy-alist
 
 ** It can also JIT compile parts as needed
 
 ** Type-generic operations like + would be better expressed
    using defgeneric and defmethod.  then the compiler could
    more easily optimize?  Not clear.
+
+** Meanwhile there should be a rule about use of Fwhatever in Emacs
+
+*** Only "inlineable" uses should be permitted
+*** Things like Fload should indirect via Ffuncall
 
 ** It is bad that Emacs has 3 interpreters in it:
 *** Emacs Lisp
