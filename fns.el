@@ -149,3 +149,33 @@ Return the reversed list.  Expects a properly nil-terminated list."
     (if (consp tem)
 	(mapc #'funcall (cdr tem))))
   feature)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun plist-member (plist prop)
+  (while (and (consp plist)
+	      (not (eq (car plist) prop)))
+    (setf plist (cddr plist)))
+  plist)
+
+(defun widget-put (widget property value)
+  (check-type widget list)
+  (setcdr widget (plist-put (cdr widget) property value)))
+
+(defun widget-get (widget property)
+  (catch 'done
+    (while t
+      (unless widget
+	(throw 'done nil))
+      (check-type widget consp)		; FIXME type name
+      (let ((tmp (plist-member (cdr widget) property)))
+	(when (consp tmp)
+	  (setf tmp (cdr tmp))
+	  (throw 'done (car tmp)))
+	(setf tmp (car widget))
+	(unless tmp
+	  (throw 'done nil))
+	(setf widget (get tmp 'widget-type))))))
+
+(defun widget-apply (widget property &rest args)
+  FIXME)
