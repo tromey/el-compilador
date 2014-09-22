@@ -11,12 +11,17 @@
    Major bug!
 
 *** We have to transform (let ((*V* value)) BODY)
-    into (let ((--new-sym-- *V*))
-          (unwind-protect
-	      (progn
-	        (setf *V* value)
-	        BODY)
-	    (setf *V* --new-sym--)))
+    Probably need to introduce a new "internal function" for this;
+    the "obvious" transform using unwind-protect doesn't actually 
+    follow elisp semantics.
+
+    Maybe something like:
+
+        (let ((--n-- (:specpdl:)))
+	  (unwind-protect
+	      (:specbind: *V* value)
+	    (unbind-to --n--)))
+
     Ditto for let* of course
 
 ** Some special forms are still not handled
