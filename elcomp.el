@@ -29,6 +29,8 @@
   ;; True if the back-edges in the CFG are considered valid.
   ;; FIXME - deal with IDOM being invalid too
   back-edges-valid
+  ;; The current list of exception handlers.
+  exceptions
   ;; The current defun being compiled.
   ;; This is a list (NAME ARGLIST DOC INTERACTIVE).
   defun
@@ -49,6 +51,8 @@
   parents
   ;; The immediate dominator, or nil if not known.
   immediate-dominator
+  ;; The list of exception handlers.
+  exceptions
   )
 
 (defclass elcomp--set nil
@@ -78,6 +82,24 @@
 (defclass elcomp--phi nil
   ((sym :initform nil :initarg :sym)
    (args :initform nil :initarg :args)))
+
+;; An exception edge.
+(defclass elcomp--exception nil
+  ((handler :initform nil :initarg :handler)))
+
+;; A catch.
+(defclass elcomp--catch (elcomp--exception)
+  ((tag :initform nil :initarg :tag)
+   (result :initform nil :initarg :result)))
+
+;; A single condition-case handler.
+(defclass elcomp--condcase (elcomp--exception)
+  ((variable :initform nil :initarg :variable)
+   (condition-name :initform nil :initarg :condition-name)))
+
+;; An unwind-protect.
+(defclass elcomp--unwind-protect (elcomp--exception)
+  ())
 
 (defun elcomp--ssa-name-p (arg)
   (or
@@ -115,7 +137,8 @@ Or REF can be a constant, in which case it is returned unchanged."
 
 (defun elcomp--label (compiler)
   (prog1
-      (make-elcomp--basic-block :number (elcomp--next-label compiler))
+      (make-elcomp--basic-block :number (elcomp--next-label compiler)
+				:exceptions (elcomp--exceptions compiler))
     (cl-incf (elcomp--next-label compiler))))
 
 (defun elcomp--add-basic (compiler obj)
@@ -354,8 +377,9 @@ sequence of objects.  FIXME ref the class docs"
 	(let ((label-done (elcomp--label compiler)))
 	  (dolist (condition (cdr form))
 	    (elcomp--linearize compiler condition result-location)
-	    ;; FIXME: don't need this "if" for the last iteration.
-	    ;; FIXME: "and" in conditionals could be handled better.
+	    ;; We don't need this "if" for the last iteration, and
+	    ;; "and" in conditionals could be handled better -- but
+	    ;; all this is fixed up by the optimizers.
 	    (elcomp--add-if compiler result-location label-done nil))
 	  (elcomp--make-block-current compiler label-done)))
 
@@ -366,12 +390,108 @@ sequence of objects.  FIXME ref the class docs"
 	    (elcomp--add-if compiler result-location label-done nil))
 	  (elcomp--make-block-current compiler label-done)))
 
+       ((eq fn 'catch)
+	(let* ((tag-var (elcomp--new-var compiler))
+	       (result-var (elcomp--new-var compiler))
+	       (handler-label (elcomp--label compiler))
+	       (done-label (elcomp--label compiler))
+	       (exception (elcomp--catch "catch"
+					 :handler handler-label
+					 :tag tag-var
+					 :result result-var)))
+	  ;; Handle the common case of a symbol-valued TAG more
+	  ;; directly.  See above as well.
+	  (unless (symbolp (cadr form))
+	    (elcomp--linearize compiler (cadr form) tag-var))
+	  (push exception (elcomp--exceptions compiler))
+	  ;; We need a new block because we have modified the
+	  ;; exception handler list.
+	  (elcomp--make-block-current compiler (elcomp--label compiler))
+	  (elcomp--linearize-body compiler (cddr form) result-location)
+	  ;; The catch doesn't cover the handler; but pop before the
+	  ;; "goto" so the new block has the correct exception list.
+	  (pop (elcomp--exceptions compiler))
+	  (elcomp--add-goto compiler done-label)
+	  (elcomp--make-block-current compiler handler-label)
+	  ;; This block magically sets RESULT-VAR... ?
+	  ;; Or we could emit a special internal call to fetch
+	  ;; the data.  FIXME.
+	  (elcomp--add-goto compiler done-label)
+	  (elcomp--make-block-current compiler done-label)))
+
+       ((eq fn 'unwind-protect)
+	(let ((handler-label (elcomp--label compiler))
+	      (done-label (elcomp--label compiler)))
+	  (push (elcomp--unwind-protect "unwind-protect"
+					:handler handler-label)
+		(elcomp--exceptions compiler))
+	  ;; We need a new block because we have modified the
+	  ;; exception handler list.
+	  (elcomp--make-block-current compiler (elcomp--label compiler))
+	  (elcomp--linearize compiler (cadr form) result-location)
+	  ;; We double-linearize the handlers because this is simpler
+	  ;; and usually better.
+	  (elcomp--linearize-body compiler (cddr form)
+				  (elcomp--new-var compiler))
+	  ;; The catch doesn't cover the handler; but pop before the
+	  ;; "goto" so the new block has the correct exception list.
+	  (pop (elcomp--exceptions compiler))
+	  (elcomp--add-goto compiler done-label)
+	  (elcomp--make-block-current compiler handler-label)
+	  ;; The second linearization.
+	  (elcomp--linearize-body compiler (cddr form)
+				  (elcomp--new-var compiler))
+	  ;; FIXME - what instruction do we emit here?
+	  ;; We will probably need a special "keep unwinding" call.
+	  ;; Perhaps an internal 'noreturn' function would do.
+	  (elcomp--add-goto compiler done-label)
+	  (elcomp--make-block-current compiler done-label)))
+
+       ((eq fn 'condition-case)
+	(let ((new-exceptions nil)
+	      (body-label (elcomp--label compiler))
+	      (done-label (elcomp--label compiler))
+	      (saved-exceptions (elcomp--exceptions compiler)))
+	  ;; We emit the handlers first because it is a bit simpler
+	  ;; here, and it doesn't matter for the result.
+	  (elcomp--add-goto compiler body-label)
+	  (dolist (handler (cdddr form))
+	    (let ((this-label (elcomp--label compiler)))
+	      (push (elcomp--condcase "condition-case"
+				      :handler this-label
+				      :variable (cadr form)
+				      :condition-name (car handler))
+		    new-exceptions)
+	      (elcomp--make-block-current compiler this-label)
+	      ;; Here we should probably pretend that the
+	      ;; handler block is surrounded by '(let ((var ...))...)'.
+	      ;; VAR might be defvar'd.
+	      ;; Maybe we could emit a special call like
+	      ;; (setq VAR (:internal-function:))
+	      ;; to fetch the data.
+	      (elcomp--linearize-body compiler (cdr handler) result-location)
+	      (elcomp--add-goto compiler done-label)))
+	  ;; Careful with the ordering.
+	  (setf new-exceptions (nreverse new-exceptions))
+	  (dolist (exception new-exceptions)
+	    (push exception (elcomp--exceptions compiler)))
+	  ;; Update the body label's list of exceptions.
+	  (oset (elcomp--basic-block-exceptions body-label)
+		:exceptions (elcomp--exceptions compiler))
+	  (elcomp--make-block-current compiler body-label)
+	  (elcomp--linearize compiler (caddr form) result-location)
+	  ;; The catch doesn't cover the handler; but pop before the
+	  ;; "goto" so the new block has the correct exception list.
+	  (setf (elcomp--exceptions compiler) saved-exceptions)
+	  (elcomp--add-goto compiler done-label)
+	  (elcomp--make-block-current compiler done-label)))
+
        ((eq fn 'interactive)
 	nil)
 
        ((not (symbolp fn))
 	;; FIXME - lambda or the like
-	(error "not supported")
+	(error "not supported: %S" fn)
 	)
 
        ((special-form-p (symbol-function fn))
@@ -458,6 +578,8 @@ sequence of objects.  FIXME ref the class docs"
        ((elcomp--if-child-p obj)
 	(elcomp--do-iterate hash callback (oref obj :block-true) postorder)
 	(elcomp--do-iterate hash callback (oref obj :block-false) postorder))))
+    (dolist (exception (elcomp--basic-block-exceptions bb))
+      (elcomp--do-iterate hash callback (oref exception :handler) postorder))
     (when postorder
       (funcall callback bb))))
 

@@ -27,6 +27,9 @@
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)
+       (dolist (exception (elcomp--basic-block-exceptions bb))
+	 (puthash bb t
+		  (elcomp--basic-block-parents (oref exception :handler))))
        (elcomp--add-links (elcomp--last-instruction bb) bb)))
     (setf (elcomp--back-edges-valid compiler) t)))
 

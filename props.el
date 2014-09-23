@@ -29,7 +29,8 @@ Defined properties are:
                              and that the type of the result
                              follows the usual contagion rules.
   :elcomp-predicate TYPE     This function is a type predicate that
-                             tests for TYPE."
+                             tests for TYPE.
+  :elcomp-noreturn t|nil     If t, FUNC does not return normally."
   ;; add more?
   ;; :pure - like const but can refer to memory - e.g., car
   ;;         this would be great for CSE but would require modeling
@@ -61,6 +62,10 @@ Defined properties are:
   "If FUNC is a type predicate, return the corresponding type, else nil."
   (get func :elcomp-predicate))
 
+(defun elcomp--func-type-noreturn-p (func)
+  "Return t if FUNC can be considered 'noreturn'."
+  (get func :elcomp-noreturn))
+
 (dolist (func '(+ - * / % 1+ 1- mod max min abs expt))
   (elcomp-declare func :elcomp-const t :elcomp-simple-numeric t))
 
@@ -83,3 +88,5 @@ Defined properties are:
 		(floatp . float)))
   (elcomp-declare (car iter) :elcomp-predicate (cdr iter)))
 
+(dolist (iter '(throw signal error user-error))
+  (elcomp-declare iter :elcomp-noreturn t))

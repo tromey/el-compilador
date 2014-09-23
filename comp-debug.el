@@ -18,7 +18,8 @@
   (princ (oref obj :sym) stream)
   (princ " = " stream)
   (princ (oref obj :func) stream)
-  (princ (oref obj :args) stream))
+  (when (oref obj :args)
+    (princ (oref obj :args) stream)))
 
 (defmethod elcomp--pp ((obj elcomp--goto) stream)
   (princ "goto BB " stream)
@@ -49,6 +50,26 @@
     (princ " " stream)
     (elcomp--pp item stream)))
 
+(defmethod elcomp--pp ((obj elcomp--catch) stream)
+  (princ "catch " stream)
+  (princ (oref obj :result) stream)
+  (princ " = " stream)
+  (princ (oref obj :tag) stream)
+  (princ " => block " stream)
+  (princ (elcomp--basic-block-number (oref obj :handler)) stream))
+
+(defmethod elcomp--pp ((obj elcomp--condcase) stream)
+  (princ "condition-case " stream)
+  (princ (oref obj :variable) stream)
+  (princ ", " stream)
+  (princ (oref obj :condition-name) stream)
+  (princ " => block " stream)
+  (princ (elcomp--basic-block-number (oref obj :handler)) stream))
+
+(defmethod elcomp--pp ((obj elcomp--unwind-protect) stream)
+  (princ "unwind-protect => block " stream)
+  (princ (elcomp--basic-block-number (oref obj :handler)) stream))
+
 ;; Insert a single pretty-printed basic block into the current buffer.
 (defun elcomp--pp-basic-block (bb)
   (insert (format "\n[Basic block %d"
@@ -63,6 +84,10 @@
 		  (elcomp--basic-block-number
 		   (elcomp--basic-block-immediate-dominator bb))))
   (insert "]\n")
+  (dolist (exception (elcomp--basic-block-exceptions bb))
+    (insert "    ")
+    (elcomp--pp exception (current-buffer))
+    (insert "\n"))
   (dolist (item (elcomp--basic-block-code bb))
     (elcomp--pp item (current-buffer))
     (insert "\n")))
