@@ -236,6 +236,19 @@ A variable is a symbol that is not a keyword."
 ;; (defmacro define-elcomp-handler (name arg-list &rest body)
 ;;   `(defun ,(elcomp--handler-name name) arg-list body))
 
+(defun elcomp--operand (compiler form)
+  (cond
+   ((elcomp--variable-p form)
+    (elcomp--rewrite-one-ref compiler form))
+   ((atom form)
+    (elcomp--constant "constant" :value form))
+   ((eq (car form) 'quote)
+    (elcomp--constant "constant" :value (cadr form)))
+   (t
+    (let ((var (elcomp--new-var compiler)))
+      (elcomp--linearize compiler form var)
+      var))))
+ 
 (defun elcomp--linearize (compiler form result-location)
   "Linearize FORM and return the result.
 
@@ -244,17 +257,13 @@ sequence of objects.  FIXME ref the class docs"
   (if (atom form)
       (if result-location
 	  (elcomp--add-set compiler result-location
-			   (if (elcomp--variable-p form)
-			       (elcomp--rewrite-one-ref compiler form)
-			     (elcomp--constant "constant"
-					       :value form))))
+			   (elcomp--operand compiler form)))
     (let ((fn (car form)))
       (cond
        ((eq fn 'quote)
 	(if result-location
 	    (elcomp--add-set compiler result-location
-			     (elcomp--constant "constant"
-					       :value form))))
+			     (elcomp--operand compiler form))))
        ((eq 'lambda (car-safe fn))
 	(error "lambda not supported"))
        ((eq fn 'let)
@@ -391,18 +400,13 @@ sequence of objects.  FIXME ref the class docs"
 	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'catch)
-	(let* ((tag-var (elcomp--new-var compiler))
-	       (result-var (elcomp--new-var compiler))
+	(let* ((tag (elcomp--operand compiler (cadr form)))
 	       (handler-label (elcomp--label compiler))
 	       (done-label (elcomp--label compiler))
 	       (exception (elcomp--catch "catch"
 					 :handler handler-label
-					 :tag tag-var
-					 :result result-var)))
-	  ;; Handle the common case of a symbol-valued TAG more
-	  ;; directly.  See above as well.
-	  (unless (symbolp (cadr form))
-	    (elcomp--linearize compiler (cadr form) tag-var))
+					 :tag tag
+					 :result result-location)))
 	  (push exception (elcomp--exceptions compiler))
 	  ;; We need a new block because we have modified the
 	  ;; exception handler list.
@@ -413,7 +417,7 @@ sequence of objects.  FIXME ref the class docs"
 	  (pop (elcomp--exceptions compiler))
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler handler-label)
-	  ;; This block magically sets RESULT-VAR... ?
+	  ;; This block magically sets RESULT-LOCATION... ?
 	  ;; Or we could emit a special internal call to fetch
 	  ;; the data.  FIXME.
 	  (elcomp--add-goto compiler done-label)
