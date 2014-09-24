@@ -37,6 +37,9 @@
   (princ "return " stream)
   (princ (oref obj :sym) stream))
 
+(defmethod elcomp--pp ((obj elcomp--diediedie) stream)
+  (princ "diediedie " stream))
+
 (defmethod elcomp--pp ((obj elcomp--constant) stream)
   (princ "<< ")
   (princ (oref obj :value) stream)

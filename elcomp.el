@@ -75,6 +75,12 @@
 (defclass elcomp--return nil
   ((sym :initform nil :initarg :sym)))
 
+(defclass elcomp--diediedie nil
+  ()
+  "An instruction which terminates a basic block without leading anywhere.
+
+This can only be used after a call to a `nothrow' function.")
+
 ;; An SSA operand representing a constant.
 (defclass elcomp--constant nil
   ((value :initform nil :initarg :value)))
@@ -153,8 +159,16 @@ Or REF can be a constant, in which case it is returned unchanged."
   (elcomp--add-basic compiler (elcomp--set "set" :sym sym :value value)))
 
 (defun elcomp--add-call (compiler sym func args)
-  (elcomp--add-basic compiler (elcomp--call "call" :sym sym
-					    :func func :args args)))
+  (let ((call (elcomp--call "call" :sym sym :func func :args args)))
+    (elcomp--add-basic compiler call)
+    (when (and (symbolp func)
+	       (elcomp--func-noreturn-p func))
+      ;; Add a terminator instruction and push a new basic block --
+      ;; this block will be discarded later, but that's ok.  Also
+      ;; discard the assignment.
+      (setf (oref call :sym) nil)
+      (elcomp--add-basic compiler (elcomp--diediedie "diediedie"))
+      (setf (elcomp--current-block compiler) (elcomp--label compiler)))))
 
 (defun elcomp--add-return (compiler sym)
   (elcomp--add-basic compiler (elcomp--return "return" :sym sym)))
@@ -199,7 +213,8 @@ Or REF can be a constant, in which case it is returned unchanged."
 (defun elcomp--terminator-p (obj)
   (or (elcomp--goto-child-p obj)
       (elcomp--if-child-p obj)
-      (elcomp--return-child-p obj)))
+      (elcomp--return-child-p obj)
+      (elcomp--diediedie-child-p obj)))
 
 (defun elcomp--invalidate-cfg (compiler)
   (elcomp--invalidate-back-edges compiler))
@@ -505,12 +520,7 @@ sequence of objects.  FIXME ref the class docs"
 	;; An ordinary function call.
 	(let ((these-args
 	       ;; Compute each argument.
-	       (mapcar (lambda (arg)
-			 (if (atom arg)
-			     arg
-			   (let ((one-arg (elcomp--new-var compiler)))
-			     (elcomp--linearize compiler arg one-arg)
-			     one-arg)))
+	       (mapcar (lambda (arg) (elcomp--operand compiler arg))
 		       (cdr form))))
 	  ;; Make the call.
 	  (elcomp--add-call compiler result-location fn these-args)))))))

@@ -62,7 +62,7 @@ Defined properties are:
   "If FUNC is a type predicate, return the corresponding type, else nil."
   (get func :elcomp-predicate))
 
-(defun elcomp--func-type-noreturn-p (func)
+(defun elcomp--func-noreturn-p (func)
   "Return t if FUNC can be considered 'noreturn'."
   (get func :elcomp-noreturn))
 
