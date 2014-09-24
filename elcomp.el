@@ -75,7 +75,7 @@
 (defclass elcomp--return nil
   ((sym :initform nil :initarg :sym)))
 
-(defclass elcomp--diediedie nil
+(defclass elcomp--diediedie (elcomp--call)
   ()
   "An instruction which terminates a basic block without leading anywhere.
 
@@ -147,28 +147,32 @@ Or REF can be a constant, in which case it is returned unchanged."
 				:exceptions (elcomp--exceptions compiler))
     (cl-incf (elcomp--next-label compiler))))
 
-(defun elcomp--add-basic (compiler obj)
-  (let ((new-cell (cons obj nil))
-	(block (elcomp--current-block compiler)))
+(defun elcomp--add-to-basic-block (block obj)
+  (let ((new-cell (cons obj nil)))
     (if (elcomp--basic-block-code-link block)
 	(setf (cdr (elcomp--basic-block-code-link block)) new-cell)
       (setf (elcomp--basic-block-code block) new-cell))
     (setf (elcomp--basic-block-code-link block) new-cell)))
 
+(defun elcomp--add-basic (compiler obj)
+  (elcomp--add-to-basic-block (elcomp--current-block compiler) obj))
+
 (defun elcomp--add-set (compiler sym value)
   (elcomp--add-basic compiler (elcomp--set "set" :sym sym :value value)))
 
 (defun elcomp--add-call (compiler sym func args)
-  (let ((call (elcomp--call "call" :sym sym :func func :args args)))
-    (elcomp--add-basic compiler call)
-    (when (and (symbolp func)
-	       (elcomp--func-noreturn-p func))
-      ;; Add a terminator instruction and push a new basic block --
-      ;; this block will be discarded later, but that's ok.  Also
-      ;; discard the assignment.
-      (setf (oref call :sym) nil)
-      (elcomp--add-basic compiler (elcomp--diediedie "diediedie"))
-      (setf (elcomp--current-block compiler) (elcomp--label compiler)))))
+  (if (and (symbolp func)
+	   (elcomp--func-noreturn-p func))
+      (progn
+	;; Add the terminator instruction and push a new basic block
+	;; -- this block will be discarded later, but that's ok.  Also
+	;; discard the assignment.
+	(elcomp--add-basic compiler
+			   (elcomp--diediedie "diediedie" :sym nil :func func
+					      :args args))
+	(setf (elcomp--current-block compiler) (elcomp--label compiler)))
+    (elcomp--add-basic compiler (elcomp--call "call" :sym sym :func func
+					      :args args))))
 
 (defun elcomp--add-return (compiler sym)
   (elcomp--add-basic compiler (elcomp--return "return" :sym sym)))

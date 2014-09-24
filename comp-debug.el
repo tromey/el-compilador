@@ -37,9 +37,6 @@
   (princ "return " stream)
   (princ (oref obj :sym) stream))
 
-(defmethod elcomp--pp ((obj elcomp--diediedie) stream)
-  (princ "diediedie " stream))
-
 (defmethod elcomp--pp ((obj elcomp--constant) stream)
   (princ "<< ")
   (princ (oref obj :value) stream)
@@ -58,7 +55,7 @@
   (princ (oref obj :result) stream)
   (princ " = " stream)
   (princ (oref obj :tag) stream)
-  (princ " => block " stream)
+  (princ " => BB " stream)
   (princ (elcomp--basic-block-number (oref obj :handler)) stream))
 
 (defmethod elcomp--pp ((obj elcomp--condcase) stream)
@@ -66,16 +63,16 @@
   (princ (oref obj :variable) stream)
   (princ ", " stream)
   (princ (oref obj :condition-name) stream)
-  (princ " => block " stream)
+  (princ " => BB " stream)
   (princ (elcomp--basic-block-number (oref obj :handler)) stream))
 
 (defmethod elcomp--pp ((obj elcomp--unwind-protect) stream)
-  (princ "unwind-protect => block " stream)
+  (princ "unwind-protect => BB " stream)
   (princ (elcomp--basic-block-number (oref obj :handler)) stream))
 
 ;; Insert a single pretty-printed basic block into the current buffer.
 (defun elcomp--pp-basic-block (bb)
-  (insert (format "\n[Basic block %d"
+  (insert (format "\n[BB %d"
 		  (elcomp--basic-block-number bb)))
   (when (> (hash-table-count (elcomp--basic-block-parents bb)) 0)
     (insert " (parents:")

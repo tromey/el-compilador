@@ -67,6 +67,42 @@ collector."
        compiler
        (lambda (block)
 	 (let ((insn (elcomp--last-instruction block)))
+	   ;; A `throw' with a constant tag can be transformed into an
+	   ;; assignment and a GOTO when the current blocks' outermost
+	   ;; handler is a `catch' of the same tag.
+	   (when (and (elcomp--diediedie-child-p insn)
+		      (eq (oref insn :func) 'throw)
+		      ;; Argument to throw is a const.
+		      (elcomp--constant-child-p
+		       (car (oref insn :args)))
+		      ;; In a catch block.
+		      (elcomp--catch-child-p
+		       (car (elcomp--basic-block-exceptions block)))
+		      ;; With a constant tag.
+		      (elcomp--constant-child-p
+		       (oref
+			(car (elcomp--basic-block-exceptions block))
+			:tag))
+		      ;; ... which is equal to the throw.
+		      (equal (car (oref insn :args))
+			     (oref (car (elcomp--basic-block-exceptions block))
+				   :tag)))
+	     ;; Whew.  Replace the instruction with an assignment and
+	     ;; a goto, and zap the `diediedie' instruction.
+	     (setf (elcomp--last-instruction block)
+		   (elcomp--set "set"
+				:sym (oref (car (elcomp--basic-block-exceptions
+						 block))
+					   :result)
+				:value (cadr (oref insn :args))))
+	     (setf insn
+		   (elcomp--goto
+		    "goto"
+		    :block (oref (car (elcomp--basic-block-exceptions block))
+				 :handler)))
+	     (elcomp--add-to-basic-block block insn)
+	     (setf rewrote-one t))
+
 	   ;; A GOTO to a block holding just another branch (of any kind)
 	   ;; can be replaced by the instruction at the target.
 	   (when (and (elcomp--goto-child-p insn)
