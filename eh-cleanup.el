@@ -47,6 +47,4 @@
 	   (setf (elcomp--basic-block-exceptions bb) nil)
 	   (setf found-one t)))))
     (when found-one
-      (elcomp--invalidate-cfg compiler)
-      ;; FIXME - good spot to try to coalesce blocks.
-      )))
+      (elcomp--invalidate-cfg compiler))))

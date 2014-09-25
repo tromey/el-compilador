@@ -9,4 +9,5 @@
     (load "dom.el")
     (load "dce.el")
     (load "jump-thread.el")
-    (load "eh-cleanup.el")))
+    (load "eh-cleanup.el")
+    (load "coalesce.el")))
