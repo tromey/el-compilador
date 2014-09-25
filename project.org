@@ -2,11 +2,6 @@
 
 * To Do
 
-** jump-thread can coalesce blocks
-   if a block has a single predecessor and that predecessor
-   has a single successor, and the exception regions are
-   the same, then the blocks can be merged
-
 ** Currently we don't handle special-variable-p in let bindings
    Major bug!
 
