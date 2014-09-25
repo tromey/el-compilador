@@ -21,10 +21,12 @@
   nil)
 
 (defmethod elcomp--eh-nonlocal ((insn elcomp--call))
-  ;; FIXME some things are definitely safe.  But note that we can't
-  ;; really be picky about `signal' or `throw' tags, due to QUIT and
-  ;; `throw-on-input'.
-  t)
+  ;; Note that we can't really be picky about `signal' or `throw'
+  ;; tags, due to QUIT and `throw-on-input'.
+  (if (and (symbolp (oref insn :func))
+	   (elcomp--func-nothrow-p (oref insn :func)))
+      nil
+    t))
 
 (defmethod elcomp--eh-nonlocal ((insn elcomp--diediedie))
   t)

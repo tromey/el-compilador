@@ -30,12 +30,12 @@ Defined properties are:
                              follows the usual contagion rules.
   :elcomp-predicate TYPE     This function is a type predicate that
                              tests for TYPE.
-  :elcomp-noreturn t|nil     If t, FUNC does not return normally."
+  :elcomp-noreturn t|nil     If t, FUNC does not return normally.
+  :elcomp-nothrow t|nil      If t, FUNC cannot `throw' or `signal'."
   ;; add more?
   ;; :pure - like const but can refer to memory - e.g., car
   ;;         this would be great for CSE but would require modeling
   ;;         memory a bit more
-  ;; :nothrow - can't signal or throw
   ;; :malloc - allocates new object
   ;; :primitive - assume this can never be rewritten, e.g. car
   ;; ... though if a function has any properties then we're already
@@ -66,6 +66,10 @@ Defined properties are:
   "Return t if FUNC can be considered 'noreturn'."
   (get func :elcomp-noreturn))
 
+(defun elcomp--func-nothrow-p (func)
+  "Return t if FUNC can be considered 'nothrow'."
+  (get func :elcomp-nothrow))
+
 (dolist (func '(+ - * / % 1+ 1- mod max min abs expt))
   (elcomp-declare func :elcomp-const t :elcomp-simple-numeric t))
 
@@ -90,3 +94,6 @@ Defined properties are:
 
 (dolist (iter '(throw signal error user-error))
   (elcomp-declare iter :elcomp-noreturn t))
+
+(dolist (iter '(car-safe cdr-safe))
+  (elcomp-declare iter :elcomp-nothrow t))
