@@ -8,4 +8,5 @@
     (load "back.el")
     (load "dom.el")
     (load "dce.el")
-    (load "jump-thread.el")))
+    (load "jump-thread.el")
+    (load "eh-cleanup.el")))

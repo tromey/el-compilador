@@ -562,6 +562,7 @@ sequence of objects.  FIXME ref the class docs"
 
 (defun elcomp--optimize (compiler)
   (elcomp--thread-jumps-pass compiler)
+  (elcomp--eh-cleanup-pass compiler)
   (elcomp--require-back-edges compiler)
   (elcomp--compute-dominators compiler))
 
