@@ -47,7 +47,6 @@
   ;; A hash table holding back-links to parent nodes.
   ;; Outgoing edges are represented directly by the last instruction
   ;; in the code sequence.
-  ;; FIXME - exception edges.
   parents
   ;; The immediate dominator, or nil if not known.
   immediate-dominator
