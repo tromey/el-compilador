@@ -444,7 +444,8 @@ sequence of objects.  FIXME ref the class docs"
 
        ((eq fn 'unwind-protect)
 	(let ((handler-label (elcomp--label compiler))
-	      (done-label (elcomp--label compiler)))
+	      (done-label (elcomp--label compiler))
+	      (normal-label (elcomp--label compiler)))
 	  (push (elcomp--unwind-protect "unwind-protect"
 					:handler handler-label)
 		(elcomp--exceptions compiler))
@@ -452,13 +453,15 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; exception handler list.
 	  (elcomp--make-block-current compiler (elcomp--label compiler))
 	  (elcomp--linearize compiler (cadr form) result-location)
+	  ;; The catch doesn't cover the handler; but pop before the
+	  ;; "goto" so the new block has the correct exception list.
+	  (pop (elcomp--exceptions compiler))
+	  (elcomp--add-goto compiler normal-label)
+	  (elcomp--make-block-current compiler normal-label)
 	  ;; We double-linearize the handlers because this is simpler
 	  ;; and usually better.
 	  (elcomp--linearize-body compiler (cddr form)
 				  (elcomp--new-var compiler))
-	  ;; The catch doesn't cover the handler; but pop before the
-	  ;; "goto" so the new block has the correct exception list.
-	  (pop (elcomp--exceptions compiler))
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler handler-label)
 	  ;; The second linearization.
