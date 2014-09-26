@@ -466,10 +466,7 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; The second linearization.
 	  (elcomp--linearize-body compiler (cddr form)
 				  (elcomp--new-var compiler))
-	  ;; FIXME - what instruction do we emit here?
-	  ;; We will probably need a special "keep unwinding" call.
-	  ;; Perhaps an internal 'noreturn' function would do.
-	  (elcomp--add-goto compiler done-label)
+	  (elcomp--add-call compiler nil :unwind-protect-continue nil)
 	  (elcomp--make-block-current compiler done-label)))
 
        ((eq fn 'condition-case)

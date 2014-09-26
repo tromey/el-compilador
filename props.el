@@ -92,7 +92,7 @@ Defined properties are:
 		(floatp . float)))
   (elcomp-declare (car iter) :elcomp-predicate (cdr iter)))
 
-(dolist (iter '(throw signal error user-error))
+(dolist (iter '(throw signal error user-error :unwind-protect-continue))
   (elcomp-declare iter :elcomp-noreturn t))
 
 (dolist (iter '(car-safe cdr-safe))

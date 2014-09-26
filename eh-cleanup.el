@@ -31,11 +31,32 @@
 (defmethod elcomp--eh-nonlocal ((insn elcomp--diediedie))
   t)
 
+(defun elcomp--eh-remove-unwinds (compiler bb)
+  "Remove any empty `unwind-protect' edges from BB."
+  ;; There's probably some cl-loop formulation that isn't so ugly.
+  (catch 'done
+    (while t
+      (let ((exception (car (elcomp--basic-block-exceptions bb))))
+	;; Only the outermost thing is elig
+	(unless (elcomp--unwind-protect-p exception)
+	  (throw 'done nil))
+	(let ((exc-block (oref exception :handler)))
+	  ;; If the block is just a single instruction, then we know
+	  ;; it is a call to the special :unwind-protect-continue
+	  ;; function, and so the edge can be removed.
+	  (unless (eq (elcomp--basic-block-code exc-block)
+		      (elcomp--basic-block-code-link exc-block))
+	    (throw 'done nil))
+	  (cl-assert (elcomp--diediedie-p
+		      (car (elcomp--basic-block-code exc-block))))
+	  (pop (elcomp--basic-block-exceptions bb)))))))
+
 (defun elcomp--eh-cleanup-pass (compiler)
   (let ((found-one nil))
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)
+       (elcomp--eh-remove-unwinds compiler bb)
        ;; Don't bother if there are already no exception handlers.
        (when (elcomp--basic-block-exceptions bb)
 	 (unless (catch 'can-throw
