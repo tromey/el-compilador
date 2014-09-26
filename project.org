@@ -51,8 +51,6 @@
 
 ** Still need to write into-SSA
 
-** Type inference
-
 ** Note that we can copy-propagate into a funcall or apply
    For apply this is a bit like strength reduction
 
