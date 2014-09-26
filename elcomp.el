@@ -315,7 +315,9 @@ sequence of objects.  FIXME ref the class docs"
 	    (let* ((sym (if (symbolp sexp)
 			    sexp
 			  (car sexp)))
-		   (sym-initializer (cadr sexp))
+		   (sym-initializer (if (consp sexp)
+					(cadr sexp)
+				      nil))
 		   (sym-result (elcomp--new-var compiler sym)))
 	      ;; If there is a body, compute it.
 	      (elcomp--linearize compiler sym-initializer sym-result)
