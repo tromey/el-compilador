@@ -56,6 +56,9 @@
 
 ** Type inference, including handling type predicates
 
+** Can we always optimize mapc and mapcar with a lambda?
+   If we add a compiler macro can it expand back to 'itself'?
+
 * Back Ends
 
 ** Disassembly
