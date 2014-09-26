@@ -55,6 +55,18 @@
 
 ** Type inference, including handling type predicates
 
+* Back Ends
+
+** Disassembly
+
+** C Code
+
+*** Could use the coming "FFI" / DSO thing
+
+*** Type inference would be great here, could do unboxing
+
+** Bytecode
+
 * Emacs Bugs
 
 ** Some code uses the CLASS-child-p form, since the CLASS-p form didn't seem to work.
