@@ -32,23 +32,26 @@
 *** (track-mouse defconst defvar save-excursion setq-default 
      interactive save-restriction save-current-buffer function)
 
-*** can turn throw->catch into a goto
+*** Some of these can be handled by unwind-protect plus an internal function
+
+** can turn throw->catch into a goto
 
     (catch CONST (... (throw CONST val)))
     =>
     R = val; GOTO done
 
-    However this has to deal with unwind-protect as well
+    We do this already but can do better by handling unwind-protect as
+    well
 
 ** If a value is ignored we still emit a temporary
    Sometimes a value is only needed as a boolean, like (if (and ...)).
    This could be optimized as well
 
-** Probably need more passes, pass infrastructure, SSA, type inference, etc
-
-** Various code-gen bits need thinking through
-
 * Passes
+
+** Still need to write into-SSA
+
+** Type inference
 
 ** Note that we can copy-propagate into a funcall or apply
    For apply this is a bit like strength reduction
