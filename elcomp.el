@@ -392,13 +392,13 @@ sequence of objects.  FIXME ref the class docs"
 	  (elcomp--linearize compiler (cadr form) cond-var)
 	  (elcomp--add-if compiler cond-var nil label-false)
 	  ;; The true branch.
-	  (elcomp--linearize compiler (caddr form) result-location)
+	  (elcomp--linearize compiler (cl-caddr form) result-location)
 	  ;; The end of the true branch.
 	  (elcomp--add-goto compiler label-done)
 	  ;; The false branch.
 	  (elcomp--make-block-current compiler label-false)
-	  (if (cdddr form)
-	      (elcomp--linearize-body compiler (cdddr form) result-location))
+	  (if (cl-cdddr form)
+	      (elcomp--linearize-body compiler (cl-cdddr form) result-location))
 	  ;; The end of the statement.
 	  (elcomp--make-block-current compiler label-done)))
 
@@ -479,7 +479,7 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; We emit the handlers first because it is a bit simpler
 	  ;; here, and it doesn't matter for the result.
 	  (elcomp--add-goto compiler body-label)
-	  (dolist (handler (cdddr form))
+	  (dolist (handler (cl-cdddr form))
 	    (let ((this-label (elcomp--label compiler)))
 	      (push (elcomp--condcase "condition-case"
 				      :handler this-label
@@ -503,7 +503,7 @@ sequence of objects.  FIXME ref the class docs"
 	  (oset (elcomp--basic-block-exceptions body-label)
 		:exceptions (elcomp--exceptions compiler))
 	  (elcomp--make-block-current compiler body-label)
-	  (elcomp--linearize compiler (caddr form) result-location)
+	  (elcomp--linearize compiler (cl-caddr form) result-location)
 	  ;; The catch doesn't cover the handler; but pop before the
 	  ;; "goto" so the new block has the correct exception list.
 	  (setf (elcomp--exceptions compiler) saved-exceptions)
@@ -535,8 +535,8 @@ sequence of objects.  FIXME ref the class docs"
     (error "not a defun"))
   (push (cadr form) (elcomp--defuns compiler))
   (setf (elcomp--defun compiler)
-	(list (cadr form) (caddr form)))
-  (setf form (cdddr form))
+	(list (cadr form) (cl-caddr form)))
+  (setf form (cl-cdddr form))
   ;; The doc string.
   (if (stringp (car form))
       (progn
