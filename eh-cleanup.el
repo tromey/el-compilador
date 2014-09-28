@@ -1,7 +1,13 @@
-;;; eh-cleanup.el - Clean up exceptions.
+;;; eh-cleanup.el --- Clean up exceptions.
+
+;;; Commentary:
+
+;; A pass to remove obviously-dead exception edges.
+
+;;; Code:
 
 (defgeneric elcomp--can-throw (insn)
-  "Return t if INSN can `throw' or `signal'."
+  "Return t if INSN can `throw' or `signal', otherwise nil."
   )
 
 (defmethod elcomp--can-throw (insn)
@@ -9,18 +15,24 @@
   t)
 
 (defmethod elcomp--can-throw ((insn elcomp--set))
+  "A `set' instruction cannot throw."
   nil)
 
 (defmethod elcomp--can-throw ((insn elcomp--goto))
+  "A `goto' instruction cannot throw."
   nil)
 
 (defmethod elcomp--can-throw ((insn elcomp--if))
+  "An `if' instruction cannot throw."
   nil)
 
 (defmethod elcomp--can-throw ((insn elcomp--return))
+  "A `return' instruction cannot throw."
   nil)
 
 (defmethod elcomp--can-throw ((insn elcomp--call))
+  "A `call' instruction usually can throw.
+A function marked `nothrow' will not throw."
   ;; Note that we can't really be picky about `signal' or `throw'
   ;; tags, due to QUIT and `throw-on-input'.
   (if (and (symbolp (oref insn :func))
@@ -29,15 +41,22 @@
     t))
 
 (defmethod elcomp--can-throw ((insn elcomp--diediedie))
+  "A `diediedie' instruction always throws.
+Though note that there's no way to distinguish this from the
+\"can throw\" case."
   t)
 
 (defun elcomp--eh-remove-unwinds (compiler bb)
-  "Remove any empty `unwind-protect' edges from BB."
+  "Remove any empty `unwind-protect' edges from the basic block BB.
+
+An empty `unwind-protect' edge is one where the target block
+consists of just a call to the special `:unwind-protect-continue'
+function."
   ;; There's probably some cl-loop formulation that isn't so ugly.
   (catch 'done
     (while t
       (let ((exception (car (elcomp--basic-block-exceptions bb))))
-	;; Only the outermost thing is elig
+	;; Only the outermost exception edge is eligible for removal.
 	(unless (elcomp--unwind-protect-p exception)
 	  (throw 'done nil))
 	(let ((exc-block (oref exception :handler)))
@@ -52,6 +71,15 @@
 	  (pop (elcomp--basic-block-exceptions bb)))))))
 
 (defun elcomp--eh-cleanup-pass (compiler)
+  "Remove useless exception handling edges from a function.
+
+This operates on the function currently being defined in COMPILER.
+
+This pass will remove useless `unwind-protect' edges.  See
+`elcomp--eh-remove-unwinds'.
+
+It will also remove all exception edges from a basic block if
+that block has no instructions which may throw."
   (let ((found-one nil))
     (elcomp--iterate-over-bbs
      compiler
@@ -69,3 +97,5 @@
 	   (setf found-one t)))))
     (when found-one
       (elcomp--invalidate-cfg compiler))))
+
+;;; eh-cleanup.el ends here
