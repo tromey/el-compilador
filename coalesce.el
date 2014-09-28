@@ -1,6 +1,18 @@
-;;; coalesce.el - Coalesce blocks.
+;;; coalesce.el --- Coalesce blocks.
+
+;;; Commentary:
+
+;; A simple pass to coalesce blocks when possible.
+
+;;; Code:
 
 (defun elcomp--coalesce-pass (compiler)
+  "A compiler pass to coalesce blocks.
+
+A block can be coalesced with a second block if the second block
+is the sole successor of the original, and the original is the
+sole predecessor of the second, and if they have compatible
+outgoing exception edges."
   (elcomp--require-back-edges compiler)
   (let ((rewrote-one nil))
     (elcomp--iterate-over-bbs
@@ -32,3 +44,5 @@
 	       (setf rewrote-one t)))))))
     (when rewrote-one
       (elcomp--invalidate-cfg compiler))))
+
+;;; coalesce.el ends here
