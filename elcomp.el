@@ -1,13 +1,4 @@
-;; TO DO:
-
-;; Ideas:
-;; * always inline mapcar &c
-
-;; * Why doesn't mapconcat let the lambda return chars?
-
-;; Notes
-;; * I wonder if progv is implemented correctly now that
-;;   macroexpand is done eagerly
+;;; elcomp.el - Compiler for Emacs Lisp.
 
 (require 'cl-macs)
 (require 'eieio)

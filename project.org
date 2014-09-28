@@ -47,6 +47,11 @@
    Sometimes a value is only needed as a boolean, like (if (and ...)).
    This could be optimized as well
 
+** If we use the result of setq we generate an extra load
+   However we could avoid this by using a private name for
+   the intermediate set
+   Or maybe it won't matter at all after ssa opts
+
 * Passes
 
 ** Still need to write into-SSA
@@ -90,3 +95,6 @@
 ** it seems that cl-nreconc would be more efficient as
    (prog1 (nreverse x) (setcdr x y))
    ... not if x=nil?
+
+** I wonder if progv is implemented correctly now that
+   macroexpand is done eagerly
