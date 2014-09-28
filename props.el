@@ -13,6 +13,12 @@
 ;; (symbol-plist 'integerp)
 ;; => (byte-compile byte-compile-one-arg byte-opcode byte-integerp side-effect-free error-free)
 
+;; See 'side-effect-free, 'pure
+
+;; byte-compile-negated-op is not quite useful
+;; but the idea could be applied
+;; normalizing is valuable for generic optimizations
+
 ;;; Code:
 
 (defun elcomp-declare (func &rest props)

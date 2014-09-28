@@ -19,6 +19,12 @@
 
     Ditto for let* of course
 
+** For a special variable we do not want to use a `set' instruction.
+   These should be reserved for ssa names
+   Instead we should use a `call' with `setq'
+   This would negate the comment below about needing a temporary
+   result from a setq
+
 ** Some special forms are still not handled
 
 ** "Ordinary special forms"
