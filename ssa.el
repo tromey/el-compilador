@@ -32,17 +32,17 @@ the existing phi nodes."
 	 (puthash value t (oref phi :args))))
      current-map)))
 
-(defun elcomp--ssa-rename-lhs (compiler bb insn current-map)
-  "Rename the left-hand side of an assignment.
+(defun elcomp--ssa-note-lhs (compiler bb insn current-map)
+  "Note the left-hand side of an assignment.
 
 If the left-hand-side of the assignment instruction INSN is
-non-nil, then a new variable is generated and added to
-CURRENT-MAP.  INSN is modified to reflect the new name."
+non-nil, then the instruction is added to CURRENT-MAP.
+
+Returns t if CURRENT-MAP was updated, or nil if not."
   (let ((name (oref insn :sym)))
     (if name
-	(let ((new-name (elcomp--ssa-variable "ssa-name" :original-name name)))
-	  (puthash name new-name current-map)
-	  (setf (oref insn :sym) new-name)
+	(progn
+	  (puthash name insn current-map)
 	  t)
       nil)))
 
@@ -63,7 +63,7 @@ nil otherwise.")
 (defmethod elcomp--ssa-rename ((insn elcomp--set) compiler bb current-map)
   (setf (oref insn :value) (elcomp--ssa-rename-arg (oref insn :value)
 						   current-map))
-  (elcomp--ssa-rename-lhs compiler bb insn current-map))
+  (elcomp--ssa-note-lhs compiler bb insn current-map))
 
 (defmethod elcomp--ssa-rename ((insn elcomp--call) compiler bb current-map)
   ;; FIXME the :func slot.
@@ -71,7 +71,7 @@ nil otherwise.")
     (while cell
       (setf (car cell) (elcomp--ssa-rename-arg (car cell) current-map))
       (setf cell (cdr cell))))
-  (elcomp--ssa-rename-lhs compiler bb insn current-map))
+  (elcomp--ssa-note-lhs compiler bb insn current-map))
 
 (defmethod elcomp--ssa-rename ((insn elcomp--goto) compiler bb current-map)
   (elcomp--ssa-propagate compiler (oref insn :block) current-map)
@@ -97,13 +97,15 @@ nil otherwise.")
   ;; FIXME how to handle renaming for catch edges with a built-in
   ;; variable?  those variables are defined in that scope...
   (let ((current-map (copy-hash-table (elcomp--basic-block-phis bb))))
-    (let ((changed-since-exception nil)
+    (let ((changed-since-exception t)
 	  (topmost-exception (elcomp--basic-block-exceptions bb)))
       (dolist (insn (elcomp--basic-block-code bb))
-	;; Propagate any state changes to the exception handler.  Note
-	;; that `changed-since-exception' can be initialized to nil
-	;; because an exception can't have been thrown yet.  FIXME?
-	(when (and topmost-exception changed-since-exception)
+	;; If this instruction can throw, and if there have been any
+	;; changes since the last throwing instruction, then propagate
+	;; any state changes to the exception handler.
+	(when (and topmost-exception
+		   changed-since-exception
+		   (elcomp--can-throw insn))
 	  (elcomp--ssa-propagate current-map
 				 (oref topmost-exception :handler))
 	  (setf changed-since-exception nil))

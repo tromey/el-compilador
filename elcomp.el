@@ -48,7 +48,7 @@
   ;; computing the SSA form and is deleted by that pass.
   entry-vars
   ;; The phi nodes for this basic block.  This is a hash table whose
-  ;; keys are SSA names (either SSA variables or phis) and whose
+  ;; keys are SSA names (either assignments or phis) and whose
   ;; values are ignored.  This starts as nil and is initialized when
   ;; converting to SSA form.
   phis
