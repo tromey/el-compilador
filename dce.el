@@ -99,7 +99,7 @@ its references on the work list."
       ;; Push the arguments on the work list.
       (dolist (arg (oref insn :args))
 	(when (elcomp--ssa-name-p arg)
-	  (push arg (elcomp--work-list-list work-list)))))))
+	  (push arg (elcomp--dce-work-list work-list)))))))
 
 (defun elcomp--dce-mark-intrinsically-necessary (compiler dce)
   "Mark all intrinsically necessary statements.
