@@ -6,7 +6,7 @@
 
 ;;; Code:
 
-(defun elcomp--reset-back-edges (compiler)
+(defun elcomp--reset-back-edges (compiler init)
   "Reset the back edges of all basic blocks in COMPILER.
 
 This sets all the back edges to nil."
@@ -14,7 +14,7 @@ This sets all the back edges to nil."
    compiler
    (lambda (bb)
      (setf (elcomp--basic-block-parents bb)
-	   (make-hash-table)))))
+	   (if init (make-hash-table) nil)))))
 
 (defgeneric elcomp--add-links (insn block)
   "Add backlinks for the instruction INSN, which appears in BLOCK.")
@@ -39,6 +39,7 @@ This sets all the back edges to nil."
 If the links are already believed to be valid, this does nothing.
 Otherwise, it recreates the links."
   (unless (elcomp--back-edges-valid compiler)
+    (elcomp--reset-back-edges compiler t)
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)
@@ -51,7 +52,7 @@ Otherwise, it recreates the links."
 (defun elcomp--invalidate-back-edges (compiler)
   "Invalidate the back links in COMPILER."
   (when (elcomp--back-edges-valid compiler)
-    (elcomp--reset-back-edges compiler)
+    (elcomp--reset-back-edges compiler nil)
     (setf (elcomp--back-edges-valid compiler) nil)))
 
 ;;; back.el ends here
