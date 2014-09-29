@@ -73,10 +73,9 @@ its references on the work list."
   ;; A PHI is not intrinsically needed, so check which pass this is.
   (unless (elcomp--dce-just-intrinsic dce)
     (puthash insn t (elcomp--dce-hash dce))
-    (dolist (arg (oref insn :args))
-      ;; FIXME - when would a PHI arg not be an SSA name?
-      (when (elcomp--ssa-name-p arg)
-	(push arg (elcomp--dce-work-list dce))))))
+    (maphash (lambda (arg _ignore)
+	       (push arg (elcomp--dce-work-list dce)))
+	     (oref insn :args))))
 
 (defmethod elcomp--mark-necessary ((insn elcomp--call) dce)
   "Mark a `call' statement as necessary.

@@ -46,9 +46,10 @@
   (princ "phi " stream)
   (princ (oref obj :sym) stream)
   (princ " =" stream)
-  (dolist (item (oref obj :args))
-    (princ " " stream)
-    (elcomp--pp item stream)))
+  (maphash (lambda (item _ignore)
+	     (princ " " stream)
+	     (elcomp--pp item stream))
+	   (oref obj :args)))
 
 (defmethod elcomp--pp ((obj elcomp--catch) stream)
   (princ "catch " stream)

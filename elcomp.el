@@ -43,6 +43,15 @@
   immediate-dominator
   ;; The list of exception handlers.
   exceptions
+  ;; The entry variables for this basic block.  This is a list of all
+  ;; variables in scope when this block was created.  This is used for
+  ;; computing the SSA form and is deleted by that pass.
+  entry-vars
+  ;; The phi nodes for this basic block.  This is a hash table whose
+  ;; keys are SSA names (either SSA variables or phis) and whose
+  ;; values are ignored.  This starts as nil and is initialized when
+  ;; converting to SSA form.
+  phis
   )
 
 (defclass elcomp--set nil
@@ -76,8 +85,13 @@ This can only be used after a call to a `nothrow' function.")
   ((value :initform nil :initarg :value)))
 
 (defclass elcomp--phi nil
-  ((sym :initform nil :initarg :sym)
-   (args :initform nil :initarg :args)))
+  ((original-name :initform nil :initarg :original-name)
+   ;; Keys in this map are the possible source values for the PHI.
+   ;; The values in the map are meaningless.
+   (args :initform (make-hash-table) :initarg :args)))
+
+(defclass elcomp--ssa-variable nil
+  ((original-name :initform nil :initarg :original-name)))
 
 ;; An exception edge.
 (defclass elcomp--exception nil

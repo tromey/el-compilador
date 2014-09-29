@@ -2,6 +2,10 @@
 
 * To Do
 
+** The variable from a `catch' or `unwind-protect' has to be
+   kept in the handling block
+   it can just be a special call
+
 ** Currently we don't handle special-variable-p in let bindings
    Major bug!
 
