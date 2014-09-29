@@ -8,9 +8,6 @@
   ;; symbol in the original code.  The cdr is the symbol to which it
   ;; is rewritten.
   rewrite-alist
-  ;; A list of symbols representing variables that must be defined in
-  ;; the generated code.
-  variables
   ;; Next label value.
   (next-label 0) 
   ;; The entry block.
@@ -120,14 +117,11 @@ This can only be used after a call to a `nothrow' function.")
   (cons 'declare specs))
 
 (defun elcomp--new-var (compiler &optional symname)
-  (let* ((cell (and symname
-		   (memq symname (elcomp--rewrite-alist compiler))))
-	 (result (if cell
-		     (cl-gensym)
-		   (or symname
-		       (cl-gensym)))))
-    (push result (elcomp--variables compiler))
-    result))
+  (let* ((cell (memq symname (elcomp--rewrite-alist compiler))))
+    (if cell
+	(cl-gensym)
+      (or symname
+	  (cl-gensym)))))
 
 (defun elcomp--rewrite-one-ref (compiler ref)
   "Rewrite REF.
@@ -147,8 +141,10 @@ Or REF can be a constant, in which case it is returned unchanged."
 
 (defun elcomp--label (compiler)
   (prog1
-      (make-elcomp--basic-block :number (elcomp--next-label compiler)
-				:exceptions (elcomp--exceptions compiler))
+      (make-elcomp--basic-block
+       :number (elcomp--next-label compiler)
+       :exceptions (elcomp--exceptions compiler)
+       :entry-vars (mapcar #'car (elcomp--rewrite-alist compiler)))
     (cl-incf (elcomp--next-label compiler))))
 
 (defun elcomp--add-to-basic-block (block obj)
@@ -308,7 +304,7 @@ sequence of objects.  FIXME ref the class docs"
 	      (push (cons sym sym-result) let-symbols)))
 	  ;; Push the new values onto the rewrite list.
 	  (setf (elcomp--rewrite-alist compiler)
-		(append let-symbols (elcomp--rewrite-alist compiler)))
+		(nconc let-symbols (elcomp--rewrite-alist compiler)))
 	  ;; Now evaluate the body of the let.
 	  (elcomp--linearize-body compiler (cddr form) result-location)))
        ((eq fn 'let*)
@@ -567,8 +563,8 @@ sequence of objects.  FIXME ref the class docs"
   (elcomp--thread-jumps-pass compiler)
   (elcomp--eh-cleanup-pass compiler)
   (elcomp--coalesce-pass compiler)
-  (elcomp--require-back-edges compiler)
-  (elcomp--compute-dominators compiler))
+  (elcomp--compute-dominators compiler)	; don't really need this right now
+  (elcomp--into-ssa-pass compiler))
 
 (defun elcomp--translate (form)
   (byte-compile-close-variables

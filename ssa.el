@@ -6,16 +6,20 @@
 ;; SSA form.  In particular it inserts way too many phi nodes, relying
 ;; on a later pass to prune them.
 
+;; I think it would be better to replace this with an algorithm using
+;; the dominance frontiers, though I haven't examined this too deeply.
+
 ;;; Code:
 
 (defun elcomp--ssa-require-phis-for-block (compiler bb)
   "Ensure that the `phis' slot for BB has been initialized."
   (unless (elcomp--basic-block-phis bb)
-    (setf (elcomp--basic-block-phis bb) (make-hash-table))
-    (dolist (var-name (elcomp--basic-block-entry-vars))
-      (puthash var-name (elcomp--phi "phi" :original-name var-name)))
-    ;; We don't need this any more.
-    (setf (elcomp--basic-block-entry-vars bb) nil)))
+    (let ((table (make-hash-table)))
+      (setf (elcomp--basic-block-phis bb) table)
+      (dolist (var-name (elcomp--basic-block-entry-vars bb))
+	(puthash var-name (elcomp--phi "phi" :original-name var-name) table))
+      ;; We don't need this data any more.
+      (setf (elcomp--basic-block-entry-vars bb) nil))))
 
 (defun elcomp--ssa-propagate (compiler to-block current-map)
   "Propagate name mappings for phi nodes.
@@ -116,6 +120,8 @@ nil otherwise.")
 
 (defun elcomp--into-ssa-pass (compiler)
   "A pass to convert the function in COMPILER into SSA form."
-  (elcomp--iterate-over-bbs compiler #'elcomp--block-into-ssa))
+  (elcomp--iterate-over-bbs
+   compiler
+   (lambda (bb) (elcomp--block-into-ssa compiler bb))))
 
 ;;; ssa.el ends here
