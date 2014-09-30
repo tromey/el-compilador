@@ -49,7 +49,7 @@
   (princ " >>"))
 
 (defmethod elcomp--pp ((obj elcomp--phi) verbose)
-  (princ "ϕ ")
+  (princ "ϕ:")
   (princ (oref obj :original-name))
   (when verbose
     (princ " =")
