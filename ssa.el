@@ -32,7 +32,8 @@ the existing phi nodes."
     (maphash
      (lambda (name value)
        (let ((phi (gethash name to-block-phis)))
-	 (cl-assert phi)
+	 (cl-assert phi nil "couldn't find %S in block %d"
+		    name (elcomp--basic-block-number to-block))
 	 (puthash value t (oref phi :args))))
      current-map)))
 
