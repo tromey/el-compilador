@@ -4,14 +4,6 @@
 
 ;;; Code:
 
-(defun elcomp--postorder (compiler)
-  "Return a list of basic blocks from COMPILER, in postorder."
-  (let ((result))
-    (elcomp--iterate-over-bbs compiler (lambda (bb)
-					 (push bb result))
-			      t)
-    (nreverse result)))
-
 (defun elcomp--first-processed-predecessor (bb)
   (or (catch 'found
 	(maphash

@@ -609,3 +609,15 @@ sequence of objects.  FIXME ref the class docs"
   (elcomp--do-iterate (make-hash-table) callback
 		      (elcomp--entry-block compiler)
 		      postorder))
+
+(defun elcomp--postorder (compiler)
+  "Return a list of basic blocks from COMPILER, in postorder."
+  (let ((result))
+    (elcomp--iterate-over-bbs compiler (lambda (bb)
+					 (push bb result))
+			      t)
+    (nreverse result)))
+
+(defun elcomp--reverse-postorder (compiler)
+  "Return a list of basic blocks from COMPILER, in reverse postorder."
+  (nreverse (elcomp--postorder compiler)))
