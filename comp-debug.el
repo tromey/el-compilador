@@ -11,23 +11,29 @@
 
 ;; FIXME eldoc for defmethod is messed up
 (defmethod elcomp--pp ((obj elcomp--set) verbose)
-  (princ "set ")
-  (elcomp--pp (oref obj :sym) nil)
-  (princ " = ")
-  (princ (oref obj :value)))
+  (if verbose
+      (progn
+	(princ "set ")
+	(elcomp--pp (oref obj :sym) nil)
+	(princ " = ")
+	(princ (oref obj :value)))
+    (elcomp--pp (oref obj :sym) nil)))
 
 (defmethod elcomp--pp ((obj elcomp--call) verbose)
-  (princ "call ")
-  (elcomp--pp (oref obj :sym) nil)
-  (princ " = ")
-  (elcomp--pp (oref obj :func) nil)
-  (when (oref obj :args)
-    (let ((first t))
-    (dolist (arg (oref obj :args))
-      (princ (if first "(" " "))
-      (setf first nil)
-      (elcomp--pp arg nil))
-    (princ ")"))))
+  (if verbose
+      (progn
+	(princ "call ")
+	(elcomp--pp (oref obj :sym) nil)
+	(princ " = ")
+	(elcomp--pp (oref obj :func) nil)
+	(when (oref obj :args)
+	  (let ((first t))
+	    (dolist (arg (oref obj :args))
+	      (princ (if first "(" " "))
+	      (setf first nil)
+	      (elcomp--pp arg nil))
+	    (princ ")"))))
+    (elcomp--pp (oref obj :sym) nil)))
 
 (defmethod elcomp--pp ((obj elcomp--goto) verbose)
   (princ "goto BB ")
