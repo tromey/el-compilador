@@ -117,7 +117,7 @@
   (let ((buf (get-buffer-create "*ELCOMP*")))
     (with-current-buffer buf
       (erase-buffer)
-      (let ((standard-output buf))
-	(elcomp--iterate-over-bbs (elcomp--translate form)
-				  #'elcomp--pp-basic-block))
+      (let ((standard-output buf)
+	    (compiled-form (elcomp--translate form)))
+	(elcomp--iterate-over-bbs compiled-form #'elcomp--pp-basic-block))
       (pop-to-buffer buf))))
