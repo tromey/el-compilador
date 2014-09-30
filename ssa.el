@@ -14,12 +14,7 @@
 (defun elcomp--ssa-require-phis-for-block (compiler bb)
   "Ensure that the `phis' slot for BB has been initialized."
   (unless (elcomp--basic-block-phis bb)
-    (let ((table (make-hash-table)))
-      (setf (elcomp--basic-block-phis bb) table)
-      (dolist (var-name (elcomp--basic-block-entry-vars bb))
-	(puthash var-name (elcomp--phi "phi" :original-name var-name) table))
-      ;; We don't need this data any more.
-      (setf (elcomp--basic-block-entry-vars bb) nil))))
+    (setf (elcomp--basic-block-phis bb) (make-hash-table))))
 
 (defun elcomp--ssa-propagate (compiler to-block current-map)
   "Propagate name mappings for phi nodes.
@@ -32,8 +27,9 @@ the existing phi nodes."
     (maphash
      (lambda (name value)
        (let ((phi (gethash name to-block-phis)))
-	 (cl-assert phi nil "couldn't find %S in block %d"
-		    name (elcomp--basic-block-number to-block))
+	 (unless phi
+	   (setf phi (elcomp--phi "phi" :original-name name))
+	   (puthash name phi to-block-phis))
 	 (puthash value t (oref phi :args))))
      current-map)))
 
@@ -121,8 +117,7 @@ nil otherwise.")
 
 (defun elcomp--into-ssa-pass (compiler)
   "A pass to convert the function in COMPILER into SSA form."
-  (elcomp--iterate-over-bbs
-   compiler
-   (lambda (bb) (elcomp--block-into-ssa compiler bb))))
+  (dolist (bb (elcomp--reverse-postorder compiler))
+    (elcomp--block-into-ssa compiler bb)))
 
 ;;; ssa.el ends here

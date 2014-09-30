@@ -40,10 +40,6 @@
   immediate-dominator
   ;; The list of exception handlers.
   exceptions
-  ;; The entry variables for this basic block.  This is a list of all
-  ;; variables in scope when this block was created.  This is used for
-  ;; computing the SSA form and is deleted by that pass.
-  entry-vars
   ;; The phi nodes for this basic block.  This is a hash table whose
   ;; keys are SSA names (either assignments or phis) and whose
   ;; values are ignored.  This starts as nil and is initialized when
@@ -141,10 +137,8 @@ Or REF can be a constant, in which case it is returned unchanged."
 
 (defun elcomp--label (compiler)
   (prog1
-      (make-elcomp--basic-block
-       :number (elcomp--next-label compiler)
-       :exceptions (elcomp--exceptions compiler)
-       :entry-vars (mapcar #'car (elcomp--rewrite-alist compiler)))
+      (make-elcomp--basic-block :number (elcomp--next-label compiler)
+				:exceptions (elcomp--exceptions compiler))
     (cl-incf (elcomp--next-label compiler))))
 
 (defun elcomp--add-to-basic-block (block obj)
