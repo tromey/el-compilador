@@ -41,9 +41,8 @@
   ;; The list of exception handlers.
   exceptions
   ;; The phi nodes for this basic block.  This is a hash table whose
-  ;; keys are SSA names (either assignments or phis) and whose
-  ;; values are ignored.  This starts as nil and is initialized when
-  ;; converting to SSA form.
+  ;; keys are original variable names and whose values are phis.  This
+  ;; starts as nil and is initialized when converting to SSA form.
   phis
   )
 

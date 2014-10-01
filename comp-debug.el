@@ -63,7 +63,7 @@
     (princ " =")
     (maphash (lambda (item _ignore)
 	       (princ " ")
-	       (elcomp--pp item))
+	       (elcomp--pp item nil))
 	     (oref obj :args))))
 
 (defmethod elcomp--pp ((obj elcomp--ssa-variable) verbose)
@@ -90,7 +90,6 @@
   (princ "unwind-protect => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))
 
-;; Insert a single pretty-printed basic block into the current buffer.
 (defun elcomp--pp-basic-block (bb)
   (princ (format "\n[BB %d"
 		 (elcomp--basic-block-number bb)))
@@ -108,6 +107,11 @@
     (princ "    ")
     (elcomp--pp exception (current-buffer))
     (princ "\n"))
+  (maphash (lambda (_ignore_name phi)
+	     (princ "    ")
+	     (elcomp--pp phi t)
+	     (princ "\n"))
+	   (elcomp--basic-block-phis bb))
   (dolist (item (elcomp--basic-block-code bb))
     (elcomp--pp item (current-buffer))
     (princ "\n")))

@@ -16,6 +16,9 @@
   (unless (elcomp--basic-block-phis bb)
     (setf (elcomp--basic-block-phis bb) (make-hash-table))))
 
+(defun elcomp--ssa-new-name (symbol)
+  (cl-gensym (concat (symbol-name symbol) "_")))
+
 (defun elcomp--ssa-propagate (compiler to-block current-map)
   "Propagate name mappings for phi nodes.
 
@@ -28,7 +31,9 @@ the existing phi nodes."
      (lambda (name value)
        (let ((phi (gethash name to-block-phis)))
 	 (unless phi
-	   (setf phi (elcomp--phi "phi" :original-name name))
+	   (setf phi (elcomp--phi "phi"
+				  ;; FIXME "original-" is a misnomer
+				  :original-name (elcomp--ssa-new-name name)))
 	   (puthash name phi to-block-phis))
 	 (puthash value t (oref phi :args))))
      current-map)))
@@ -42,7 +47,8 @@ non-nil, then the instruction is added to CURRENT-MAP.
 Returns t if CURRENT-MAP was updated, or nil if not."
   (let ((name (oref insn :sym)))
     (if name
-	(progn
+	(let ((new-name (elcomp--ssa-new-name name)))
+	  (setf (oref insn :sym) new-name)
 	  (puthash name insn current-map)
 	  t)
       nil)))
@@ -107,8 +113,8 @@ nil otherwise.")
 	(when (and topmost-exception
 		   changed-since-exception
 		   (elcomp--can-throw insn))
-	  (elcomp--ssa-propagate current-map
-				 (oref topmost-exception :handler))
+	  (elcomp--ssa-propagate compiler (oref topmost-exception :handler)
+				 current-map)
 	  (setf changed-since-exception nil))
 	;; Rename the operands and also see whether the map has
 	;; changed.
