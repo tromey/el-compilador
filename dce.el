@@ -123,8 +123,8 @@ This iterates over the work list, entering statements into the
 DCE's `hash' table and pushing references onto the `work-list'."
   (setf (elcomp--dce-just-intrinsic dce) nil)
   (while (elcomp--dce-work-list dce)
-    (let ((insn (pop (elcomp--dce-work-list dce)))
-	  (mark (gethash (elcomp--dce-hash insn))))
+    (let* ((insn (pop (elcomp--dce-work-list dce)))
+	   (mark (gethash insn (elcomp--dce-hash dce))))
       ;; If it is marked as 't', then we don't need to do any more.
       ;; If it is marked as :call, upgrade to 't'.
       (if mark
@@ -138,17 +138,24 @@ DCE's `hash' table and pushing references onto the `work-list'."
 
 Iterate over the statements in the function and remove any
 statement that has not been marked as necessary."
-  (let ((hash elcomp--dce-hash dce))
+  (let ((hash (elcomp--dce-hash dce)))
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)
+       ;; Delete dead statements.
        (let ((iter (elcomp--basic-block-code bb)))
 	 (while iter
 	   (unless (gethash (car iter) hash)
 	     (setcar iter nil))
 	   (setf iter (cdr iter))))
        (setf (elcomp--basic-block-code bb)
-	     (delq nil (elcomp--basic-block-code bb)))))))
+	     (delq nil (elcomp--basic-block-code bb)))
+       ;; Delete dead phi nodes.
+       (let ((phi-table (elcomp--basic-block-phis bb)))
+	 (maphash (lambda (key _ignore)
+		    (unless (gethash key hash)
+		      (remhash key phi-table)))
+		  phi-table))))))
 
 (defun elcomp--dce-pass (compiler)
   "Delete dead code."
