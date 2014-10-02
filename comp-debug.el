@@ -121,7 +121,9 @@
   (let ((buf (get-buffer-create "*ELCOMP*")))
     (with-current-buffer buf
       (erase-buffer)
-      (let ((standard-output buf)
-	    (compiled-form (elcomp--translate form)))
+      ;; Use "let*" so we can hack debugging prints into the compiler
+      ;; and have them show up in the temporary buffer.
+      (let* ((standard-output buf)
+	     (compiled-form (elcomp--translate form)))
 	(elcomp--iterate-over-bbs compiled-form #'elcomp--pp-basic-block))
       (pop-to-buffer buf))))
