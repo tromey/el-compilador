@@ -122,6 +122,9 @@
     (elcomp--pp item (current-buffer))
     (princ "\n")))
 
+(defun elcomp--pp-compiler (compiler)
+  (elcomp--iterate-over-bbs compiled-form #'elcomp--pp-basic-block))
+
 ;; Temporary function for hacking.
 (defun elcomp--do (form)
   (let ((buf (get-buffer-create "*ELCOMP*")))
@@ -131,5 +134,5 @@
       ;; and have them show up in the temporary buffer.
       (let* ((standard-output buf)
 	     (compiled-form (elcomp--translate form)))
-	(elcomp--iterate-over-bbs compiled-form #'elcomp--pp-basic-block))
+	(elcomp--pp-compiler compiled-form))
       (pop-to-buffer buf))))
