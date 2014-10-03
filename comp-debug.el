@@ -123,7 +123,7 @@
     (princ "\n")))
 
 (defun elcomp--pp-compiler (compiler)
-  (elcomp--iterate-over-bbs compiled-form #'elcomp--pp-basic-block))
+  (elcomp--iterate-over-bbs compiler #'elcomp--pp-basic-block))
 
 ;; Temporary function for hacking.
 (defun elcomp--do (form)
