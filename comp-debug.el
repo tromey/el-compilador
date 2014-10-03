@@ -90,6 +90,12 @@
   (princ "unwind-protect => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))
 
+(defun elcomp--pp-insn (text insn verbose)
+  (princ text)
+  (princ " ")
+  (elcomp--pp insn verbose)
+  (princ "\n"))
+
 (defun elcomp--pp-basic-block (bb)
   (princ (format "\n[BB %d"
 		 (elcomp--basic-block-number bb)))
