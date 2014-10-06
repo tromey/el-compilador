@@ -1,4 +1,4 @@
-;;; Dominators.
+;;; Dominators. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

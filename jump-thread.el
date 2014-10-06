@@ -1,4 +1,4 @@
-;;; Jump-threading pass.
+;;; Jump-threading pass. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

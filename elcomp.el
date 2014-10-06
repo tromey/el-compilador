@@ -1,4 +1,4 @@
-;;; elcomp.el - Compiler for Emacs Lisp.
+;;; elcomp.el - Compiler for Emacs Lisp. -*- lexical-binding:t -*-
 
 (require 'cl-macs)
 (require 'eieio)

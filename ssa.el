@@ -1,4 +1,4 @@
-;;; ssa.el --- change to SSA form.
+;;; ssa.el --- change to SSA form. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

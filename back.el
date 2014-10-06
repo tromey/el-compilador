@@ -1,4 +1,4 @@
-;;; back.el --- fix up back edges.
+;;; back.el --- fix up back edges. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

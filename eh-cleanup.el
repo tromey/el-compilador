@@ -1,4 +1,4 @@
-;;; eh-cleanup.el --- Clean up exceptions.
+;;; eh-cleanup.el --- Clean up exceptions. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

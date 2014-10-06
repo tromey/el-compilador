@@ -1,4 +1,4 @@
-;;; Function properties.
+;;; Function properties. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

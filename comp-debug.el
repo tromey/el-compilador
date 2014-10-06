@@ -1,4 +1,4 @@
-;; Debugging the compiler.
+;; Debugging the compiler. -*- lexical-binding:t -*-
 
 (defgeneric elcomp--pp (obj verbose)
   "FIXME")

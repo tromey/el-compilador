@@ -1,4 +1,4 @@
-;;; dce.el --- Dead Code Elimination.
+;;; dce.el --- Dead Code Elimination. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

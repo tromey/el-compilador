@@ -1,4 +1,4 @@
-;;; Type inference code.
+;;; Type inference code. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 

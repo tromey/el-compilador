@@ -1,4 +1,4 @@
-;;; coalesce.el --- Coalesce blocks.
+;;; coalesce.el --- Coalesce blocks. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 
