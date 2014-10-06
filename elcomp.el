@@ -106,7 +106,8 @@ This can only be used after a call to a `nothrow' function.")
 (defun elcomp--ssa-name-p (arg)
   (or
    (elcomp--set-child-p arg)
-   (elcomp--phi-child-p arg)))
+   (elcomp--phi-child-p arg)
+   (elcomp--call-child-p arg)))
 
 (defun elcomp--declare (&rest specs)
   (cons 'declare specs))
@@ -557,7 +558,8 @@ sequence of objects.  FIXME ref the class docs"
   (elcomp--eh-cleanup-pass compiler)
   (elcomp--coalesce-pass compiler)
   (elcomp--compute-dominators compiler)	; don't really need this right now
-  (elcomp--into-ssa-pass compiler))
+  (elcomp--into-ssa-pass compiler)
+  (elcomp--dce-pass compiler))
 
 (defun elcomp--translate (form)
   (byte-compile-close-variables

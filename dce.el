@@ -17,6 +17,10 @@ It holds data internal to the pass."
   ;; marked as needed.
   (hash (make-hash-table)))
 
+(defun elcomp--dce-add (insn dce)
+  "Add INSN to the work list of DCE, unless it is already marked."
+  (push insn (elcomp--dce-work-list dce)))
+
 (defgeneric elcomp--mark-necessary (insn dce just-intrinsic)
   "Possibly mark the instruction INSN as necessary.
 DCE is the DCE state object for the pass.
@@ -32,19 +36,24 @@ pushing the instruction's arguments onto the work list.")
   "The default case is to mark a statement as needed."
   (puthash insn t (elcomp--dce-hash dce)))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--return) dce just-intrinsic)
+(defmethod elcomp--mark-necessary ((insn elcomp--if) dce just-intrinsic)
   "`If' statements are marked as needed and their argument is pushed."
   ;; An IF is always needed.
   (puthash insn t (elcomp--dce-hash dce))
   ;; And so is its reference.
-  (push (oref insn :sym) (elcomp--dce-work-list dce)))
+  (elcomp--dce-add (oref insn :sym) dce))
+
+(defmethod elcomp--mark-necessary ((insn elcomp--goto) dce just-intrinsic)
+  "`Goto' statements are marked as needed."
+  ;; A GOTO is always needed.
+  (puthash insn t (elcomp--dce-hash dce)))
 
 (defmethod elcomp--mark-necessary ((insn elcomp--return) dce just-intrinsic)
   "`Return' statements are marked as needed and their argument is pushed."
   ;; A RETURN is always needed.
   (puthash insn t (elcomp--dce-hash dce))
   ;; And so is its reference.
-  (push (oref insn :sym) (elcomp--dce-work-list dce)))
+  (elcomp--dce-add (oref insn :sym) dce))
 
 (defmethod elcomp--mark-necessary ((insn elcomp--set) dce just-intrinsic)
   "Mark a `set' statement as necessary.
@@ -56,7 +65,7 @@ its references on the work list."
   (unless just-intrinsic
     (puthash insn t (elcomp--dce-hash dce))
     (when (elcomp--ssa-name-p (oref insn :value))
-      (push (oref insn :value) (elcomp--dce-work-list dce)))))
+      (elcomp--dce-add (oref insn :value) dce))))
 
 (defmethod elcomp--mark-necessary ((insn elcomp--phi) dce just-intrinsic)
   "Mark a `phi' statement as necessary.
@@ -68,21 +77,17 @@ its references on the work list."
   (unless just-intrinsic
     (puthash insn t (elcomp--dce-hash dce))
     (maphash (lambda (arg _ignore)
-	       (push arg (elcomp--dce-work-list dce)))
+	       (elcomp--dce-add arg dce))
 	     (oref insn :args))))
 
 (defmethod elcomp--mark-necessary ((insn elcomp--call) dce just-intrinsic)
-  "Mark a `call' statement as necessary.
-
-In the first pass, do nothing.  A `call' is not intrinsically needed.
-In the second pass, mark this statement as needed, and then push
-its references on the work list."
+  "Mark a `call' statement as necessary."
   (let ((push-args nil))
-    ;; A non-const call is intrinsically needed.  However, we mark it
-    ;; specially so we can determine whether its LHS is needed as
-    ;; well.  Note that the "const" check also picks up the
-    ;; "diediedie" statements.
     (if just-intrinsic
+	;; A non-const call is intrinsically needed.  However, we mark
+	;; it specially so we can determine whether its LHS is needed
+	;; as well.  Note that the "const" check also picks up the
+	;; "diediedie" statements.
 	(unless (elcomp--func-const-p (oref insn :func))
 	  (puthash insn :call (elcomp--dce-hash dce))
 	  (setf push-args t))
@@ -93,7 +98,7 @@ its references on the work list."
       ;; Push the arguments on the work list.
       (dolist (arg (oref insn :args))
 	(when (elcomp--ssa-name-p arg)
-	  (push arg (elcomp--dce-work-list work-list)))))))
+	  (elcomp--dce-add arg dce))))))
 
 (defun elcomp--dce-mark-intrinsically-necessary (compiler dce)
   "Mark all intrinsically necessary statements.
@@ -131,24 +136,31 @@ DCE's `hash' table and pushing references onto the `work-list'."
 
 Iterate over the statements in the function and remove any
 statement that has not been marked as necessary."
-  (let ((hash (elcomp--dce-hash dce)))
-    (elcomp--iterate-over-bbs
-     compiler
-     (lambda (bb)
-       ;; Delete dead statements.
-       (let ((iter (elcomp--basic-block-code bb)))
-	 (while iter
-	   (unless (gethash (car iter) hash)
-	     (setcar iter nil))
-	   (setf iter (cdr iter))))
-       (setf (elcomp--basic-block-code bb)
-	     (delq nil (elcomp--basic-block-code bb)))
-       ;; Delete dead phi nodes.
-       (let ((phi-table (elcomp--basic-block-phis bb)))
-	 (maphash (lambda (key _ignore)
-		    (unless (gethash key hash)
-		      (remhash key phi-table)))
-		  phi-table))))))
+  (elcomp--iterate-over-bbs
+   compiler
+   (lambda (bb)
+     ;; Delete dead statements.
+     (let ((iter (elcomp--basic-block-code bb)))
+       (while iter
+	 (let ((mark (gethash (car iter) (elcomp--dce-hash dce))))
+	   (cl-case mark
+	     ((:call)
+	      ;; We found a call whose result is not needed.  Drop the
+	      ;; result if it is an SSA name.
+	      (when (elcomp--ssa-name-p (car iter))
+		(setf (oref (car iter) :sym) nil)))
+	     ((nil)
+	      ;; Remove the entire instruction.
+	      (setf (car iter) nil))))
+	 (setf iter (cdr iter))))
+     (setf (elcomp--basic-block-code bb)
+	   (delq nil (elcomp--basic-block-code bb)))
+     ;; Delete dead phi nodes.
+     (let ((phi-table (elcomp--basic-block-phis bb)))
+       (maphash (lambda (key _ignore)
+		  (unless (gethash key (elcomp--dce-hash dce))
+		    (remhash key phi-table)))
+		phi-table)))))
 
 (defun elcomp--dce-pass (compiler)
   "Delete dead code."

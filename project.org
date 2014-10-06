@@ -2,6 +2,12 @@
 
 * To Do
 
+** into-ssa is still a bit broken
+   arguments need to be turned into ssa form but are not
+
+** DCE might be a bit broken
+   it's hard to tell due to the into-ssa bug
+
 ** The variable from a `catch' or `unwind-protect' has to be
    kept in the handling block
    it can just be a special call
