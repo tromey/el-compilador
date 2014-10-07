@@ -123,6 +123,12 @@ nil otherwise.")
 
 (defun elcomp--into-ssa-pass (compiler)
   "A pass to convert the function in COMPILER into SSA form."
+  ;; Initialize the entry block with an initial mapping for the
+  ;; arguments.
+  (elcomp--ssa-require-phis-for-block compiler (elcomp--entry-block compiler))
+  (dolist (arg (cadr (elcomp--defun compiler)))
+    
+    ...)
   (dolist (bb (elcomp--reverse-postorder compiler))
     (elcomp--block-into-ssa compiler bb)))
 

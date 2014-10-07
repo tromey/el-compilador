@@ -82,7 +82,7 @@ This can only be used after a call to a `nothrow' function.")
    ;; The values in the map are meaningless.
    (args :initform (make-hash-table) :initarg :args)))
 
-(defclass elcomp--ssa-variable nil
+(defclass elcomp--argument nil
   ((original-name :initform nil :initarg :original-name)))
 
 ;; An exception edge.
@@ -107,7 +107,8 @@ This can only be used after a call to a `nothrow' function.")
   (or
    (elcomp--set-child-p arg)
    (elcomp--phi-child-p arg)
-   (elcomp--call-child-p arg)))
+   (elcomp--call-child-p arg)
+   (elcomp--argument-child-p arg)))
 
 (defun elcomp--declare (&rest specs)
   (cons 'declare specs))

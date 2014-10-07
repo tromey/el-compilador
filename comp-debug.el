@@ -66,8 +66,8 @@
 	       (elcomp--pp item nil))
 	     (oref obj :args))))
 
-(defmethod elcomp--pp ((obj elcomp--ssa-variable) verbose)
-  (princ "ssa-name ")
+(defmethod elcomp--pp ((obj elcomp--argument) verbose)
+  (princ "argument ")
   (princ (oref obj :original-name)))
 
 (defmethod elcomp--pp ((obj elcomp--catch) verbose)
