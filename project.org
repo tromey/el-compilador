@@ -74,6 +74,11 @@
 ** Can we always optimize mapc and mapcar with a lambda?
    If we add a compiler macro can it expand back to 'itself'?
 
+** We can optimize some regexps.
+   for example looking-at-p with a constant can be turned into ordinary code
+   especially if the regexp is very simple this would be a win
+   same with string-match-p
+
 * Back Ends
 
 ** Disassembly
