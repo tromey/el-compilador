@@ -157,7 +157,6 @@ statement that has not been marked as necessary."
      (let ((phi-table (elcomp--basic-block-phis bb)))
        (maphash (lambda (name phi)
 		  (unless (gethash phi (elcomp--dce-hash dce))
-		    (elcomp--pp-insn "Removing" phi nil)
 		    (remhash name phi-table)))
 		phi-table)))))
 
