@@ -26,10 +26,13 @@
 
 Defined properties are:
 
-  :elcomp-const t|nil        If t, FUNC only examines its arguments, not memory.
+  :elcomp-const t|nil        If t, FUNC does not have side effects.
+                             This means a call to it can be removed if
+                             its return value is not used.
+  :elcomp-pure t|nil         Like :elcomp-const, but also does not
+                             refer to memory.
   :elcomp-type TYPE          The return type of FUNC.
   :elcomp-simple-numeric t|n If t, FUNC is a simple numeric function.  This
-
                              means that it accepts a number of
                              integer, marker, or float arguments,
                              and that the type of the result
@@ -39,9 +42,6 @@ Defined properties are:
   :elcomp-noreturn t|nil     If t, FUNC does not return normally.
   :elcomp-nothrow t|nil      If t, FUNC cannot `throw' or `signal'."
   ;; add more?
-  ;; :pure - like const but can refer to memory - e.g., car
-  ;;         this would be great for CSE but would require modeling
-  ;;         memory a bit more
   ;; :malloc - allocates new object
   ;; :primitive - assume this can never be rewritten, e.g. car
   ;; ... though if a function has any properties then we're already
@@ -54,7 +54,15 @@ Defined properties are:
 
 (defun elcomp--func-const-p (func)
   "Return t if FUNC can be considered 'const'."
-  (get func :elcomp-const))
+  (or (get func :elcomp-const)
+      (get func 'side-effect-free)
+      (get func 'pure)))
+
+(defun elcomp--func-pure-p (func)
+  "Return t if FUNC can be considered 'const'."
+  (or (elcomp--func-const-p func)
+      (get func :elcomp-pure)
+      (get func 'pure)))
 
 (defun elcomp--func-type (func)
   "Return the type of FUNC, if known, or nil."
@@ -74,7 +82,8 @@ Defined properties are:
 
 (defun elcomp--func-nothrow-p (func)
   "Return t if FUNC can be considered 'nothrow'."
-  (get func :elcomp-nothrow))
+  (or (get func :elcomp-nothrow)
+      (eq (get func 'side-effect-free) 'error-free)))
 
 (dolist (func '(+ - * / % 1+ 1- mod max min abs expt))
   (elcomp-declare func :elcomp-const t :elcomp-simple-numeric t))
