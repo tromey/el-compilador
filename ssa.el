@@ -104,6 +104,12 @@ nil otherwise.")
   ;; FIXME how to handle renaming for catch edges with a built-in
   ;; variable?  those variables are defined in that scope...
   (let ((current-map (copy-hash-table (elcomp--basic-block-phis bb))))
+    ;; Set up the initial block with renamings of the arguments.
+    (when (eq bb (elcomp--entry-block compiler))
+      ;; FIXME this is not correct!!  it doesn't handle &rest, etc.
+      (dolist (arg (cadr (elcomp--defun compiler)))
+	(puthash arg (elcomp--argument "argument" :original-name arg)
+		 current-map)))
     (let ((changed-since-exception t)
 	  (topmost-exception (elcomp--basic-block-exceptions bb)))
       (dolist (insn (elcomp--basic-block-code bb))
@@ -123,12 +129,6 @@ nil otherwise.")
 
 (defun elcomp--into-ssa-pass (compiler)
   "A pass to convert the function in COMPILER into SSA form."
-  ;; Initialize the entry block with an initial mapping for the
-  ;; arguments.
-  (elcomp--ssa-require-phis-for-block compiler (elcomp--entry-block compiler))
-  (dolist (arg (cadr (elcomp--defun compiler)))
-    
-    ...)
   (dolist (bb (elcomp--reverse-postorder compiler))
     (elcomp--block-into-ssa compiler bb)))
 
