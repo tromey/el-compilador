@@ -16,7 +16,7 @@
 	(princ "set ")
 	(elcomp--pp (oref obj :sym) nil)
 	(princ " = ")
-	(princ (oref obj :value)))
+	(elcomp--pp (oref obj :value) nil))
     (elcomp--pp (oref obj :sym) nil)))
 
 (defmethod elcomp--pp ((obj elcomp--call) verbose)
