@@ -48,8 +48,7 @@ Defined properties are:
 (defun elcomp--func-const-p (func)
   "Return t if FUNC can be considered 'const'."
   (or (get func :elcomp-const)
-      (get func 'side-effect-free)
-      (get func 'pure)))
+      (get func 'side-effect-free)))
 
 (defun elcomp--func-pure-p (func)
   "Return t if FUNC can be considered 'const'."
