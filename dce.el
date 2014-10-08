@@ -64,8 +64,7 @@ its references on the work list."
   ;; A SET is not intrinsically needed, so check which pass this is.
   (unless just-intrinsic
     (puthash insn t (elcomp--dce-hash dce))
-    (when (elcomp--ssa-name-p (oref insn :value))
-      (elcomp--dce-add (oref insn :value) dce))))
+    (elcomp--dce-add (oref insn :value) dce)))
 
 (defmethod elcomp--mark-necessary ((insn elcomp--phi) dce just-intrinsic)
   "Mark a `phi' statement as necessary.
@@ -97,8 +96,7 @@ its references on the work list."
     (when push-args
       ;; Push the arguments on the work list.
       (dolist (arg (oref insn :args))
-	(when (elcomp--ssa-name-p arg)
-	  (elcomp--dce-add arg dce))))))
+	(elcomp--dce-add arg dce)))))
 
 (defun elcomp--dce-mark-intrinsically-necessary (compiler dce)
   "Mark all intrinsically necessary statements.
@@ -157,9 +155,10 @@ statement that has not been marked as necessary."
 	   (delq nil (elcomp--basic-block-code bb)))
      ;; Delete dead phi nodes.
      (let ((phi-table (elcomp--basic-block-phis bb)))
-       (maphash (lambda (key _ignore)
-		  (unless (gethash key (elcomp--dce-hash dce))
-		    (remhash key phi-table)))
+       (maphash (lambda (name phi)
+		  (unless (gethash phi (elcomp--dce-hash dce))
+		    (elcomp--pp-insn "Removing" phi nil)
+		    (remhash name phi-table)))
 		phi-table)))))
 
 (defun elcomp--dce-pass (compiler)
