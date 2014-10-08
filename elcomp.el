@@ -405,7 +405,7 @@ sequence of objects.  FIXME ref the class docs"
 	    ;; We don't need this "if" for the last iteration, and
 	    ;; "and" in conditionals could be handled better -- but
 	    ;; all this is fixed up by the optimizers.
-	    (elcomp--add-if compiler result-location label-done nil))
+	    (elcomp--add-if compiler result-location nil label-done))
 	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'or)
