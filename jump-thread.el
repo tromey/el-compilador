@@ -68,7 +68,7 @@ collector."
        (lambda (block)
 	 (let ((insn (elcomp--last-instruction block)))
 	   ;; A `throw' with a constant tag can be transformed into an
-	   ;; assignment and a GOTO when the current blocks' outermost
+	   ;; assignment and a GOTO when the current block's outermost
 	   ;; handler is a `catch' of the same tag.
 	   (when (and (elcomp--diediedie-child-p insn)
 		      (eq (oref insn :func) 'throw)
