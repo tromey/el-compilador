@@ -2,6 +2,8 @@
 
 * To Do
 
+** We don't handle lambdas at all
+
 ** The variable from a `catch' or `unwind-protect' has to be
    kept in the handling block
    it can just be a special call
@@ -22,6 +24,9 @@
 	    (unbind-to --n--)))
 
     Ditto for let* of course
+
+*** An exception edge has an implicit unbind-to.
+    so we only need an explicit one along the normal path
 
 ** For a special variable we do not want to use a `set' instruction.
    These should be reserved for ssa names
@@ -64,8 +69,6 @@
 
 * Passes
 
-** Still need to write into-SSA
-
 ** Note that we can copy-propagate into a funcall or apply
    For apply this is a bit like strength reduction
 
@@ -79,13 +82,15 @@
    especially if the regexp is very simple this would be a win
    same with string-match-p
 
+** At least a simple form of TCO is easy
+
 * Back Ends
 
 ** Disassembly
 
 ** C Code
 
-*** Could use the coming "FFI" / DSO thing
+*** Could use Aurélien's "FFI" / DSO thing
 
 *** Type inference would be great here, could do unboxing
 

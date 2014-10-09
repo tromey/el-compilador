@@ -21,6 +21,7 @@
 
 *** Only "inlineable" uses should be permitted
 *** Things like Fload should indirect via Ffuncall
+*** This is very easy to do when translating from lisp
 
 ** It is bad that Emacs has 3 interpreters in it:
 *** Emacs Lisp
