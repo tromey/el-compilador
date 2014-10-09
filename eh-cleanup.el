@@ -41,9 +41,7 @@ A function marked `nothrow' will not throw."
     t))
 
 (defmethod elcomp--can-throw ((insn elcomp--diediedie))
-  "A `diediedie' instruction always throws.
-Though note that there's no way to distinguish this from the
-\"can throw\" case."
+  "A `diediedie' instruction always throws."
   t)
 
 (defun elcomp--eh-remove-unwinds (compiler bb)
