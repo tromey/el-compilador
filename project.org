@@ -4,6 +4,10 @@
 
 ** We don't handle lambdas at all
 
+** Need to do closure-conversion
+
+*** Probably need to handle "closure"
+
 ** The variable from a `catch' or `unwind-protect' has to be
    kept in the handling block
    it can just be a special call
