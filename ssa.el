@@ -111,7 +111,7 @@ nil otherwise.")
 	(puthash arg (elcomp--argument "argument" :original-name arg)
 		 current-map)))
     (let ((changed-since-exception t)
-	  (topmost-exception (elcomp--basic-block-exceptions bb)))
+	  (topmost-exception (car (elcomp--basic-block-exceptions bb))))
       (dolist (insn (elcomp--basic-block-code bb))
 	;; If this instruction can throw, and if there have been any
 	;; changes since the last throwing instruction, then propagate
