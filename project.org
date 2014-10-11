@@ -2,7 +2,15 @@
 
 * To Do
 
-** Remove "defuns" from compiler
+** Remove "defuns" from compiler?
+
+** It's easy to see dumb code like
+
+   set G5030_5031 = argument arg
+   return G5030_5031
+
+   we'll optimize that away (eventually) but it would be nice perhaps
+   not to generate it in the first place
 
 ** We don't handle lambdas at all
 
@@ -10,8 +18,7 @@
 
 *** Probably need to handle "closure"
 
-** The variable from a `catch' or `unwind-protect' has to be
-   kept in the handling block
+** The variable from a `catch' has to be kept in the handling block
    it can just be a special call
 
 ** Currently we don't handle special-variable-p in let bindings
@@ -50,8 +57,10 @@
 		    (push sym result))))
       result)
 
-*** (track-mouse defconst defvar save-excursion setq-default 
+*** (defconst defvar save-excursion setq-default 
      interactive save-restriction save-current-buffer function)
+
+*** (Note track-mouse turned into a macro)
 
 *** Some of these can be handled by unwind-protect plus an internal function
 
@@ -75,6 +84,9 @@
 
 * Passes
 
+** Copy and constant propagation
+   Perhaps SCCP - we can reuse the idea for type inference
+
 ** Note that we can copy-propagate into a funcall or apply
    For apply this is a bit like strength reduction
 
@@ -89,6 +101,9 @@
    same with string-match-p
 
 ** At least a simple form of TCO is easy
+
+** Look into a smarter form of closure conversion
+   Possibly sometimes we could optimize away closed-over variables, etc
 
 * Back Ends
 
