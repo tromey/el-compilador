@@ -104,3 +104,5 @@ Defined properties are:
 
 (dolist (iter '(car-safe cdr-safe))
   (elcomp-declare iter :elcomp-nothrow t))
+
+(elcomp-declare :elcomp-fetch-condition :elcomp-const t)

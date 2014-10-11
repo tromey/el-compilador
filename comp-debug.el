@@ -80,8 +80,6 @@
 
 (defmethod elcomp--pp ((obj elcomp--condcase) verbose)
   (princ "condition-case ")
-  (elcomp--pp (oref obj :variable) nil)
-  (princ ", ")
   (princ (oref obj :condition-name))
   (princ " => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))

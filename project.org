@@ -2,6 +2,8 @@
 
 * To Do
 
+** Remove "defuns" from compiler
+
 ** We don't handle lambdas at all
 
 ** Need to do closure-conversion

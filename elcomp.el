@@ -96,8 +96,7 @@ This can only be used after a call to a `nothrow' function.")
 
 ;; A single condition-case handler.
 (defclass elcomp--condcase (elcomp--exception)
-  ((variable :initform nil :initarg :variable)
-   (condition-name :initform nil :initarg :condition-name)))
+  ((condition-name :initform nil :initarg :condition-name)))
 
 ;; An unwind-protect.
 (defclass elcomp--unwind-protect (elcomp--exception)
@@ -110,8 +109,36 @@ This can only be used after a call to a `nothrow' function.")
    (elcomp--call-child-p arg)
    (elcomp--argument-child-p arg)))
 
+;;
+;; Compiler macros.
+;;
+
 (defun elcomp--declare (&rest specs)
+  "A compiler macro for `declare'.
+
+This just ensures we preserve the declaration so the compiler can
+see it."
   (cons 'declare specs))
+
+(defun elcomp--condition-case (var bodyform &rest handlers)
+  "A compiler macro for `condition-case'.
+
+This pushes VAR as a let-binding into HANDLERS, when VAR is not
+nil."
+  ;; Use a special name so we (us humans hacking on this) don't get
+  ;; confused later on.
+  (append (list :elcomp-condition-case bodyform)
+	  (if var
+	      (mapcar (lambda (handler)
+			(list (car handler)
+			      `(let ((,var (:elcomp-fetch-condition)))
+				 ,@(cdr handler))))
+		      handlers)
+	    handlers)))
+
+;;
+;;
+;;
 
 (defun elcomp--new-var (compiler &optional symname)
   (let* ((cell (memq symname (elcomp--rewrite-alist compiler))))
@@ -468,6 +495,9 @@ sequence of objects.  FIXME ref the class docs"
 	  (elcomp--make-block-current compiler done-label)))
 
        ((eq fn 'condition-case)
+	(error "somehow a condition-case made it through macro expansion"))
+
+       ((eq fn :elcomp-condition-case)
 	(let ((new-exceptions nil)
 	      (body-label (elcomp--label compiler))
 	      (done-label (elcomp--label compiler))
@@ -475,20 +505,17 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; We emit the handlers first because it is a bit simpler
 	  ;; here, and it doesn't matter for the result.
 	  (elcomp--add-goto compiler body-label)
-	  (dolist (handler (cl-cdddr form))
+	  (dolist (handler (cddr form))
 	    (let ((this-label (elcomp--label compiler)))
 	      (push (elcomp--condcase "condition-case"
 				      :handler this-label
-				      :variable (cadr form)
 				      :condition-name (car handler))
 		    new-exceptions)
 	      (elcomp--make-block-current compiler this-label)
-	      ;; Here we should probably pretend that the
-	      ;; handler block is surrounded by '(let ((var ...))...)'.
-	      ;; VAR might be defvar'd.
-	      ;; Maybe we could emit a special call like
-	      ;; (setq VAR (:internal-function:))
-	      ;; to fetch the data.
+	      ;; Note that here we probably pretend that the handler
+	      ;; block is surrounded by '(let ((var ...))...)'.  This
+	      ;; is done by a compiler macro, which explains why
+	      ;; there's no special handling here.
 	      (elcomp--linearize-body compiler (cdr handler) result-location)
 	      (elcomp--add-goto compiler done-label)))
 	  ;; Careful with the ordering.
@@ -496,10 +523,10 @@ sequence of objects.  FIXME ref the class docs"
 	  (dolist (exception new-exceptions)
 	    (push exception (elcomp--exceptions compiler)))
 	  ;; Update the body label's list of exceptions.
-	  (oset (elcomp--basic-block-exceptions body-label)
-		:exceptions (elcomp--exceptions compiler))
+	  (setf (elcomp--basic-block-exceptions body-label)
+		(elcomp--exceptions compiler))
 	  (elcomp--make-block-current compiler body-label)
-	  (elcomp--linearize compiler (cl-caddr form) result-location)
+	  (elcomp--linearize compiler (cadr form) result-location)
 	  ;; The catch doesn't cover the handler; but pop before the
 	  ;; "goto" so the new block has the correct exception list.
 	  (setf (elcomp--exceptions compiler) saved-exceptions)
@@ -565,8 +592,9 @@ sequence of objects.  FIXME ref the class docs"
 (defun elcomp--translate (form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
-	   (cons '(declare . elcomp--declare)
-		 byte-compile-macro-environment))
+	   (cons '(condition-case . elcomp--condition-case)
+		 (cons '(declare . elcomp--declare)
+		       byte-compile-macro-environment)))
 	  (compiler (make-elcomp))
 	  (result-var (elcomp--new-var compiler))
 	  (code nil))
@@ -575,7 +603,7 @@ sequence of objects.  FIXME ref the class docs"
      (setf form (elcomp--extract-defun compiler form))
      (elcomp--linearize compiler
       (byte-optimize-form (macroexpand-all form
-				       byte-compile-macro-environment))
+					   byte-compile-macro-environment))
       result-var)
      (elcomp--add-return compiler result-var)
      (elcomp--optimize compiler)
