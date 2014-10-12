@@ -95,7 +95,7 @@ This can only be used after a call to a `nothrow' function.")
    (result :initform nil :initarg :result)))
 
 ;; A single condition-case handler.
-(defclass elcomp--condcase (elcomp--exception)
+(defclass elcomp--condition-case (elcomp--exception)
   ((condition-name :initform nil :initarg :condition-name)))
 
 ;; An unwind-protect.
@@ -507,9 +507,9 @@ sequence of objects.  FIXME ref the class docs"
 	  (elcomp--add-goto compiler body-label)
 	  (dolist (handler (cddr form))
 	    (let ((this-label (elcomp--label compiler)))
-	      (push (elcomp--condcase "condition-case"
-				      :handler this-label
-				      :condition-name (car handler))
+	      (push (elcomp--condition-case "condition-case"
+					    :handler this-label
+					    :condition-name (car handler))
 		    new-exceptions)
 	      (elcomp--make-block-current compiler this-label)
 	      ;; Note that here we probably pretend that the handler

@@ -78,7 +78,7 @@
   (princ " => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))
 
-(defmethod elcomp--pp ((obj elcomp--condcase) verbose)
+(defmethod elcomp--pp ((obj elcomp--condition-case) verbose)
   (princ "condition-case ")
   (princ (oref obj :condition-name))
   (princ " => BB ")
