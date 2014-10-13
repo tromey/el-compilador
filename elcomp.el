@@ -103,6 +103,14 @@ This can only be used after a call to a `nothrow' function.")
   ;; Well.. it will be someday.  FIXME.
   ((original-form :initform nil :initarg :original-form)))
 
+;; A fake unwind-protect that is used to represent the unbind
+;; operation from a `let' of a special variable.  This is needed to
+;; properly deal with `catch' optimization from inside a `let', like:
+;; (catch 'x (let* ((var1 (something)) (var2 (throw 'x 99))) ...))
+;; Here, the `throw' has to unbind "var1".
+(defclass elcomp--fake-unwind-protect (elcomp--exception)
+  ())
+
 (defun elcomp--ssa-name-p (arg)
   (or
    (elcomp--set-child-p arg)
@@ -313,7 +321,8 @@ sequence of objects.  FIXME ref the class docs"
 	;; Arrange to reset the rewriting table outside the 'let'.
 	(cl-letf (((elcomp--rewrite-alist compiler)
 		   (elcomp--rewrite-alist compiler))
-		  (let-symbols nil))
+		  (let-symbols nil)
+		  (spec-vars nil))
 	  ;; Compute the values.
 	  (dolist (sexp (cadr form))
 	    (let* ((sym (if (symbolp sexp)
@@ -325,12 +334,28 @@ sequence of objects.  FIXME ref the class docs"
 		   (sym-result (elcomp--new-var compiler sym)))
 	      ;; If there is a body, compute it.
 	      (elcomp--linearize compiler sym-initializer sym-result)
-	      (push (cons sym sym-result) let-symbols)))
+	      (if (special-variable-p sym)
+		  (push (cons sym sym-result) spec-vars)
+		(push (cons sym sym-result) let-symbols))))
 	  ;; Push the new values onto the rewrite list.
 	  (setf (elcomp--rewrite-alist compiler)
 		(nconc let-symbols (elcomp--rewrite-alist compiler)))
+	  ;; Specbind all the special variables.
+	  (dolist (spec-var spec-vars)
+	    (elcomp--add-call compiler nil :elcomp-specbind
+			      (list
+			       (elcomp--constant "constant"
+						 :value (car spec-var))
+			       (car spec-var))))
 	  ;; Now evaluate the body of the let.
-	  (elcomp--linearize-body compiler (cddr form) result-location)))
+	  (elcomp--linearize-body compiler (cddr form) result-location)
+	  ;; And finally unbind.
+	  (if spec-vars
+	      (elcomp--add-call compiler nil :elcomp-unbind
+				(list
+				 (elcomp--constant "constant"
+						   :value (length spec-vars)))))))
+
        ((eq fn 'let*)
 	;; Arrange to reset the rewriting table outside the 'let*'.
 	(cl-letf (((elcomp--rewrite-alist compiler)
