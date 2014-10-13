@@ -347,20 +347,32 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; Now evaluate the body of the let*.
 	  (elcomp--linearize-body compiler (cddr form) result-location)))
 
-       ;; Do we need set?  or what else?  setq-default?  set-default?
        ((eq fn 'setq)
 	(setf form (cdr form))
-	(let ((last-rewritten-sym nil))
-	  (while form
-	    (let* ((sym (car form))
-		   (rewritten-sym (elcomp--rewrite-one-ref compiler sym))
-		   (val (cadr form)))
-	      (setf last-rewritten-sym rewritten-sym)
-	      (elcomp--linearize compiler val rewritten-sym))
-	    (setf form (cddr form)))
-	  ;; Return the value.
-	  (if result-location
-	      (elcomp--add-set compiler result-location last-rewritten-sym))))
+	(while form
+	  (let* ((sym (pop form))
+		 (val (pop form))
+		 ;; We store the last `setq' but drop the results of
+		 ;; the rest.
+		 (stored-variable (if form nil result-location)))
+	    (if (special-variable-p sym)
+		(let ((intermediate (elcomp--new-var compiler)))
+		  ;; A setq of a special variable is turned into a
+		  ;; call to `set'.  Our "set" instruction is reserved
+		  ;; for ordinary variables.
+		  (elcomp--linearize compiler val intermediate)
+		  (elcomp--add-call compiler stored-variable
+				    'set
+				    (list (elcomp--constant "constant"
+							    :value sym)
+					  intermediate)))
+	      ;; An ordinary `setq' is turned into a "set"
+	      ;; instruction.
+	      (let ((rewritten-sym (elcomp--rewrite-one-ref compiler sym)))
+		(elcomp--linearize compiler val rewritten-sym)
+		(when stored-variable
+		  ;; Return the value.
+		  (elcomp--add-set compiler result-location stored-variable)))))))
 
        ((eq fn 'cond)
 	(let ((label-done (elcomp--label compiler)))
