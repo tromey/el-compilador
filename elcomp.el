@@ -91,8 +91,7 @@ This can only be used after a call to a `nothrow' function.")
 
 ;; A catch.
 (defclass elcomp--catch (elcomp--exception)
-  ((tag :initform nil :initarg :tag)
-   (result :initform nil :initarg :result)))
+  ((tag :initform nil :initarg :tag)))
 
 ;; A single condition-case handler.
 (defclass elcomp--condition-case (elcomp--exception)
@@ -448,8 +447,7 @@ sequence of objects.  FIXME ref the class docs"
 	       (done-label (elcomp--label compiler))
 	       (exception (elcomp--catch "catch"
 					 :handler handler-label
-					 :tag tag
-					 :result result-location)))
+					 :tag tag)))
 	  (push exception (elcomp--exceptions compiler))
 	  ;; We need a new block because we have modified the
 	  ;; exception handler list.
@@ -460,9 +458,9 @@ sequence of objects.  FIXME ref the class docs"
 	  (pop (elcomp--exceptions compiler))
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler handler-label)
-	  ;; This block magically sets RESULT-LOCATION... ?
-	  ;; Or we could emit a special internal call to fetch
-	  ;; the data.  FIXME.
+	  ;; A magic call to get the value.
+	  (elcomp--add-call compiler result-location
+			    :catch-value nil)
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler done-label)))
 

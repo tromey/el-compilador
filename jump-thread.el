@@ -18,6 +18,21 @@ Otherwise return nil."
 	     (memq (oref call :func) '(not null)))
 	(car (oref call :args)))))
 
+(defun elcomp--get-catch-symbol (exception)
+  "Given a `catch' exception object, return the symbol holding the `throw' value."
+  (cl-assert (elcomp--catch-child-p exception))
+  (let ((insn (car (elcomp--basic-block-code (oref exception :handler)))))
+    (cl-assert (elcomp--call-child-p insn))
+    (cl-assert (eq (oref insn :func) :catch-value))
+    (oref insn :sym)))
+
+(defun elcomp--get-catch-target (exception)
+  "Given a `catch' exception object, return the basic block of the `catch' itself."
+  (cl-assert (elcomp--catch-child-p exception))
+  (let ((insn (cadr (elcomp--basic-block-code (oref exception :handler)))))
+    (cl-assert (elcomp--goto-child-p insn))
+    (oref insn :block)))
+
 (defun elcomp--thread-jumps-pass (compiler)
   "A pass to perform jump threading on COMPILER.
 
@@ -88,18 +103,20 @@ collector."
 			     (oref (car (elcomp--basic-block-exceptions block))
 				   :tag)))
 	     ;; Whew.  Replace the instruction with an assignment and
-	     ;; a goto, and zap the `diediedie' instruction.
+	     ;; a goto, and zap the `diediedie' instruction.  FIXME
+	     ;; note that this only works when *NOT* in SSA form,
+	     ;; because we're reusing the variable.
 	     (setf (elcomp--last-instruction block)
 		   (elcomp--set "set"
-				:sym (oref (car (elcomp--basic-block-exceptions
-						 block))
-					   :result)
+				:sym (elcomp--get-catch-symbol
+				      (car (elcomp--basic-block-exceptions
+					    block)))
 				:value (cadr (oref insn :args))))
 	     (setf insn
 		   (elcomp--goto
 		    "goto"
-		    :block (oref (car (elcomp--basic-block-exceptions block))
-				 :handler)))
+		    :block (elcomp--get-catch-target
+			    (car (elcomp--basic-block-exceptions block)))))
 	     (elcomp--add-to-basic-block block insn)
 	     (setf rewrote-one t))
 
