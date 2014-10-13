@@ -14,7 +14,8 @@ is the sole successor of the original, and the original is the
 sole predecessor of the second, and if they have compatible
 outgoing exception edges."
   (elcomp--require-back-edges compiler)
-  (let ((rewrote-one nil))
+  (let ((rewrote-one nil)
+	(ever-rewrote-one nil))
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)
@@ -41,8 +42,9 @@ outgoing exception edges."
 		      (elcomp--basic-block-code succ)))
 	       (setf (elcomp--basic-block-code-link bb)
 		     (elcomp--basic-block-code-link succ))
-	       (setf rewrote-one t)))))))
-    (when rewrote-one
+	       (setf rewrote-one t)
+	       (setf ever-rewrote-one t)))))))
+    (when ever-rewrote-one
       (elcomp--invalidate-cfg compiler))))
 
 ;;; coalesce.el ends here
