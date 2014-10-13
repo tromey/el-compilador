@@ -248,7 +248,8 @@ Or REF can be a constant, in which case it is returned unchanged."
   "Return t if OBJ is a variable when linearizing.
 A variable is a symbol that is not a keyword."
   (and (symbolp obj)
-       (not (keywordp obj))))
+       (not (keywordp obj))
+       (not (memq obj '(t nil)))))
 
 (defun elcomp--make-block-current (compiler block)
   ;; Terminate the previous basic block.
