@@ -48,7 +48,7 @@
 		    (push sym result))))
       result)
 
-*** (defconst defvar save-excursion setq-default 
+*** (defconst defvar save-excursion
      interactive save-restriction save-current-buffer function)
 
 *** (Note track-mouse turned into a macro)

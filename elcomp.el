@@ -348,6 +348,22 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; Now evaluate the body of the let*.
 	  (elcomp--linearize-body compiler (cddr form) result-location)))
 
+       ((eq fn 'setq-default)
+	(setf form (cdr form))
+	(while form
+	  (let* ((sym (pop form))
+		 (val (pop form))
+		 ;; We store the last result but drop the others.
+		 (stored-variable (if form nil result-location))
+		 (intermediate (elcomp--new-var compiler)))
+	    ;; This is translated straightforwardly as a call to
+	    ;; `set-default'.
+	    (elcomp--linearize compiler val intermediate)
+	    (elcomp--add-call compiler stored-variable
+			      'set-default
+			      (list (elcomp--constant "constant" :value sym)
+				    intermediate)))))
+
        ((eq fn 'setq)
 	(setf form (cdr form))
 	(while form
