@@ -102,7 +102,7 @@
 	       (princ (format " %d" (elcomp--basic-block-number parent-bb))))
 	     (elcomp--basic-block-parents bb))
     (princ ")"))
-  (princ (format " (idom: %S)"
+  (princ (format " (idom: %s)"
 		 (if (elcomp--basic-block-immediate-dominator bb)
 		     (elcomp--basic-block-number
 		      (elcomp--basic-block-immediate-dominator bb))
