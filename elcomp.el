@@ -99,7 +99,9 @@ This can only be used after a call to a `nothrow' function.")
 
 ;; An unwind-protect.
 (defclass elcomp--unwind-protect (elcomp--exception)
-  ())
+  ;; The original form is used when optimizing "catch".
+  ;; Well.. it will be someday.  FIXME.
+  ((original-form :initform nil :initarg :original-form)))
 
 (defun elcomp--ssa-name-p (arg)
   (or
@@ -499,7 +501,9 @@ sequence of objects.  FIXME ref the class docs"
 	      (done-label (elcomp--label compiler))
 	      (normal-label (elcomp--label compiler)))
 	  (push (elcomp--unwind-protect "unwind-protect"
-					:handler handler-label)
+					:handler handler-label
+					:original-form (cons 'progn
+							     (cddr form)))
 		(elcomp--exceptions compiler))
 	  ;; We need a new block because we have modified the
 	  ;; exception handler list.
