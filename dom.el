@@ -11,7 +11,8 @@
 	   (if (elcomp--basic-block-immediate-dominator pred)
 	       (throw 'found pred)))
 	 (elcomp--basic-block-parents bb)))
-      (error "couldn't find processed predecessor")))
+      (error "couldn't find processed predecessor in %S"
+	     (elcomp--basic-block-number bb))))
 
 (defun elcomp--predecessors (bb)
   (let ((result nil))
