@@ -408,7 +408,8 @@ sequence of objects.  FIXME ref the class docs"
 	      (label-done (elcomp--label compiler))
 	      (cond-var (elcomp--new-var compiler)))
 	  (if result-location
-	      (elcomp--add-set compiler result-location nil))
+	      (elcomp--add-set compiler result-location
+			       (elcomp--operand compiler nil)))
 	  ;; FIXME: set the result-location
 	  (elcomp--make-block-current compiler label-top)
 	  ;; The condition expression and goto.
