@@ -18,9 +18,6 @@
 
 *** Probably need to handle "closure"
 
-** The variable from a `catch' has to be kept in the handling block
-   it can just be a special call
-
 ** Currently we don't handle special-variable-p in let bindings
    Major bug!
 
@@ -40,12 +37,6 @@
 
 *** An exception edge has an implicit unbind-to.
     so we only need an explicit one along the normal path
-
-** For a special variable we do not want to use a `set' instruction.
-   These should be reserved for ssa names
-   Instead we should use a `call' with `setq'
-   This would negate the comment below about needing a temporary
-   result from a setq
 
 ** Some special forms are still not handled
 
@@ -72,15 +63,6 @@
 
     We do this already but can do better by handling unwind-protect as
     well
-
-** If a value is ignored we still emit a temporary
-   Sometimes a value is only needed as a boolean, like (if (and ...)).
-   This could be optimized as well
-
-** If we use the result of setq we generate an extra load
-   However we could avoid this by using a private name for
-   the intermediate set
-   Or maybe it won't matter at all after ssa opts
 
 * Passes
 
