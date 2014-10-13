@@ -346,7 +346,9 @@ sequence of objects.  FIXME ref the class docs"
 			      (list
 			       (elcomp--constant "constant"
 						 :value (car spec-var))
-			       (car spec-var))))
+			       (cdr spec-var))))
+	  ;; FIXME this is where we should push a fake unwind-protect
+	  ;; object.
 	  ;; Now evaluate the body of the let.
 	  (elcomp--linearize-body compiler (cddr form) result-location)
 	  ;; And finally unbind.
@@ -359,7 +361,8 @@ sequence of objects.  FIXME ref the class docs"
        ((eq fn 'let*)
 	;; Arrange to reset the rewriting table outside the 'let*'.
 	(cl-letf (((elcomp--rewrite-alist compiler)
-		   (elcomp--rewrite-alist compiler)))
+		   (elcomp--rewrite-alist compiler))
+		  (num-specbinds 0))
 	  ;; Compute the values.
 	  (dolist (sexp (cadr form))
 	    (let* ((sym (if (symbolp sexp)
@@ -371,9 +374,25 @@ sequence of objects.  FIXME ref the class docs"
 		   (sym-result (elcomp--new-var compiler sym)))
 	      ;; If there is a body, compute it.
 	      (elcomp--linearize compiler sym-initializer sym-result)
-	      (push (cons sym sym-result) (elcomp--rewrite-alist compiler))))
-	  ;; Now evaluate the body of the let*.
-	  (elcomp--linearize-body compiler (cddr form) result-location)))
+	      ;; Make it visible to subsequent blocks.
+	      ;; FIXME this is where we should push a fake
+	      ;; unwind-protect.
+	      (if (special-variable-p sym)
+		  (progn
+		    (elcomp--add-call compiler nil :elcomp-specbind
+				      (list
+				       (elcomp--constant "constant" :value sym)
+				       sym-result))
+		    (cl-incf num-specbinds))
+		(push (cons sym sym-result) (elcomp--rewrite-alist compiler)))))
+	  ;; Evaluate the body of the let*.
+	  (elcomp--linearize-body compiler (cddr form) result-location)
+	  ;; And finally unbind.
+	  (if (> num-specbinds 0)
+	      (elcomp--add-call compiler nil :elcomp-unbind
+				(list
+				 (elcomp--constant "constant"
+						   :value num-specbinds))))))
 
        ((eq fn 'setq-default)
 	(setf form (cdr form))

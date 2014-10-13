@@ -2,6 +2,10 @@
 
 * To Do
 
+** bug with unbinding
+   we need to add a fake unwind-protect edge
+   so the `catch' optimization doesn't skip unbinds
+
 ** Remove "defuns" from compiler?
 
 ** It's easy to see dumb code like
@@ -17,26 +21,6 @@
 ** Need to do closure-conversion
 
 *** Probably need to handle "closure"
-
-** Currently we don't handle special-variable-p in let bindings
-   Major bug!
-
-*** We have to transform (let ((*V* value)) BODY)
-    Probably need to introduce a new "internal function" for this;
-    the "obvious" transform using unwind-protect doesn't actually 
-    follow elisp semantics.
-
-    Maybe something like:
-
-        (let ((--n-- (:specpdl:)))
-	  (unwind-protect
-	      (:specbind: *V* value)
-	    (unbind-to --n--)))
-
-    Ditto for let* of course
-
-*** An exception edge has an implicit unbind-to.
-    so we only need an explicit one along the normal path
 
 ** Some special forms are still not handled
 
