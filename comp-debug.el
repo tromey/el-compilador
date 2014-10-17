@@ -86,6 +86,10 @@
   (princ "unwind-protect => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))
 
+(defmethod elcomp--pp ((obj elcomp--fake-unwind-protect) verbose)
+  (princ "fake-unwind-protect ")
+  (princ (oref obj :count)))
+
 (defun elcomp--pp-insn (text insn verbose)
   (princ text)
   (princ " ")

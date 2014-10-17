@@ -58,15 +58,16 @@ function."
 	(unless (elcomp--unwind-protect-p exception)
 	  (throw 'done nil))
 	(let ((exc-block (oref exception :handler)))
-	  ;; If the block is just a single instruction, then we know
-	  ;; it is a call to the special :unwind-protect-continue
-	  ;; function, and so the edge can be removed.
-	  (unless (eq (elcomp--basic-block-code exc-block)
-		      (elcomp--basic-block-code-link exc-block))
-	    (throw 'done nil))
-	  (cl-assert (elcomp--diediedie-p
-		      (car (elcomp--basic-block-code exc-block))))
-	  (pop (elcomp--basic-block-exceptions bb)))))))
+	  (when exc-block
+	    ;; If the block is just a single instruction, then we know
+	    ;; it is a call to the special :unwind-protect-continue
+	    ;; function, and so the edge can be removed.
+	    (unless (eq (elcomp--basic-block-code exc-block)
+			(elcomp--basic-block-code-link exc-block))
+	      (throw 'done nil))
+	    (cl-assert (elcomp--diediedie-p
+			(car (elcomp--basic-block-code exc-block))))
+	    (pop (elcomp--basic-block-exceptions bb))))))))
 
 (defun elcomp--eh-cleanup-pass (compiler)
   "Remove useless exception handling edges from a function.

@@ -109,7 +109,7 @@ This can only be used after a call to a `nothrow' function.")
 ;; (catch 'x (let* ((var1 (something)) (var2 (throw 'x 99))) ...))
 ;; Here, the `throw' has to unbind "var1".
 (defclass elcomp--fake-unwind-protect (elcomp--exception)
-  ())
+  ((count :initform nil :initarg :count)))
 
 (defun elcomp--ssa-name-p (arg)
   (or
@@ -148,6 +148,27 @@ nil."
 ;;
 ;;
 ;;
+
+(defun elcomp--push-fake-unwind-protect (compiler num)
+  (let* ((first-exception (car (elcomp--exceptions compiler)))
+	 (new-exception
+	  (if (elcomp--fake-unwind-protect-p first-exception)
+	      (progn
+		(pop (elcomp--exceptions compiler))
+		(elcomp--fake-unwind-protect
+		 "fake" :count (+ (oref first-exception :count) num)))
+	    (elcomp--fake-unwind-protect "fake" :count num))))
+    (push new-exception (elcomp--exceptions compiler)))
+  (elcomp--make-block-current compiler (elcomp--label compiler)))
+
+(defun elcomp--pop-fake-unwind-protects (compiler num)
+  (let* ((first-exception (pop (elcomp--exceptions compiler))))
+    (cl-assert (elcomp--fake-unwind-protect-p first-exception))
+    (cl-assert (>= (oref first-exception :count) num))
+    (if (> (oref first-exception :count) num)
+	(push (elcomp--fake-unwind-protect
+	       "fake" :count (- (oref first-exception :count) num)))))
+  (elcomp--make-block-current compiler (elcomp--label compiler)))
 
 (defun elcomp--new-var (compiler &optional symname)
   (let* ((cell (memq symname (elcomp--rewrite-alist compiler))))
@@ -340,23 +361,24 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; Push the new values onto the rewrite list.
 	  (setf (elcomp--rewrite-alist compiler)
 		(nconc let-symbols (elcomp--rewrite-alist compiler)))
-	  ;; Specbind all the special variables.
-	  (dolist (spec-var spec-vars)
-	    (elcomp--add-call compiler nil :elcomp-specbind
-			      (list
-			       (elcomp--constant "constant"
-						 :value (car spec-var))
-			       (cdr spec-var))))
-	  ;; FIXME this is where we should push a fake unwind-protect
-	  ;; object.
+	  (when spec-vars
+	    ;; Specbind all the special variables.
+	    (dolist (spec-var spec-vars)
+	      (elcomp--add-call compiler nil :elcomp-specbind
+				(list
+				 (elcomp--constant "constant"
+						   :value (car spec-var))
+				 (cdr spec-var))))
+	    (elcomp--push-fake-unwind-protect compiler (length spec-vars)))
 	  ;; Now evaluate the body of the let.
 	  (elcomp--linearize-body compiler (cddr form) result-location)
 	  ;; And finally unbind.
-	  (if spec-vars
-	      (elcomp--add-call compiler nil :elcomp-unbind
-				(list
-				 (elcomp--constant "constant"
-						   :value (length spec-vars)))))))
+	  (when spec-vars
+	    (elcomp--pop-fake-unwind-protects compiler (length spec-vars))
+	    (elcomp--add-call compiler nil :elcomp-unbind
+			      (list
+			       (elcomp--constant "constant"
+						 :value (length spec-vars)))))))
 
        ((eq fn 'let*)
 	;; Arrange to reset the rewriting table outside the 'let*'.
@@ -375,24 +397,24 @@ sequence of objects.  FIXME ref the class docs"
 	      ;; If there is a body, compute it.
 	      (elcomp--linearize compiler sym-initializer sym-result)
 	      ;; Make it visible to subsequent blocks.
-	      ;; FIXME this is where we should push a fake
-	      ;; unwind-protect.
 	      (if (special-variable-p sym)
 		  (progn
 		    (elcomp--add-call compiler nil :elcomp-specbind
 				      (list
 				       (elcomp--constant "constant" :value sym)
 				       sym-result))
+		    (elcomp--push-fake-unwind-protect compiler 1)
 		    (cl-incf num-specbinds))
 		(push (cons sym sym-result) (elcomp--rewrite-alist compiler)))))
 	  ;; Evaluate the body of the let*.
 	  (elcomp--linearize-body compiler (cddr form) result-location)
 	  ;; And finally unbind.
-	  (if (> num-specbinds 0)
-	      (elcomp--add-call compiler nil :elcomp-unbind
-				(list
-				 (elcomp--constant "constant"
-						   :value num-specbinds))))))
+	  (when (> num-specbinds 0)
+	    (elcomp--pop-fake-unwind-protects compiler num-specbinds)
+	    (elcomp--add-call compiler nil :elcomp-unbind
+			      (list
+			       (elcomp--constant "constant"
+						 :value num-specbinds))))))
 
        ((eq fn 'setq-default)
 	(setf form (cdr form))
@@ -701,7 +723,8 @@ sequence of objects.  FIXME ref the class docs"
 	(elcomp--do-iterate hash callback (oref obj :block-true) postorder)
 	(elcomp--do-iterate hash callback (oref obj :block-false) postorder))))
     (dolist (exception (elcomp--basic-block-exceptions bb))
-      (elcomp--do-iterate hash callback (oref exception :handler) postorder))
+      (when (oref exception :handler)
+	(elcomp--do-iterate hash callback (oref exception :handler) postorder)))
     (when postorder
       (funcall callback bb))))
 

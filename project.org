@@ -2,9 +2,18 @@
 
 * To Do
 
-** bug with unbinding
-   we need to add a fake unwind-protect edge
-   so the `catch' optimization doesn't skip unbinds
+** A "catch" with a non-constant tag will still require
+   special handling in the IR, e.g. when converting to SSA form
+   this isn't done now
+
+** We can merge blocks with different exception handlers
+   if one of them doesn't have any throwing instructions
+   likewise if we have fake-unwind-protect?
+
+** We can remove specbind/unbind if there aren't intervening statements
+   probably unimportant optimization though?
+
+** Can specbind or unbind throw?
 
 ** Remove "defuns" from compiler?
 

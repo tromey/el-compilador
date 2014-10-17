@@ -98,6 +98,12 @@ nil otherwise.")
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
   nil)
 
+(defun elcomp--topmost-exception (bb)
+  (catch 'done
+    (dolist (topmost-exception (elcomp--basic-block-exceptions bb))
+      (when (oref topmost-exception :handler)
+	(throw 'done topmost-exception)))))
+
 (defun elcomp--block-into-ssa (compiler bb)
   "Convert a single basic block into SSA form."
   (elcomp--ssa-require-phis-for-block compiler bb)
@@ -111,7 +117,7 @@ nil otherwise.")
 	(puthash arg (elcomp--argument "argument" :original-name arg)
 		 current-map)))
     (let ((changed-since-exception t)
-	  (topmost-exception (car (elcomp--basic-block-exceptions bb))))
+	  (topmost-exception (elcomp--topmost-exception bb)))
       (dolist (insn (elcomp--basic-block-code bb))
 	;; If this instruction can throw, and if there have been any
 	;; changes since the last throwing instruction, then propagate

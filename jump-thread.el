@@ -18,6 +18,28 @@ Otherwise return nil."
 	     (memq (oref call :func) '(not null)))
 	(car (oref call :args)))))
 
+(defun elcomp--block-has-catch (block)
+  "If the block has a `catch' exception handler, return it.
+Otherwise return nil."
+  (catch 'done
+    (dolist (exception (elcomp--basic-block-exceptions block))
+      (cond
+       ((elcomp--catch-p exception)
+	(throw 'done exception))
+       ((elcomp--fake-unwind-protect-p exception)
+	;; Keep going.
+	)
+       ;; This requires re-linearizing the unwind-protect
+       ;; original-form.  However we can't do this at present because
+       ;; we've already lost information about the variable
+       ;; remappings.  Perhaps it would be simpler to just go directly
+       ;; into SSA when linearizing?
+       ;; ((elcomp--unwind-protect-p exception)
+       ;; 	;; Keep going.
+       ;; 	)
+       (t
+	(throw 'done nil))))))
+
 (defun elcomp--get-catch-symbol (exception)
   "Given a `catch' exception object, return the symbol holding the `throw' value."
   (cl-assert (elcomp--catch-child-p exception))
@@ -32,6 +54,57 @@ Otherwise return nil."
   (let ((insn (cadr (elcomp--basic-block-code (oref exception :handler)))))
     (cl-assert (elcomp--goto-child-p insn))
     (oref insn :block)))
+
+(defun elcomp--maybe-replace-catch (block insn)
+  ;; A `throw' with a constant tag can be transformed into an
+  ;; assignment and a GOTO when the current block's outermost handler
+  ;; is a `catch' of the same tag.
+  (when (and (elcomp--diediedie-child-p insn)
+	     (eq (oref insn :func) 'throw)
+	     ;; Argument to throw is a const.
+	     (elcomp--constant-child-p
+	      (car (oref insn :args))))
+    (let ((exception (elcomp--block-has-catch block)))
+      (when (and exception
+		 ;; With a constant tag.
+		 (elcomp--constant-child-p (oref exception :tag))
+		 ;; ... which is equal to the throw.
+		 (equal (car (oref insn :args)) (oref exception :tag)))
+	;; Whew.  First drop the last instruction from the block.
+	(setf (elcomp--basic-block-code block)
+	      (nbutlast (elcomp--basic-block-code block) 1))
+	(setf (elcomp--basic-block-code-link block)
+	      (last (elcomp--basic-block-code block)))
+	;; Emit `unbind' calls.  (Note that when we can handle real
+	;; unwind-protects we will re-linearize those here as well.)
+	(let ((iter (elcomp--basic-block-exceptions block)))
+	  ;; Really there can only be one with the current
+	  ;; implementation.
+	  (while (not (elcomp--catch-child-p (car iter)))
+	    (elcomp--add-to-basic-block
+	     block
+	     (elcomp--call "call"
+			   :sym nil
+			   :func :elcomp-unbind
+			   :args (list
+				  (elcomp--constant "constant"
+						    :value
+						    (oref (car iter) :count)))))
+	    (setf iter (cdr iter))))
+	;; Now add an instruction with an assignment and a goto, and
+	;; zap the `diediedie' instruction.  FIXME note that this only
+	;; works when *NOT* in SSA form, because we're reusing the
+	;; variable.
+	(elcomp--add-to-basic-block
+	 block
+	 (elcomp--set "set"
+		      :sym (elcomp--get-catch-symbol exception)
+		      :value (cadr (oref insn :args))))
+	(elcomp--add-to-basic-block
+	 block
+	 (elcomp--goto "goto"
+		       :block (elcomp--get-catch-target exception)))
+	t))))
 
 (defun elcomp--thread-jumps-pass (compiler)
   "A pass to perform jump threading on COMPILER.
@@ -82,44 +155,9 @@ collector."
        compiler
        (lambda (block)
 	 (let ((insn (elcomp--last-instruction block)))
-	   ;; A `throw' with a constant tag can be transformed into an
-	   ;; assignment and a GOTO when the current block's outermost
-	   ;; handler is a `catch' of the same tag.
-	   (when (and (elcomp--diediedie-child-p insn)
-		      (eq (oref insn :func) 'throw)
-		      ;; Argument to throw is a const.
-		      (elcomp--constant-child-p
-		       (car (oref insn :args)))
-		      ;; In a catch block.
-		      (elcomp--catch-child-p
-		       (car (elcomp--basic-block-exceptions block)))
-		      ;; With a constant tag.
-		      (elcomp--constant-child-p
-		       (oref
-			(car (elcomp--basic-block-exceptions block))
-			:tag))
-		      ;; ... which is equal to the throw.
-		      (equal (car (oref insn :args))
-			     (oref (car (elcomp--basic-block-exceptions block))
-				   :tag)))
-	     ;; Whew.  Replace the instruction with an assignment and
-	     ;; a goto, and zap the `diediedie' instruction.  FIXME
-	     ;; note that this only works when *NOT* in SSA form,
-	     ;; because we're reusing the variable.
-	     (setf (elcomp--last-instruction block)
-		   (elcomp--set "set"
-				:sym (elcomp--get-catch-symbol
-				      (car (elcomp--basic-block-exceptions
-					    block)))
-				:value (cadr (oref insn :args))))
-	     (setf insn
-		   (elcomp--goto
-		    "goto"
-		    :block (elcomp--get-catch-target
-			    (car (elcomp--basic-block-exceptions block)))))
-	     (elcomp--add-to-basic-block block insn)
+	   ;; See if we can turn a `throw' into a `goto'.
+	   (when (elcomp--maybe-replace-catch block insn)
 	     (setf rewrote-one t))
-
 	   ;; A GOTO to a block holding just another branch (of any kind)
 	   ;; can be replaced by the instruction at the target.
 	   (when (and (elcomp--goto-child-p insn)
