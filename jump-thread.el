@@ -18,6 +18,47 @@ Otherwise return nil."
 	     (memq (oref call :func) '(not null)))
 	(car (oref call :args)))))
 
+(defun elcomp--constant-nil-p (cst)
+  (and (elcomp--constant-child-p cst)
+       (eq (oref cst :value) nil)))
+
+(defun elcomp--get-eq-argument (insn)
+  "Check if INSN uses an `eq' condition.
+
+INSN is an `if' instruction.  If the condition is of the
+form `(eq V nil)' or `(eq nil V)', return V.  Otherwise return
+nil."
+  (cl-assert (elcomp--if-child-p insn))
+  (let ((call (oref insn :sym)))
+    (if (and (elcomp--call-child-p call)
+	     (memq (oref call :func) '(eq equal)))
+	(let ((args (oref call :args)))
+	  (cond
+	   ((elcomp--constant-nil-p (car args))
+	    (cadr args))
+	   ((elcomp--constant-nil-p (cadr args))
+	    (car args))
+	   (t nil))))))
+
+(defun elcomp--peel-condition (insn)
+  "Peel `not' and other obviously unnecessary calls from INSN.
+INSN is the variable used by an `if'."
+  (let ((changed-one t))
+    (while changed-one
+      (setf changed-one nil)
+      ;; Peel a 'not'.
+      (let ((arg-to-not (elcomp--get-not-argument insn)))
+	(when arg-to-not
+	  (setf changed-one t)
+	  (cl-rotatef (oref insn :block-true)
+		      (oref insn :block-false))
+	  (setf (oref insn :sym) arg-to-not)))
+      ;; Change (eq V nil) or (eq nil V) to plain V.
+      (let ((arg-to-eq (elcomp--get-eq-argument insn)))
+	(when arg-to-eq
+	  (setf changed-one t)
+	  (setf (oref insn :sym) arg-to-eq))))))
+
 (defun elcomp--block-has-catch (block)
   "If the block has a `catch' exception handler, return it.
 Otherwise return nil."
@@ -92,9 +133,7 @@ Otherwise return nil."
 						    (oref (car iter) :count)))))
 	    (setf iter (cdr iter))))
 	;; Now add an instruction with an assignment and a goto, and
-	;; zap the `diediedie' instruction.  FIXME note that this only
-	;; works when *NOT* in SSA form, because we're reusing the
-	;; variable.
+	;; zap the `diediedie' instruction.
 	(elcomp--add-to-basic-block
 	 block
 	 (elcomp--set "set"
@@ -106,7 +145,7 @@ Otherwise return nil."
 		       :block (elcomp--get-catch-target exception)))
 	t))))
 
-(defun elcomp--thread-jumps-pass (compiler)
+(defun elcomp--thread-jumps-pass (compiler in-ssa-form)
   "A pass to perform jump threading on COMPILER.
 
 This pass simplifies the CFG by eliminating redundant jumps.  In
@@ -155,9 +194,12 @@ collector."
        compiler
        (lambda (block)
 	 (let ((insn (elcomp--last-instruction block)))
-	   ;; See if we can turn a `throw' into a `goto'.
-	   (when (elcomp--maybe-replace-catch block insn)
-	     (setf rewrote-one t))
+	   ;; See if we can turn a `throw' into a `goto'.  This only
+	   ;; works when not in SSA form, because it reuses variable
+	   ;; names from the `catch' handler.
+	   (unless in-ssa-form
+	     (when (elcomp--maybe-replace-catch block insn)
+	       (setf rewrote-one t)))
 	   ;; A GOTO to a block holding just another branch (of any kind)
 	   ;; can be replaced by the instruction at the target.
 	   (when (and (elcomp--goto-child-p insn)
@@ -200,17 +242,8 @@ collector."
 
 	   ;; If the condition for an IF was a call to 'not', then the
 	   ;; call can be bypassed and the targets swapped.
-	   (if nil
-	       ;; FIXME - this is not ready yet, as it relies on
-	       ;; really having SSA form.
-	       (when (elcomp--if-child-p insn)
-		 ;; Peel any number of 'not's.
-		 (let ((arg-to-not nil))
-		   (while (setf arg-to-not (elcomp--get-not-argument insn))
-		     (cl-rotatef (oref insn :block-true)
-				 (oref insn :block-false))
-		     (setf (oref insn :sym) arg-to-not))))
-	     )
+	   (when (and in-ssa-form (elcomp--if-child-p insn))
+	     (elcomp--peel-condition insn))
 
 	   ;; If a target of an IF is another IF, and the conditions are the
 	   ;; same, then the target IF can be hoisted.

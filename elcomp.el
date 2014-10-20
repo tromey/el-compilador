@@ -680,11 +680,12 @@ sequence of objects.  FIXME ref the class docs"
   (cons 'progn form))
 
 (defun elcomp--optimize (compiler)
-  (elcomp--thread-jumps-pass compiler)
+  (elcomp--thread-jumps-pass compiler nil)
   (elcomp--eh-cleanup-pass compiler)
   (elcomp--coalesce-pass compiler)
   (elcomp--compute-dominators compiler)	; don't really need this right now
   (elcomp--into-ssa-pass compiler)
+  (elcomp--thread-jumps-pass compiler t)
   (elcomp--dce-pass compiler))
 
 (defun elcomp--translate (form)
