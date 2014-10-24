@@ -525,18 +525,22 @@ sequence of objects.  FIXME ref the class docs"
        ((eq fn 'and)
 	(let ((label-done (elcomp--label compiler)))
 	  (dolist (condition (cdr form))
-	    (elcomp--linearize compiler condition result-location)
-	    ;; We don't need this "if" for the last iteration, and
-	    ;; "and" in conditionals could be handled better -- but
-	    ;; all this is fixed up by the optimizers.
-	    (elcomp--add-if compiler result-location nil label-done))
+	    (let ((result-location (or result-location
+				       (elcomp--new-var compiler))))
+	      (elcomp--linearize compiler condition result-location)
+	      ;; We don't need this "if" for the last iteration, and
+	      ;; "and" in conditionals could be handled better -- but
+	      ;; all this is fixed up by the optimizers.
+	      (elcomp--add-if compiler result-location nil label-done)))
 	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'or)
 	(let ((label-done (elcomp--label compiler)))
 	  (dolist (condition (cdr form))
-	    (elcomp--linearize compiler condition result-location)
-	    (elcomp--add-if compiler result-location label-done nil))
+	    (let ((result-location (or result-location
+				       (elcomp--new-var compiler))))
+	      (elcomp--linearize compiler condition result-location)
+	      (elcomp--add-if compiler result-location label-done nil)))
 	  (elcomp--make-block-current compiler label-done)))
 
        ((eq fn 'catch)
