@@ -70,7 +70,7 @@
   ()
   "An instruction which terminates a basic block without leading anywhere.
 
-This can only be used after a call to a `nothrow' function.")
+This can only be for a call to a `nothrow' function.")
 
 ;; An SSA operand representing a constant.
 (defclass elcomp--constant nil
