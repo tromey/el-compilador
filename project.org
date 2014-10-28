@@ -96,6 +96,8 @@
 
 * Emacs Bugs
 
+** We should turn `nlistp' into a defsubst
+
 ** Some code uses the CLASS-child-p form, since the CLASS-p form didn't seem to work.
 
 ** There doesn't seem to be a way to fetch an object's name

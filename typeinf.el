@@ -159,7 +159,9 @@ and `nil' is used to mean a typeless instruction.")
 	  ;; We know nothing.  We could be even smarter and arrange
 	  ;; for type errors to be detected, and turn the current
 	  ;; instruction into a `diediedie'.
-	  (setf result 'number)))))))
+	  (setf result 'number)))))
+
+    result))
 
 (defmethod elcomp--compute-type ((obj elcomp--call) map)
   (if (not (oref obj :sym))
@@ -232,13 +234,34 @@ Return non-nil if any changes were made."
 (defmethod elcomp--type-map-propagate ((insn elcomp--goto) infobj type-map)
   (elcomp--type-map-propagate-one infobj (oref insn :block) type-map))
 
+(defun elcomp--find-type-predicate (sym)
+  "Return type tested by the statement INSN, or nil."
+  (when (elcomp--call-child-p sym)
+    (elcomp--func-type-predicate (oref sym :func))))
+
 (defmethod elcomp--type-map-propagate ((insn elcomp--if) infobj type-map)
-  ;; FIXME this is where we should handle inferencing from type
-  ;; predicates.  We can also take the opportunity here to ignore a
-  ;; branch based on that -- if we never visit the branch then we can
-  ;; delete it and re-run some opts.
-  (elcomp--type-map-propagate-one infobj (oref insn :block-true) type-map)
-  (elcomp--type-map-propagate-one infobj (oref insn :block-false) type-map))
+  (let* ((sym (oref insn :sym))
+	 (predicated-type (elcomp--find-type-predicate sym)))
+    ;; FIXME this is where we'd check to see if the predicate is known
+    ;; to be true or false.  This just requires some simple type
+    ;; comparisons.  This would give us better inferencing; and then
+    ;; in a separate sub-pass we could rewrite all such predicates to
+    ;; constants.
+
+    ;; Handle inferencing by pretending the variable has a certain
+    ;; type in the true branch.
+    (if predicated-type
+	(let ((predicate-arg (car (oref sym :args))))
+	  (cl-letf (((gethash predicate-arg type-map)))
+	    (puthash predicate-arg predicated-type type-map)
+	    (elcomp--type-map-propagate-one infobj (oref insn :block-true)
+					    type-map)))
+      (elcomp--type-map-propagate-one infobj (oref insn :block-true)
+				      type-map))
+
+    ;; In theory we could use an "inverted type" here, but my guess is
+    ;; that it isn't worthwhile.
+    (elcomp--type-map-propagate-one infobj (oref insn :block-false) type-map)))
 
 (defun elcomp--type-map-propagate-exception (bb type-map)
   (catch 'done

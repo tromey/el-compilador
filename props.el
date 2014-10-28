@@ -98,6 +98,7 @@ Defined properties are:
 
 ;; There's a few type predicates not on the list.  They could be added
 ;; if needed.  See (elisp) Type Predicates.
+;; FIXME: characterp -> integer?
 (dolist (iter '((atom . list)
 		(arrayp . array)
 		(bool-vector-p . bool-vector)
