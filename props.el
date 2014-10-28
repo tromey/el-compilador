@@ -29,7 +29,8 @@ Defined properties are:
                              means that it accepts a number of
                              integer, marker, or float arguments,
                              and that the type of the result
-                             follows the usual contagion rules.
+                             follows the usual contagion rules.  Such a
+                             function can never return `nil'.
   :elcomp-predicate TYPE     This function is a type predicate that
                              tests for TYPE.
   :elcomp-noreturn t|nil     If t, FUNC does not return normally.
@@ -51,7 +52,7 @@ Defined properties are:
       (get func 'side-effect-free)))
 
 (defun elcomp--func-pure-p (func)
-  "Return t if FUNC can be considered 'const'."
+  "Return t if FUNC can be considered 'pure'."
   (or (elcomp--func-const-p func)
       (get func :elcomp-pure)
       (get func 'pure)))
@@ -95,8 +96,24 @@ Defined properties are:
 
 (elcomp-declare 'cons :elcomp-type 'list)
 
-(dolist (iter '((integerp . integer)
-		(floatp . float)))
+;; There's a few type predicates not on the list.  They could be added
+;; if needed.  See (elisp) Type Predicates.
+(dolist (iter '((atom . list)
+		(arrayp . array)
+		(bool-vector-p . bool-vector)
+		(booleanp . boolean)
+		(bufferp . buffer)
+		(consp . cons)
+		(floatp . float)
+		(hash-table-p . hash-table)
+		(integerp . integer)
+		(listp . list)
+		(markerp . marker)
+		(sequencep . sequence)
+		(stringp . string)
+		(symbolp . symbol)
+		(vectorp . vector)
+		(wholenump . integer)))
   (elcomp-declare (car iter) :elcomp-predicate (cdr iter)))
 
 (dolist (iter '(throw signal error user-error :unwind-protect-continue))

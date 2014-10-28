@@ -44,7 +44,11 @@
   ;; keys are original variable names and whose values are phis.  This
   ;; starts as nil and is initialized when converting to SSA form.
   phis
-  )
+  ;; Final type map for this BB.
+  final-type-map
+  ;; Entry type map for this BB.  This is not needed after type
+  ;; inferencing.  FIXME store on the side.
+  type-map)
 
 (defclass elcomp--set nil
   ((sym :initform nil :initarg :sym)
@@ -690,7 +694,8 @@ sequence of objects.  FIXME ref the class docs"
   (elcomp--compute-dominators compiler)	; don't really need this right now
   (elcomp--into-ssa-pass compiler)
   (elcomp--thread-jumps-pass compiler t)
-  (elcomp--dce-pass compiler))
+  (elcomp--dce-pass compiler)
+  (elcomp--infer-types-pass compiler))
 
 (defun elcomp--translate (form)
   (byte-compile-close-variables

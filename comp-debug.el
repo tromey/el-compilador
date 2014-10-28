@@ -120,10 +120,18 @@
     (maphash (lambda (_ignore_name phi)
 	       (princ "    ")
 	       (elcomp--pp phi t)
+	       (let ((type (elcomp--look-up-type bb phi)))
+		 (when type
+		   (princ " ; TYPE = ")
+		   (princ type)))
 	       (princ "\n"))
 	     (elcomp--basic-block-phis bb)))
   (dolist (item (elcomp--basic-block-code bb))
     (elcomp--pp item (current-buffer))
+    (let ((type (elcomp--look-up-type bb item)))
+      (when type
+	(princ " ; TYPE = ")
+	(princ type)))
     (princ "\n")))
 
 (defun elcomp--pp-compiler (compiler)

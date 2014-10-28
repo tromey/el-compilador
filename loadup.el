@@ -11,4 +11,5 @@
     (load "jump-thread.el")
     (load "eh-cleanup.el")
     (load "coalesce.el")
-    (load "ssa.el")))
+    (load "ssa.el")
+    (load "typeinf.el")))

@@ -2,6 +2,8 @@
 
 * To Do
 
+** stop using oref and oset and instead use accessors
+
 ** A "catch" with a non-constant tag will still require
    special handling in the IR, e.g. when converting to SSA form
    this isn't done now
