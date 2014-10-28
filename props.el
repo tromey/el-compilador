@@ -96,8 +96,8 @@ Defined properties are:
 
 (elcomp-declare 'cons :elcomp-type 'list)
 
-;; There's a few type predicates not on the list.  They could be added
-;; if needed.  See (elisp) Type Predicates.
+;; There are a few type predicates not on the list.  They could be
+;; added if needed.  See (elisp) Type Predicates.
 (dolist (iter '((atom . list)
 		(arrayp . array)
 		(bool-vector-p . bool-vector)
