@@ -183,6 +183,11 @@ particular, it:
   Note that this leaves the computation of E in the code.  This may
   be eliminated later by DCE.
 
+* Converts IF with a constant to a GOTO:
+        if <<nil>> A; else B;
+  =>
+        goto B;
+
 Note that nothing here explicitly removes blocks.  This is not
 needed because the only links to blocks are the various branches;
 when a block is not needed it will be reclaimed by the garbage
@@ -244,6 +249,24 @@ collector."
 	   ;; call can be bypassed and the targets swapped.
 	   (when (and in-ssa-form (elcomp--if-child-p insn))
 	     (elcomp--peel-condition insn))
+
+	   ;; If the argument to the IF is a constant, turn the IF
+	   ;; into a GOTO.  FIXME: right now we look into an SSA name
+	   ;; but really we ought to constant- and copy-propagate
+	   ;; everywhere and not need to do this.
+	   (when (and in-ssa-form (elcomp--if-child-p insn))
+	     (let ((condition (oref insn :sym)))
+	       ;; FIXME could also check for calls known not to return
+	       ;; nil.
+	       (while (elcomp--set-child-p condition)
+		 (setf condition (oref condition :value)))
+	       (when (elcomp--constant-child-p condition)
+		 (let ((goto-block (if (oref condition :value)
+				       (oref insn :block-true)
+				     (oref insn :block-false))))
+		   (setf insn (elcomp--goto "goto" :block goto-block))
+		   (setf (elcomp--last-instruction block) insn)
+		   (setf rewrote-one t)))))
 
 	   ;; If a target of an IF is another IF, and the conditions are the
 	   ;; same, then the target IF can be hoisted.

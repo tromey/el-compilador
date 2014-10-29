@@ -52,7 +52,7 @@
   (memq type '(float integer marker number)))
 
 (defun elcomp--boolean-type-p (type)
-  (memq type '(null t)))
+  (memq type '(null t boolean)))
 
 (defun elcomp--list-type-p (type)
   (memq type '(null cons list)))
@@ -239,29 +239,72 @@ Return non-nil if any changes were made."
   (when (elcomp--call-child-p sym)
     (elcomp--func-type-predicate (oref sym :func))))
 
+(defun elcomp--pretend-eval-type-predicate (predicate-type arg-type)
+  (cl-assert (not (memq predicate-type '(:top :bottom))))
+  (cl-assert (not (eq arg-type :top)))
+  (cond
+   ((eq predicate-type arg-type)
+    t)
+
+   ((eq arg-type :bottom)
+    :both)
+
+   ((eq arg-type 'null)
+    (elcomp--nullable-type-p predicate-type))
+
+   ((and (eq arg-type t)
+	 (memq predicate-type '(boolean symbol)))
+    t)
+
+   ((and (eq predicate-type 'sequence)
+	 (elcomp--sequence-type-p arg-type))
+    t)
+
+   ((and (eq predicate-type 'number)
+	 (elcomp--numeric-type-p arg-type))
+    t)
+
+   ((and (eq predicate-type 'boolean)
+	 (elcomp--boolean-type-p arg-type))
+    t)
+
+   ((and (eq predicate-type 'list)
+	 (elcomp--list-type-p arg-type))
+    t)
+
+   (t nil)))
+
 (defmethod elcomp--type-map-propagate ((insn elcomp--if) infobj type-map)
   (let* ((sym (oref insn :sym))
-	 (predicated-type (elcomp--find-type-predicate sym)))
-    ;; FIXME this is where we'd check to see if the predicate is known
-    ;; to be true or false.  This just requires some simple type
-    ;; comparisons.  This would give us better inferencing; and then
-    ;; in a separate sub-pass we could rewrite all such predicates to
-    ;; constants.
+	 (predicated-type (elcomp--find-type-predicate sym))
+	 (predicate-arg (if predicated-type
+			    (car (oref sym :args))
+			  nil))
+	 ;; See whether the type predicate is known to be always true
+	 ;; or always false here.
+	 (branches (if predicated-type
+		       (elcomp--pretend-eval-type-predicate
+			predicated-type
+			(gethash predicate-arg type-map))
+		     :both)))
 
     ;; Handle inferencing by pretending the variable has a certain
     ;; type in the true branch.
-    (if predicated-type
-	(let ((predicate-arg (car (oref sym :args))))
-	  (cl-letf (((gethash predicate-arg type-map)))
-	    (puthash predicate-arg predicated-type type-map)
-	    (elcomp--type-map-propagate-one infobj (oref insn :block-true)
-					    type-map)))
-      (elcomp--type-map-propagate-one infobj (oref insn :block-true)
-				      type-map))
+    (when (memq branches '(t :both))
+      (if predicated-type
+	  (let ((predicate-arg (car (oref sym :args))))
+	    (cl-letf (((gethash predicate-arg type-map)))
+	      (puthash predicate-arg predicated-type type-map)
+	      (elcomp--type-map-propagate-one infobj (oref insn :block-true)
+					      type-map)))
+	(elcomp--type-map-propagate-one infobj (oref insn :block-true)
+					type-map)))
 
     ;; In theory we could use an "inverted type" here, but my guess is
     ;; that it isn't worthwhile.
-    (elcomp--type-map-propagate-one infobj (oref insn :block-false) type-map)))
+    (when (memq branches '(nil :both))
+      (elcomp--type-map-propagate-one infobj (oref insn :block-false)
+				      type-map))))
 
 (defun elcomp--type-map-propagate-exception (bb type-map)
   (catch 'done
@@ -302,7 +345,7 @@ Return non-nil if any changes were made."
   (when (elcomp--basic-block-final-type-map bb)
     (gethash var (elcomp--basic-block-final-type-map bb))))
 
-(defun elcomp--infer-types-pass (compiler)
+(defun elcomp--do-infer-types (compiler)
   ;; FIXME this is where we would infer argument types.
   ;; At least &rest args should be 'list.
   (let ((infobj (make-elcomp--typeinf)))
@@ -317,6 +360,107 @@ Return non-nil if any changes were made."
     (while (elcomp--typeinf-worklist infobj)
       (let ((bb (pop (elcomp--typeinf-worklist infobj))))
 	(elcomp--infer-types-for-bb bb infobj)))))
+
+;; FIXME this should probably be shared infrastructure.
+;; There's at least one other bit of code like this.
+(defgeneric elcomp--rewrite-insn (insn map)
+  "Rewrite INSN according to MAP.
+
+MAP is a hash table mapping old instructions to new ones.")
+
+(defmethod elcomp--rewrite-insn (insn map)
+  (error "unhandled case: %S" insn))
+
+(defmethod elcomp--rewrite-insn ((insn elcomp--set) map)
+  (let ((new-insn (gethash (oref insn :value) map)))
+    (when new-insn
+      (setf (oref insn :value) new-insn))))
+
+(defmethod elcomp--rewrite-insn ((insn elcomp--call) map)
+  ;; FIXME: the :func slot?
+  (cl-mapl
+   (lambda (cell)
+     (let ((new-insn (gethash (car cell) map)))
+       (when new-insn
+	 (setf (car cell) new-insn))))
+   (oref insn :args)))
+
+(defmethod elcomp--rewrite-insn ((insn elcomp--goto) map)
+  nil)
+
+(defmethod elcomp--rewrite-insn ((insn elcomp--if) map)
+  (let ((new-insn (gethash (oref insn :sym) map)))
+    (when new-insn
+      (setf (oref insn :sym) new-insn))))
+
+(defmethod elcomp--rewrite-insn ((insn elcomp--return) map)
+  (let ((new-insn (gethash (oref insn :sym) map)))
+    (when new-insn
+      (setf (oref insn :sym) new-insn))))
+
+(defmethod elcomp--rewrite-insn ((insn elcomp--phi) map)
+  ;; Ugh.
+  (let ((new-hash (make-hash-table)))
+    (maphash
+     (lambda (phi _ignore)
+       (puthash (or (gethash phi map) phi) t new-hash))
+     (oref insn :args))
+    (setf (oref insn :args) new-hash)))
+
+;; FIXME `elcomp--catch's :tag?
+
+(defun elcomp--rewrite-using-map (compiler map)
+  (elcomp--iterate-over-bbs
+   compiler
+   (lambda (bb)
+     (maphash (lambda (_ignore phi)
+		(elcomp--rewrite-insn phi map))
+	      (elcomp--basic-block-phis bb))
+     (dolist (insn (elcomp--basic-block-code bb))
+       (elcomp--rewrite-insn insn map)))))
+
+(defun elcomp--rewrite-type-predicates (compiler map)
+  "Convert `if's to `goto's using type information.
+
+Update MAP with mappings from old to new instructions."
+  (elcomp--iterate-over-bbs
+   compiler
+   (lambda (bb)
+     (let ((iter (elcomp--basic-block-code bb)))
+       (while iter
+	 (let ((insn (car iter)))
+	   (when (elcomp--call-child-p insn)
+	     (let* ((predicated-type (elcomp--find-type-predicate insn))
+		    (predicate-arg (if predicated-type
+				       (car (oref insn :args))
+				     nil))
+		    (branches (if predicated-type
+				  (elcomp--pretend-eval-type-predicate
+				   predicated-type
+				   (elcomp--look-up-type bb
+							 predicate-arg))
+				:both)))
+	       ;; When this is true we have a call to a type
+	       ;; predicate, so we can replace it with a constant.
+	       (unless (eq branches :both)
+		 (let ((new-insn
+			(elcomp--set "set"
+				     :sym (oref insn :sym)
+				     :value
+				     (elcomp--constant "constant"
+						       :value branches))))
+		   (setf (car iter) new-insn)
+		   (puthash insn new-insn map))))))
+	 (setf iter (cdr iter)))))))
+
+(defun elcomp--infer-types-pass (compiler)
+  (elcomp--do-infer-types compiler)
+  (let ((rewrite-map (make-hash-table)))
+    (elcomp--rewrite-type-predicates compiler rewrite-map)
+    (elcomp--rewrite-using-map compiler rewrite-map))
+  (elcomp--thread-jumps-pass compiler t)
+  (elcomp--coalesce-pass compiler)
+  (elcomp--dce-pass compiler))
 
 ;; this was in elcomp--linearize
        ;; ((eq fn 'declare)

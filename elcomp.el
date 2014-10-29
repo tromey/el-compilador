@@ -694,6 +694,7 @@ sequence of objects.  FIXME ref the class docs"
   (elcomp--compute-dominators compiler)	; don't really need this right now
   (elcomp--into-ssa-pass compiler)
   (elcomp--thread-jumps-pass compiler t)
+  (elcomp--coalesce-pass compiler)
   (elcomp--dce-pass compiler)
   (elcomp--infer-types-pass compiler))
 
