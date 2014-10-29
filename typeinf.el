@@ -184,7 +184,9 @@ and `nil' is used to mean a typeless instruction.")
 (defmethod elcomp--compute-type ((obj elcomp--phi) map)
   (let ((arg-list nil))
     (maphash (lambda (var _ignore)
-	       (push (elcomp--find-type var map) arg-list))
+	       ;; We treat phis specially: any input that isn't found
+	       ;; is just defaulted to :top.
+	       (push (gethash var map :top) arg-list))
 	     (oref obj :args))
     (apply #'elcomp--merge-types arg-list)))
 
@@ -223,7 +225,9 @@ Return non-nil if any changes were made."
 
 (defun elcomp--type-map-propagate-one (infobj bb type-map)
   (when (elcomp--type-map-merge bb type-map)
-    (push bb (elcomp--typeinf-worklist infobj))))
+    ;; Only push the BB if it isn't already on the work-list.
+    (unless (memq bb (elcomp--typeinf-worklist infobj))
+      (push bb (elcomp--typeinf-worklist infobj)))))
 
 (defgeneric elcomp--type-map-propagate (insn infobj type-map)
   "FIXME")
