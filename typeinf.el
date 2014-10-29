@@ -289,7 +289,7 @@ Return non-nil if any changes were made."
 	 (branches (if predicated-type
 		       (elcomp--pretend-eval-type-predicate
 			predicated-type
-			(gethash predicate-arg type-map))
+			(elcomp--find-type predicate-arg type-map))
 		     :both)))
 
     ;; Handle inferencing by pretending the variable has a certain
