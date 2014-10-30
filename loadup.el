@@ -4,6 +4,7 @@
     (push (expand-file-name "~/Emacs/el-compilador/") load-path)
     (load "elcomp.el")
     (load "props.el")
+    (load "subst.el")
     (load "comp-debug.el")
     (load "back.el")
     (load "dom.el")
