@@ -1,4 +1,4 @@
-;;; Type inference code. -*- lexical-binding:t -*-
+;;; typeinf.el --- Type inference code. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 
@@ -45,16 +45,20 @@
   (memq type '(atom list symbol boolean :bottom)))
 
 (defun elcomp--sequence-type-p (type)
+  "Return t if TYPE is a sequence type."
   (memq type '(list cons null bool-vector char-table string
 		    vector sequence)))
 
 (defun elcomp--numeric-type-p (type)
+  "Return t if TYPE is a numeric type."
   (memq type '(float integer marker number)))
 
 (defun elcomp--boolean-type-p (type)
+  "Return t if TYPE is a boolean type."
   (memq type '(null t boolean)))
 
 (defun elcomp--list-type-p (type)
+  "Return t is TYPE is a list type."
   (memq type '(null cons list)))
 
 (defun elcomp--merge-types (&rest types)
@@ -364,64 +368,6 @@ Return non-nil if any changes were made."
       (let ((bb (pop (elcomp--typeinf-worklist infobj))))
 	(elcomp--infer-types-for-bb bb infobj)))))
 
-;; FIXME this should probably be shared infrastructure.
-;; There's at least one other bit of code like this.
-(defgeneric elcomp--rewrite-insn (insn map)
-  "Rewrite INSN according to MAP.
-
-MAP is a hash table mapping old instructions to new ones.")
-
-(defmethod elcomp--rewrite-insn (insn map)
-  (error "unhandled case: %S" insn))
-
-(defmethod elcomp--rewrite-insn ((insn elcomp--set) map)
-  (let ((new-insn (gethash (oref insn :value) map)))
-    (when new-insn
-      (setf (oref insn :value) new-insn))))
-
-(defmethod elcomp--rewrite-insn ((insn elcomp--call) map)
-  ;; FIXME: the :func slot?
-  (cl-mapl
-   (lambda (cell)
-     (let ((new-insn (gethash (car cell) map)))
-       (when new-insn
-	 (setf (car cell) new-insn))))
-   (oref insn :args)))
-
-(defmethod elcomp--rewrite-insn ((insn elcomp--goto) map)
-  nil)
-
-(defmethod elcomp--rewrite-insn ((insn elcomp--if) map)
-  (let ((new-insn (gethash (oref insn :sym) map)))
-    (when new-insn
-      (setf (oref insn :sym) new-insn))))
-
-(defmethod elcomp--rewrite-insn ((insn elcomp--return) map)
-  (let ((new-insn (gethash (oref insn :sym) map)))
-    (when new-insn
-      (setf (oref insn :sym) new-insn))))
-
-(defmethod elcomp--rewrite-insn ((insn elcomp--phi) map)
-  ;; Ugh.
-  (let ((new-hash (make-hash-table)))
-    (maphash
-     (lambda (phi _ignore)
-       (puthash (or (gethash phi map) phi) t new-hash))
-     (oref insn :args))
-    (setf (oref insn :args) new-hash)))
-
-;; FIXME `elcomp--catch's :tag?
-
-(defun elcomp--rewrite-using-map (compiler map)
-  (elcomp--iterate-over-bbs
-   compiler
-   (lambda (bb)
-     (maphash (lambda (_ignore phi)
-		(elcomp--rewrite-insn phi map))
-	      (elcomp--basic-block-phis bb))
-     (dolist (insn (elcomp--basic-block-code bb))
-       (elcomp--rewrite-insn insn map)))))
-
 (defun elcomp--rewrite-type-predicates (compiler map)
   "Convert `if's to `goto's using type information.
 
@@ -465,12 +411,4 @@ Update MAP with mappings from old to new instructions."
   (elcomp--coalesce-pass compiler)
   (elcomp--dce-pass compiler))
 
-;; this was in elcomp--linearize
-       ;; ((eq fn 'declare)
-       ;; 	(dolist (spec (cdr form))
-       ;; 	  ;; FIXME this should also examine direct-calls
-       ;; 	  (pcase spec
-       ;; 	      (`(type ,type-name . ,variables)
-       ;; 	       (dolist (var variables)
-       ;; 		 (setf var (elcomp--rewrite-one-ref compiler var))
-       ;; 		 (elcomp--set-type var type-name))))))
+;;; typeinf.el ends here
