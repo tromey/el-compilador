@@ -13,4 +13,5 @@
     (load "eh-cleanup.el")
     (load "coalesce.el")
     (load "ssa.el")
-    (load "typeinf.el")))
+    (load "typeinf.el")
+    (load "cprop.el")))

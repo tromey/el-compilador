@@ -61,8 +61,9 @@
 
 * Passes
 
-** Copy and constant propagation
-   Perhaps SCCP - we can reuse the idea for type inference
+** SCCP pass
+
+** GVN pass
 
 ** Note that we can copy-propagate into a funcall or apply
    For apply this is a bit like strength reduction

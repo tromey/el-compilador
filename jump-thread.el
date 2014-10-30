@@ -251,15 +251,11 @@ collector."
 	     (elcomp--peel-condition insn))
 
 	   ;; If the argument to the IF is a constant, turn the IF
-	   ;; into a GOTO.  FIXME: right now we look into an SSA name
-	   ;; but really we ought to constant- and copy-propagate
-	   ;; everywhere and not need to do this.
+	   ;; into a GOTO.
 	   (when (and in-ssa-form (elcomp--if-child-p insn))
 	     (let ((condition (oref insn :sym)))
 	       ;; FIXME could also check for calls known not to return
 	       ;; nil.
-	       (while (elcomp--set-child-p condition)
-		 (setf condition (oref condition :value)))
 	       (when (elcomp--constant-child-p condition)
 		 (let ((goto-block (if (oref condition :value)
 				       (oref insn :block-true)
