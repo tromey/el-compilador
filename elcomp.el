@@ -87,7 +87,8 @@ This can only be for a call to a `nothrow' function.")
    (args :initform (make-hash-table) :initarg :args)))
 
 (defclass elcomp--argument nil
-  ((original-name :initform nil :initarg :original-name)))
+  ((original-name :initform nil :initarg :original-name)
+   (is-rest :initform nil :initarg :is-rest)))
 
 ;; An exception edge.
 (defclass elcomp--exception nil

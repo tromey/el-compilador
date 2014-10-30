@@ -67,8 +67,6 @@
 ** Note that we can copy-propagate into a funcall or apply
    For apply this is a bit like strength reduction
 
-** Type inference, including handling type predicates
-
 ** Can we always optimize mapc and mapcar with a lambda?
    If we add a compiler macro can it expand back to 'itself'?
 
@@ -97,6 +95,9 @@
 * Emacs Bugs
 
 ** We should turn `nlistp' into a defsubst
+
+** There's no way to recapture the fact that some CL 'throw' constructs
+   are lexical
 
 ** Some code uses the CLASS-child-p form, since the CLASS-p form didn't seem to work.
 

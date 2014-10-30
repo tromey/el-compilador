@@ -104,6 +104,22 @@ nil otherwise.")
       (when (oref topmost-exception :handler)
 	(throw 'done topmost-exception)))))
 
+(defun elcomp--into-ssa-parse-args (compiler current-map)
+  (let ((arg-list (cadr (elcomp--defun compiler))))
+    (while arg-list
+      (let ((this-arg (pop arg-list))
+	    (is-rest nil))
+	(cond
+	 ((eq this-arg '&rest)
+	  (setf is-rest t)
+	  (setf this-arg (pop arg-list)))
+	 ((eq this-arg '&optional)
+	  (setf this-arg (pop arg-list))))
+	(puthash this-arg (elcomp--argument "argument"
+					    :original-name this-arg
+					    :is-rest is-rest)
+		 current-map)))))
+
 (defun elcomp--block-into-ssa (compiler bb)
   "Convert a single basic block into SSA form."
   (elcomp--ssa-require-phis-for-block compiler bb)
@@ -112,10 +128,7 @@ nil otherwise.")
   (let ((current-map (copy-hash-table (elcomp--basic-block-phis bb))))
     ;; Set up the initial block with renamings of the arguments.
     (when (eq bb (elcomp--entry-block compiler))
-      ;; FIXME this is not correct!!  it doesn't handle &rest, etc.
-      (dolist (arg (cadr (elcomp--defun compiler)))
-	(puthash arg (elcomp--argument "argument" :original-name arg)
-		 current-map)))
+      (elcomp--into-ssa-parse-args compiler current-map))
     (let ((changed-since-exception t)
 	  (topmost-exception (elcomp--topmost-exception bb)))
       (dolist (insn (elcomp--basic-block-code bb))

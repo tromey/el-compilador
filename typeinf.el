@@ -191,8 +191,9 @@ and `nil' is used to mean a typeless instruction.")
     (apply #'elcomp--merge-types arg-list)))
 
 (defmethod elcomp--compute-type ((obj elcomp--argument) map)
-  ;; FIXME.
-  :bottom)
+  (if (oref obj :is-rest)
+      'list
+    :bottom))
 
 (defun elcomp--find-type (obj map)
   (let ((value (gethash obj map)))
@@ -350,8 +351,6 @@ Return non-nil if any changes were made."
     (gethash var (elcomp--basic-block-final-type-map bb))))
 
 (defun elcomp--do-infer-types (compiler)
-  ;; FIXME this is where we would infer argument types.
-  ;; At least &rest args should be 'list.
   (let ((infobj (make-elcomp--typeinf)))
     ;; Make sure the entry block has an initial type map.  FIXME
     ;; probably it should hold all the arguments.
