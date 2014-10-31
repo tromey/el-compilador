@@ -9,15 +9,13 @@ but does not share the alist structure with ALIST.
 The objects mapped (cars and cdrs of elements of the alist)
 are shared, however.
 Elements of ALIST that are not conses are also shared."
-  (check-type alist list)
-  ;; FIXME.
+  (cl-check-type alist list)
   (mapcar #'identity alist))
 
 (defun nthcdr (num list)
-  (check-type n integer)
+  (cl-check-type n integer)
   (let ((i 0))
     (while (and (< i num) list)
-      (check-type list list)
       (setq list (cdr list))
       (setq i (1+ i)))
     list))
@@ -26,10 +24,10 @@ Elements of ALIST that are not conses are also shared."
   (car (nthcdr n list)))
 
 (defun elt (sequence n)
-  (check-type n integer)
-  (if (or (consp sequence) (not sequence))
+  (cl-check-type n integer)
+  (if (listp sequence)
       (car (nthcdr n sequence))
-    (check-type sequence array) ; fixme
+    (cl-check-type sequence array)
     (aref sequence n)))
 
 (defun member (elt list)
@@ -38,7 +36,6 @@ The value is actually the tail of LIST whose car is ELT."
   (let ((tail list)
 	(result nil))
     (while (and (not result) (consp tail))
-      (check-type tail list fixme)
       (let ((tem (car tail)))
 	(if (equal elt tem)
 	    (setq result elt))))
@@ -50,7 +47,6 @@ The value is actually the tail of LIST whose car is ELT."
   (let ((tail list)
 	(result nil))
     (while (and (not result) (consp tail))
-      (check-type tail list fixme)
       (let ((tem (car tail)))
 	(if (eq elt tem)
 	    (setq result elt))))
@@ -62,7 +58,6 @@ The value is actually the tail of LIST whose car is ELT."
   (let ((tail list)
 	(result nil))
     (while (and (not result) (consp tail))
-      (check-type tail list fixme)
       (let ((tem (car tail)))
 	(if (eql elt tem)
 	    (setq result elt))))
