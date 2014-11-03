@@ -14,4 +14,5 @@
     (load "coalesce.el")
     (load "ssa.el")
     (load "typeinf.el")
-    (load "cprop.el")))
+    (load "cprop.el")
+    (load "eltoc.el")))

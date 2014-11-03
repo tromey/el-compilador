@@ -1,23 +1,23 @@
+;;; eltoc.el --- compile to C. -*- lexical-binding:t -*-
+
 ;;; FIXME must be updated to use elcomp
 
 ;; We should also allow a declaration that allows a direct C
 ;; call, not allowing symbol redefinition.
 ;; (declare (direct FUNC))
 
+(cl-defstruct elcomp--c
+  decls
+  decl-marker)
+
 (defconst elcomp--c-types
-  '((integer "EMACS_INT" "XINT")
-    (float "double" "XFLOAT_DATA")
-    (symbol "struct Lisp_Symbol *" "XSYMBOL")))
+  "Map Lisp types to unchecked C accessor macros."
+  '((integer "XINT")
+    (float "XFLOAT_DATA")
+    (symbol "XSYMBOL")))
 
 (defconst elcomp--simple-math
   '(< <= > >= /= + - * / 1+))
-
-(defun elcomp--c-get-type (var)
-  (let* ((var-type (elcomp--get-type))
-	 (type-elt (assoc var-type elcomp--c-types)))
-    (if type-elt
-	(cadr type-elt)
-      "Lisp_Object")))
 
 (defun elcomp--c-name (symbol)
   "Compute the C name for a symbol."
@@ -44,140 +44,136 @@
    (t
     (error "???"))))
 
-(defun elcomp--c-test (type value-str)
-  (if (memq type '(integer float))
-      value-str
-    (concat "NILP (" value-str ")")))
+(defun elcomp--c-declare (eltoc sym)
+  (unless (gethash sym (elcomp--c-decls eltoc))
+    (save-excursion
+      (goto-char (elcomp--c-decl-marker eltoc))
+      (insert "  Lisp_Object " (elcomp--c-name sym) ";\n")
+      (puthash sym t (elcomp--c-decls eltoc)))))
 
-(defun elcomp--c-generate-inline-code (loc func args)
-  (let ((loc-type (get loc :type)))
-    (when (eq func '1+)			;FIXME something more generic
-      (push 1 args)
-      (setq func '+))
-    (insert (mapconcat
-	     (lambda (item)
-	       (elcomp--c-atom-to-expr item loc-type))
-	     args (concat " " (symbol-name func) " ")))
+(defun elcomp--c-symbol (eltoc sym)
+  (elcomp--c-declare eltoc sym)
+  (insert (elcomp--c-name sym)))
+
+(defun elcomp--c-emit-symref (eltoc insn)
+  (cond
+   ((symbolp insn)
+    (elcomp--c-symbol eltoc insn))
+   ((elcomp--set-child-p insn)
+    (elcomp--c-symbol eltoc (oref insn :name)))
+   ((elcomp--call-child-p insn)
+    (elcomp--c-symbol eltoc (oref insn :sym)))
+   ((elcomp--phi-child-p insn)
+    ;; FIXME??
+    (elcomp--c-symbol eltoc (oref insn :original-name)))
+   (t
+    (error "unhandled case: %S" insn))))
+
+(defun elcomp--c-emit-label (block)
+  (insert (format "BB_%d" (elcomp--basic-block-number block))))
+
+(defgeneric elcomp--c-emit (insn eltoc)
+  "FIXME")
+
+(defmethod elcomp--c-emit (insn eltoc)
+  (error "unhandled case: %S" insn))
+
+(defmethod elcomp--c-emit ((insn elcomp--set) eltoc)
+  (elcomp--c-emit-symref eltoc insn)
+  (insert " = ")
+  (elcomp--c-emit-symref eltoc (oref sym :value)))
+
+(defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
+  (elcomp--c-emit-symref eltoc (oref insn :sym))
+  (insert " = ")
+  ;; FIXME - what if not a symbol, etc.
+  (insert "F" (elcomp--c-name (oref insn :func)))
+  (insert " (")
+  (let ((first t))
+    (dolist (arg (oref insn :args))
+      (if first
+	  (setf first nil)
+	(insert ", "))
+      (elcomp--c-emit-symref eltoc arg)))
+  (insert ")"))
+
+(defmethod elcomp--c-emit ((insn elcomp--goto) eltoc)
+  (insert "goto ")
+  (elcomp--c-emit-label (oref insn :block)))
+
+(defmethod elcomp--c-emit ((insn elcomp--if) eltoc)
+  (insert "if (!NILP (")
+  (elcomp--c-emit-symref eltoc (oref insn :sym))
+  (insert ")) goto ")
+  (elcomp--c-emit-label (oref insn :block-true))
+  (insert "; else goto ")
+  (elcomp--c-emit-label (oref insn :block-false)))
+
+(defmethod elcomp--c-emit ((insn elcomp--return) eltoc)
+  (insert "return ")
+  (elcomp--c-emit-symref eltoc (oref insn :sym)))
+
+;; (defmethod elcomp--c-emit ((insn elcomp--constant))
+;;   (insert "goto ")
+;;   (elcomp--c-emit-label (oref insn :goto)))
+
+(defmethod elcomp--c-emit ((insn elcomp--argument) eltoc)
+  (insert "goto ")
+  (elcomp--c-emit-label (oref insn :goto)))
+
+(defun elcomp--c-emit-block (eltoc bb)
+  (elcomp--c-emit-label bb)
+  (insert ":\n")
+  (dolist (insn (elcomp--basic-block-code bb))
+    (insert "  ")
+    (elcomp--c-emit insn eltoc)
     (insert ";\n")))
 
-(defgeneric elcomp--c-generate (insn)
-  "Insert C code for INSN into the current buffer.")
-
-(defmethod elcomp--c-generate (insn)
-  (error "unrecognized instruction"))
-
-(defmethod elcomp--c-generate ((insn elcomp--set))
-  (insert "  " (symbol-name (oref insn :sym)) " = "
-	  ...
-  )
-
-(defun elcomp--c-generate-code (linear)
-  (dolist (item linear)
-    (pcase item
-      (`(set ,loc ,result)
-       (insert "  " (symbol-name loc) " = "
-	       (elcomp--c-atom-to-c-expr result
-				      (and loc
-					   (get loc :type)))
-	       ";\n"))
-      (`(call ,loc ,func . ,args)
-       (insert "  ")
-       (if loc
-	   (insert (symbol-name loc) " = "))
-       (if (and loc
-		(get loc :type)
-		(memq func elcomp--c-simple-math))
-	   (elcomp--c-generate-inline-code loc func args)
-	 (insert "F" (elcomp--c-c-name func) " (")
-	 (let ((seen nil))
-	   (while args
-	     (if seen
-		 (insert ", ")
-	       (setq seen t))
-	     (insert (elcomp--c-atom-to-c-expr (car args) nil))
-	     (setq args (cdr args))))
-	 (insert ");\n")))
-      (`(label ,num)
-       (insert "l" (int-to-string num) ":\n"))
-      (`(goto ,num)
-       (insert "  goto l" (int-to-string num) ";\n"))
-      (`(if ,sym ,true-label ,false-label . nil)
-       (if true-label
-	   (progn
-	     (insert "  if (!" (elcomp--c-test (get sym :type)
-					    (symbol-name sym))
-		     ") goto l"
-		     (int-to-string true-label)
-		     ";\n")
-	     (if false-label (insert "  else goto l"
-				     (int-to-string false-label) ";\n")))
-	 (unless false-label
-	   (error "neither true nor false label"))
-	 (insert "  if (" (elcomp--c-test (get sym :type)
-				       (symbol-name sym))
-		 ")) goto l"
-		 (int-to-string false-label)
-		 ";\n"))))))
-
-(defun elcomp--c-generate-decls ()
-  (dolist (var elcomp--c-variables)
-    (insert "  " (elcomp--c-get-type var) " " (symbol-name var) ";\n")))
-
-(defun elcomp--c-generate-defun ()
-  (let ((c-name (elcomp--c-c-name (car elcomp--c-defun))))	; FIXME mangling
-    (insert "DEFUN (\"" (symbol-name (car elcomp--c-defun)) ;FIXME quoting
+(defun elcomp--c-generate-defun (compiler)
+  (let* ((info (elcomp--defun compiler))
+	 (sym (car info))
+	 (c-name (elcomp--c-name sym))) ; FIXME mangling
+    (insert "DEFUN (\"" (symbol-name sym) ;FIXME quoting
 	    "\", F" c-name
 	    ", S" c-name ", FIXME, FIXME,\n" ;args
 	    ;; Interactive.
 	    ;; FIXME: quoting for the interactive spec
 	    ;; Note that we can have a whole lisp form here.
-	    "      " (or (nth 3 elcomp--c-defun) "0") ",\n"
+	    "      " (or (nth 3 info) "0") ",\n"
 	    "       doc: /* "
-	    (or (nth 2 elcomp--c-defun) "nothing??") ;FIXME anything?
+	    (or (nth 2 info) "nothing??") ;FIXME anything?
 	    " */)\n"
 	    "  (Lisp_Object arg)"	;FIXME args
 	    "\n")))
 
-(defun elcomp--c-translate (form buffer)
-  (byte-compile-close-variables
-   (let* ((byte-compile-macro-environment
-	   (cons '(declare . elcomp--c-declare)
-		 byte-compile-macro-environment))
-	  (elcomp--c-variables nil)
-	  (elcomp--c-rewrite-alist nil)
-	  (elcomp--c-next-label 0)
-	  (elcomp--c-code nil)
-	  (elcomp--c-code-link nil)
-	  (elcomp--c-defun nil)
-	  (elcomp--c-defuns nil)
-	  (result-var (elcomp--c-new-var))
-	  (code nil))
-     (setq form (elcomp--c-extract-defun form))
-     (elcomp--c-linearize
-      (byte-optimize-form (macroexpand form
-				       byte-compile-macro-environment))
-      result-var)
-     ;; FIXME bad factoring here.
-     (with-current-buffer buffer
-       (erase-buffer)
-       (elcomp--c-generate-defun)
-       (insert "{\n")
-       (elcomp--c-generate-decls)
-       (insert "\n")
-       (elcomp--c-generate-code elcomp--c-code)
-       (pp elcomp--c-code (current-buffer))
-       (insert "  return " (symbol-name result-var) ";\n")
-       (insert "}\n")
+(defun elcomp--c-translate (compiler)
+  (let ((eltoc (make-elcomp--c :decls (make-hash-table)
+			       :decl-marker (make-marker))))
+    (elcomp--c-generate-defun compiler)
+    (insert "{\n")
+    (set-marker (elcomp--c-decl-marker eltoc) (point))
+    (insert "\n")
+    (set-marker-insertion-type (elcomp--c-decl-marker eltoc) t)
+    (elcomp--iterate-over-bbs compiler
+			      (lambda (bb)
+				(elcomp--c-emit-block eltoc bb)))
+    (insert "}\n")
 
-       ;; This next part belongs in an outer loop.
-       (insert "\n\n")
-       (insert "void\nsyms_of_FIXME (void)\n{\n")
-       (dolist (one-def elcomp--c-defuns)
-	 (insert "  defsubr (&S" (elcomp--c-c-name one-def) ");\n"))
-       (insert "}\n")))))
+    ;; This next part belongs in an outer loop.
+    (insert "\n\n")
+    (insert "void\nsyms_of_FIXME (void)\n{\n")
+    (dolist (one-def (elcomp--defuns compiler))
+      (insert "  defsubr (&S" (elcomp--c-name one-def) ");\n"))
+    (insert "}\n")
+
+    (set-marker (elcomp--c-decl-marker eltoc) nil)))
 
 ;; Temporary function for hacking.
 (defun elcomp--c-do (form)
   (let ((buf (get-buffer-create "*ELTOC*")))
-    (elcomp--c-translate form buf)
-    (pop-to-buffer buf)))
+    (with-current-buffer buf
+      (erase-buffer)
+      (elcomp--c-translate (elcomp--translate form))
+      (pop-to-buffer buf))))
+
+;;; eltoc.el ends here

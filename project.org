@@ -8,6 +8,8 @@
    special handling in the IR, e.g. when converting to SSA form
    this isn't done now
 
+** We need a `lexical-catch' of some kind
+
 ** We can merge blocks with different exception handlers
    if one of them doesn't have any throwing instructions
    likewise if we have fake-unwind-protect?
