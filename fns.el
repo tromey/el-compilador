@@ -27,7 +27,6 @@ Elements of ALIST that are not conses are also shared."
   (cl-check-type n integer)
   (if (listp sequence)
       (car (nthcdr n sequence))
-    (cl-check-type sequence array)
     (aref sequence n)))
 
 (defun member (elt list)
@@ -114,7 +113,6 @@ Return the reversed list.  Expects a properly nil-terminated list."
   (let ((prev nil)
 	(tail list))
     (while tail
-      (check-type tail list)
       (let ((next (cdr tail)))
 	(setcdr tail prev)
 	(setq prev tail)
@@ -154,15 +152,13 @@ Return the reversed list.  Expects a properly nil-terminated list."
   plist)
 
 (defun widget-put (widget property value)
-  (check-type widget list)
   (setcdr widget (plist-put (cdr widget) property value)))
 
 (defun widget-get (widget property)
-  (catch 'done
+  (catch 'done				;FIXME - lexical catch
     (while t
       (unless widget
 	(throw 'done nil))
-      (check-type widget consp)		; FIXME type name
       (let ((tmp (plist-member (cdr widget) property)))
 	(when (consp tmp)
 	  (setf tmp (cdr tmp))
@@ -173,4 +169,4 @@ Return the reversed list.  Expects a properly nil-terminated list."
 	(setf widget (get tmp 'widget-type))))))
 
 (defun widget-apply (widget property &rest args)
-  FIXME)
+  (apply (widget-get widget property) widget args))

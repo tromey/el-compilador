@@ -9,6 +9,8 @@
    this isn't done now
 
 ** We need a `lexical-catch' of some kind
+*** Could also mark various subrs as "cannot throw" as a special case
+    Except we have Vthrow_on_input ...
 
 ** We can merge blocks with different exception handlers
    if one of them doesn't have any throwing instructions
@@ -92,9 +94,12 @@
 
 ** C Code
 
+*** Currently does not handle QUIT etc.
+
 *** Could use Aurélien's "FFI" / DSO thing
 
 *** Type inference would be great here, could do unboxing
+**** this works ok but needs better code generation
 
 ** Bytecode
 

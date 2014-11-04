@@ -86,16 +86,22 @@
 (defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
   (elcomp--c-emit-symref eltoc (oref insn :sym))
   (insert " = ")
-  ;; FIXME - what if not a symbol, etc.
-  (insert "F" (elcomp--c-name (oref insn :func)))
-  (insert " (")
-  (let ((first t))
-    (dolist (arg (oref insn :args))
-      (if first
-	  (setf first nil)
-	(insert ", "))
-      (elcomp--c-emit-symref eltoc arg)))
-  (insert ")"))
+  (let ((arg-list (oref insn :args))
+	(is-direct (elcomp--func-direct-p (oref insn :func))))
+    (if is-direct
+	(insert "F" (elcomp--c-name (oref insn :func)) " (")
+      (push (oref insn :func) arg-list)
+      ;; FIXME - what if not a symbol, etc.
+      (insert (format "Ffuncall (%d, ((Lisp_Object[]) { " (length arg-list))))
+    (let ((first t))
+      (dolist (arg arg-list)
+	(if first
+	    (setf first nil)
+	  (insert ", "))
+	(elcomp--c-emit-symref eltoc arg)))
+    (if is-direct
+	(insert ")")
+      (insert " }))"))))
 
 (defmethod elcomp--c-emit ((insn elcomp--goto) eltoc)
   (insert "goto ")

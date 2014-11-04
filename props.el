@@ -34,7 +34,8 @@ Defined properties are:
   :elcomp-predicate TYPE     This function is a type predicate that
                              tests for TYPE.
   :elcomp-noreturn t|nil     If t, FUNC does not return normally.
-  :elcomp-nothrow t|nil      If t, FUNC cannot `throw' or `signal'."
+  :elcomp-nothrow t|nil      If t, FUNC cannot `throw' or `signal'.
+  :elcomp-direct t|nil      If t, generated C code can call this directly."
   ;; add more?
   ;; :malloc - allocates new object
   ;; :primitive - assume this can never be rewritten, e.g. car
@@ -77,6 +78,16 @@ Defined properties are:
   "Return t if FUNC can be considered 'nothrow'."
   (or (get func :elcomp-nothrow)
       (eq (get func 'side-effect-free) 'error-free)))
+
+(defun elcomp--func-direct-p (func)
+  "Return t if FUNC is `direct'-capable from C code.
+
+This is used to limit how many direct calls are emitted.
+Indirect calls are generally preferable for `non-trivial'
+things, so that advice continues to work."
+  (and (symbolp func)
+       (get func :elcomp-direct)
+       (subrp (symbol-function func))))
 
 (dolist (func '(+ - * / % 1+ 1- mod max min abs expt))
   (elcomp-declare func :elcomp-const t :elcomp-simple-numeric t))
@@ -124,3 +135,7 @@ Defined properties are:
   (elcomp-declare iter :elcomp-nothrow t))
 
 (elcomp-declare :elcomp-fetch-condition :elcomp-const t)
+
+;; FIXME - add lots more
+(dolist (iter '(cons car cdr funcall apply))
+  (elcomp-declare iter :elcomp-direct t))
