@@ -11,6 +11,8 @@
 ** We need a `lexical-catch' of some kind
 *** Could also mark various subrs as "cannot throw" as a special case
     Except we have Vthrow_on_input ...
+*** Common Lisp uses block and return for lexical catch, so
+    we should do that
 
 ** We can merge blocks with different exception handlers
    if one of them doesn't have any throwing instructions
