@@ -13,7 +13,7 @@ Elements of ALIST that are not conses are also shared."
   (mapcar #'identity alist))
 
 (defun nthcdr (num list)
-  (cl-check-type n integer)
+  (cl-check-type num integer)
   (let ((i 0))
     (while (and (< i num) list)
       (setq list (cdr list))
@@ -122,15 +122,15 @@ Return the reversed list.  Expects a properly nil-terminated list."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun featurep (feature &optional subfeature)
-  (check-type feature symbol)
+  (cl-check-type feature symbol)
   (let ((tem (memq feature features)))
     (and tem subfeature
 	 (setq tem (member subfeature (get feature 'subfeatures))))
     (if tem t)))
 
 (defun provide (feature subfeatures)
-  (check-type feature symbol)
-  (check-type subfeatures list)
+  (cl-check-type feature symbol)
+  (cl-check-type subfeatures list)
   (if autoload-queue
       (push (cons 0 features) autoload-queue))
   (unless (memq feature features)

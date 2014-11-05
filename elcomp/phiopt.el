@@ -8,6 +8,8 @@
 
 ;;; Code:
 
+(require 'elcomp)
+
 (defun elcomp--ssa-hash-sole-key (hash)
   (let ((element))
     (maphash (lambda (key _ignore) (setf element key)) hash)

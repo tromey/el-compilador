@@ -1,4 +1,4 @@
-;;; Function properties. -*- lexical-binding:t -*-
+;;; props.el --- Function properties. -*- lexical-binding:t -*-
 
 ;;; Commentary:
 
@@ -13,6 +13,8 @@
 ;; normalizing is valuable for generic optimizations
 
 ;;; Code:
+
+(require 'elcomp)
 
 (defun elcomp-declare (func &rest props)
   "Apply PROPS, a plist of attributes, to FUNC, a symbol.
@@ -139,3 +141,7 @@ things, so that advice continues to work."
 ;; FIXME - add lots more
 (dolist (iter '(cons car cdr funcall apply))
   (elcomp-declare iter :elcomp-direct t))
+
+(provide 'elcomp/props)
+
+;;; props.el ends here

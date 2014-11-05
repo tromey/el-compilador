@@ -6,6 +6,9 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/props)
+
 (cl-defstruct elcomp--dce
   "A structure that holds the data for a DCE pass.
 
@@ -111,7 +114,7 @@ field of DCE and its references are pushed onto `work-list'."
      (dolist (insn (elcomp--basic-block-code bb))
        (elcomp--mark-necessary insn dce t)))))
 
-(defun elcomp--dce-propagate-necessary (compiler dce)
+(defun elcomp--dce-propagate-necessary (dce)
   "Propagate the \"necessary\" property through the function.
 
 This is the second pass of DCE.
@@ -164,7 +167,9 @@ statement that has not been marked as necessary."
   "Delete dead code."
   (let ((dce (make-elcomp--dce)))
     (elcomp--dce-mark-intrinsically-necessary compiler dce)
-    (elcomp--dce-propagate-necessary compiler dce)
+    (elcomp--dce-propagate-necessary dce)
     (elcomp--dce-delete-dead-statements compiler dce)))
+
+(provide 'elcomp/dce)
 
 ;;; dce.el ends here

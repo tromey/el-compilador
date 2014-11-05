@@ -4,6 +4,9 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/back)
+
 (defun elcomp--first-processed-predecessor (bb)
   (or (catch 'found
 	(maphash
@@ -75,3 +78,5 @@
 			(elcomp--basic-block-immediate-dominator bb))
 	      (setf (elcomp--basic-block-immediate-dominator bb) new-idom)
 	      (setf changed t))))))))
+
+;;; dom.el ends here

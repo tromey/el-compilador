@@ -7,6 +7,11 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/dce)
+(require 'elcomp/props)
+(require 'elcomp/subst)
+
 (defun elcomp--cprop-insert (rewrite-map from to)
   (puthash from (or (gethash to rewrite-map) to) rewrite-map))
 

@@ -11,6 +11,9 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/eh-cleanup)
+
 (defun elcomp--ssa-require-phis-for-block (compiler bb)
   "Ensure that the `phis' slot for BB has been initialized."
   (unless (elcomp--basic-block-phis bb)

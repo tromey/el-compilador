@@ -109,31 +109,6 @@ Or REF can be a constant, in which case it is returned unchanged."
     ;; Push a new block.
     (setf (elcomp--current-block compiler) next-block)))
 
-(defun elcomp--last-instruction (block)
-  (car (elcomp--basic-block-code-link block)))
-
-(gv-define-setter elcomp--last-instruction (val block)
-  `(setcar (elcomp--basic-block-code-link ,block) ,val))
-
-(defun elcomp--first-instruction (block)
-  (car (elcomp--basic-block-code block)))
-
-(gv-define-setter elcomp--first-instruction (val block)
-  `(setcar (elcomp--basic-block-code ,block) ,val))
-
-(defun elcomp--nonreturn-terminator-p (obj)
-  (or (elcomp--goto-child-p obj)
-      (elcomp--if-child-p obj)))
-
-(defun elcomp--terminator-p (obj)
-  (or (elcomp--goto-child-p obj)
-      (elcomp--if-child-p obj)
-      (elcomp--return-child-p obj)
-      (elcomp--diediedie-child-p obj)))
-
-(defun elcomp--invalidate-cfg (compiler)
-  (elcomp--invalidate-back-edges compiler))
-
 (defun elcomp--variable-p (obj)
   "Return t if OBJ is a variable when linearizing.
 A variable is a symbol that is not a keyword."
@@ -557,7 +532,7 @@ sequence of objects.  FIXME ref the class docs"
 (defun elcomp--translate (form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
-	   (cons '(condition-case . elcomp--condition-case)
+	   (cons '(condition-case . elcomp--macro-condition-case)
 		 (cons '(declare . elcomp--declare)
 		       byte-compile-macro-environment)))
 	  (compiler (make-elcomp))
@@ -573,5 +548,7 @@ sequence of objects.  FIXME ref the class docs"
      (elcomp--add-return compiler result-var)
      (elcomp--optimize compiler)
      compiler)))
+
+(provide 'elcomp/linearize)
 
 ;;; linearize.el ends here

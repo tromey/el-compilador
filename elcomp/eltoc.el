@@ -1,10 +1,18 @@
 ;;; eltoc.el --- compile to C. -*- lexical-binding:t -*-
 
-;;; FIXME must be updated to use elcomp
+;;; Commentary:
+
+;; A backend to generate Emacs-flavored C.
+
+;;; Code:
 
 ;; We should also allow a declaration that allows a direct C
 ;; call, not allowing symbol redefinition.
 ;; (declare (direct FUNC))
+
+(require 'elcomp)
+(require 'elcomp/linearize)
+(require 'elcomp/props)
 
 (cl-defstruct elcomp--c
   decls
@@ -81,7 +89,7 @@
 (defmethod elcomp--c-emit ((insn elcomp--set) eltoc)
   (elcomp--c-emit-symref eltoc insn)
   (insert " = ")
-  (elcomp--c-emit-symref eltoc (oref sym :value)))
+  (elcomp--c-emit-symref eltoc (oref insn :value)))
 
 (defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
   (elcomp--c-emit-symref eltoc (oref insn :sym))

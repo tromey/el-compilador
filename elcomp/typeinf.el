@@ -36,6 +36,13 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/coalesce)
+(require 'elcomp/dce)
+(require 'elcomp/jump-thread)
+(require 'elcomp/props)
+(require 'elcomp/subst)
+
 (cl-defstruct elcomp--typeinf
   "A structure that holds the data for a type-inference pass."
   worklist)
@@ -315,7 +322,7 @@ Return non-nil if any changes were made."
       (elcomp--type-map-propagate-one infobj (oref insn :block-false)
 				      type-map))))
 
-(defun elcomp--type-map-propagate-exception (bb type-map)
+(defun elcomp--type-map-propagate-exception (infobj bb type-map)
   (catch 'done
     (dolist (exception (elcomp--basic-block-exceptions bb))
       (cond
@@ -326,7 +333,7 @@ Return non-nil if any changes were made."
        (t
 	(elcomp--type-map-propagate-one infobj (oref exception :handler)
 					type-map)
-	(throw 'done))))))
+	(throw 'done nil))))))
 
 (defun elcomp--infer-types-for-bb (bb infobj)
   ;; Work on a local copy.  We're consing too much but it's for
@@ -348,7 +355,7 @@ Return non-nil if any changes were made."
     ;; Propagate the results and possibly add to the work list.
     (elcomp--type-map-propagate (elcomp--last-instruction bb) infobj
 				local-types)
-    (elcomp--type-map-propagate-exception bb local-types)))
+    (elcomp--type-map-propagate-exception infobj bb local-types)))
 
 (defun elcomp--look-up-type (bb var)
   (when (elcomp--basic-block-final-type-map bb)
@@ -410,5 +417,7 @@ Update MAP with mappings from old to new instructions."
   (elcomp--thread-jumps-pass compiler t)
   (elcomp--coalesce-pass compiler)
   (elcomp--dce-pass compiler))
+
+(provide 'elcomp/typeinf)
 
 ;;; typeinf.el ends here

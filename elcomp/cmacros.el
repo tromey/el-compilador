@@ -15,7 +15,7 @@ This just ensures we preserve the declaration so the compiler can
 see it."
   (cons 'declare specs))
 
-(defun elcomp--condition-case (var bodyform &rest handlers)
+(defun elcomp--macro-condition-case (var bodyform &rest handlers)
   "A compiler macro for `condition-case'.
 
 This pushes VAR as a let-binding into HANDLERS, when VAR is not

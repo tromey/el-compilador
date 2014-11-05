@@ -6,6 +6,9 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/iter)
+
 (defun elcomp--reset-back-edges (compiler init)
   "Reset the back edges of all basic blocks in COMPILER.
 
@@ -55,5 +58,10 @@ Otherwise, it recreates the links."
   (when (elcomp--back-edges-valid compiler)
     (elcomp--reset-back-edges compiler nil)
     (setf (elcomp--back-edges-valid compiler) nil)))
+
+(defun elcomp--invalidate-cfg (compiler)
+  (elcomp--invalidate-back-edges compiler))
+
+(provide 'elcomp/back)
 
 ;;; back.el ends here

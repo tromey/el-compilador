@@ -6,6 +6,10 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/back)
+(require 'elcomp/props)
+
 (defgeneric elcomp--can-throw (insn)
   "Return t if INSN can `throw' or `signal', otherwise nil."
   )
@@ -44,7 +48,7 @@ A function marked `nothrow' will not throw."
   "A `diediedie' instruction always throws."
   t)
 
-(defun elcomp--eh-remove-unwinds (compiler bb)
+(defun elcomp--eh-remove-unwinds (bb)
   "Remove any empty `unwind-protect' edges from the basic block BB.
 
 An empty `unwind-protect' edge is one where the target block
@@ -83,7 +87,7 @@ that block has no instructions which may throw."
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)
-       (elcomp--eh-remove-unwinds compiler bb)
+       (elcomp--eh-remove-unwinds bb)
        ;; Don't bother if there are already no exception handlers.
        (when (elcomp--basic-block-exceptions bb)
 	 (unless (catch 'can-throw
@@ -96,5 +100,7 @@ that block has no instructions which may throw."
 	   (setf found-one t)))))
     (when found-one
       (elcomp--invalidate-cfg compiler))))
+
+(provide 'elcomp/eh-cleanup)
 
 ;;; eh-cleanup.el ends here

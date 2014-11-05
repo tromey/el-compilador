@@ -1,5 +1,12 @@
 ;;; elcomp.el - Compiler for Emacs Lisp. -*- lexical-binding:t -*-
 
+;;; Commentary:
+
+;; This holds basic definitions for the compiler.  Everything else is
+;; in the elcomp subdir.
+
+;;; Code:
+
 (require 'cl-macs)
 (require 'eieio)
 
@@ -122,3 +129,29 @@ This can only be for a call to a `nothrow' function.")
    (elcomp--phi-child-p arg)
    (elcomp--call-child-p arg)
    (elcomp--argument-child-p arg)))
+
+(defun elcomp--last-instruction (block)
+  (car (elcomp--basic-block-code-link block)))
+
+(gv-define-setter elcomp--last-instruction (val block)
+  `(setcar (elcomp--basic-block-code-link ,block) ,val))
+
+(defun elcomp--first-instruction (block)
+  (car (elcomp--basic-block-code block)))
+
+(gv-define-setter elcomp--first-instruction (val block)
+  `(setcar (elcomp--basic-block-code ,block) ,val))
+
+(defun elcomp--nonreturn-terminator-p (obj)
+  (or (elcomp--goto-child-p obj)
+      (elcomp--if-child-p obj)))
+
+(defun elcomp--terminator-p (obj)
+  (or (elcomp--goto-child-p obj)
+      (elcomp--if-child-p obj)
+      (elcomp--return-child-p obj)
+      (elcomp--diediedie-child-p obj)))
+
+(provide 'elcomp)
+
+;;; elcomp.el ends here

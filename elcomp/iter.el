@@ -40,4 +40,6 @@
   "Return a list of basic blocks from COMPILER, in reverse postorder."
   (nreverse (elcomp--postorder compiler)))
 
+(provide 'elcomp/iter)
+
 ;;; iter.el ends here

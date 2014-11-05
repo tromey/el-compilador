@@ -1,7 +1,20 @@
-;; Debugging the compiler. -*- lexical-binding:t -*-
+;;; comp-debug.el --- Debugging the compiler. -*- lexical-binding:t -*-
+
+;;; Commentary:
+
+;; Debugging helpers for the compiler.
+
+;;; Code:
+
+(require 'elcomp)
+(require 'elcomp/linearize)
+(require 'elcomp/typeinf)
 
 (defgeneric elcomp--pp (obj verbose)
-  "FIXME")
+  "Pretty-print a compiler object.
+
+OBJ is the object to pretty-print.
+VERBOSE non-nil means to write a more verbose description.")
 
 (defmethod elcomp--pp (obj verbose)
   (error "unrecognized instruction"))
@@ -135,11 +148,15 @@
     (princ "\n")))
 
 (defun elcomp--pp-compiler (compiler)
+  "Pretty-print the contents of COMPILER into the current buffer."
   (elcomp--iterate-over-bbs compiler #'elcomp--pp-basic-block)
   (insert "\n=============================================================\n"))
 
 ;; Temporary function for hacking.
 (defun elcomp--do (form)
+  "Convert the defun FORM to compiler-internal form and print to a buffer.
+
+This is useful for debugging."
   (let ((buf (get-buffer-create "*ELCOMP*")))
     (with-current-buffer buf
       (erase-buffer)
@@ -149,3 +166,5 @@
 	     (compiled-form (elcomp--translate form)))
 	(elcomp--pp-compiler compiled-form))
       (pop-to-buffer buf))))
+
+;;; comp-debug.el ends here

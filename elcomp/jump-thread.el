@@ -7,6 +7,10 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/back)
+(require 'elcomp/linearize)
+
 (defun elcomp--get-not-argument (insn)
   "Check if INSN uses a 'not' condition.
 
@@ -292,3 +296,7 @@ collector."
 
       (when rewrote-one
 	(elcomp--invalidate-cfg compiler)))))
+
+(provide 'elcomp/jump-thread)
+
+;;; jump-thread.el ends here

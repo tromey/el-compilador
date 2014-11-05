@@ -6,6 +6,9 @@
 
 ;;; Code:
 
+(require 'elcomp)
+(require 'elcomp/back)
+
 (defun elcomp--coalesce-pass (compiler)
   "A compiler pass to coalesce blocks.
 
@@ -46,5 +49,7 @@ outgoing exception edges."
 	       (setf ever-rewrote-one t)))))))
     (when ever-rewrote-one
       (elcomp--invalidate-cfg compiler))))
+
+(provide 'elcomp/coalesce)
 
 ;;; coalesce.el ends here

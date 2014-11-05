@@ -8,6 +8,8 @@
 
 ;;; Code:
 
+(require 'elcomp)
+
 (defgeneric elcomp--rewrite-insn (insn map)
   "Rewrite INSN according to MAP.
 
@@ -67,5 +69,7 @@ MAP is a hash table that maps old operands to new ones."
 	      (elcomp--basic-block-phis bb))
      (dolist (insn (elcomp--basic-block-code bb))
        (elcomp--rewrite-insn insn map)))))
+
+(provide 'elcomp/subst)
 
 ;;; subst.el ends here
