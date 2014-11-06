@@ -1,18 +1,29 @@
+(defconst elcomp--loadup-dir
+  (file-name-directory (or load-file-name
+			   ;; In the eval-buffer case.
+			   (buffer-file-name))))
+
 (defun elcomp--loadup ()
   (interactive)
   (let ((load-path load-path))
-    (push (expand-file-name "~/Emacs/el-compilador/") load-path)
-    (load "elcomp.el")
-    (load "props.el")
-    (load "subst.el")
-    (load "comp-debug.el")
-    (load "back.el")
-    (load "dom.el")
-    (load "dce.el")
-    (load "jump-thread.el")
-    (load "eh-cleanup.el")
-    (load "coalesce.el")
-    (load "ssa.el")
-    (load "typeinf.el")
-    (load "cprop.el")
-    (load "eltoc.el")))
+    (push elcomp--loadup-dir load-path)
+    (dolist (feature '(elcomp
+		       elcomp/back
+		       elcomp/cmacros
+		       elcomp/coalesce
+		       elcomp/comp-debug
+		       elcomp/cprop
+		       elcomp/dce
+		       elcomp/dom
+		       elcomp/eh-cleanup
+		       elcomp/eltoc
+		       elcomp/iter
+		       elcomp/jump-thread
+		       elcomp/linearize
+		       elcomp/phiopt
+		       elcomp/props
+		       elcomp/ssa
+		       elcomp/subst
+		       elcomp/toplevel
+		       elcomp/typeinf))
+      (require feature))))

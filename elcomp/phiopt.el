@@ -70,4 +70,6 @@
 	   ;; elcomp--ssa-rename.
 	   (elcomp--ssa-substitute insn replacers)))))))
 
+(provide 'elcomp/phiopt)
+
 ;;; phiopt.el ends here

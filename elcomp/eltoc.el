@@ -190,4 +190,6 @@
       (elcomp--c-translate (elcomp--translate form))
       (pop-to-buffer buf))))
 
+(provide 'elcomp/eltoc)
+
 ;;; eltoc.el ends here

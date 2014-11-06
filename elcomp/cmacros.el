@@ -31,4 +31,6 @@ nil."
 		      handlers)
 	    handlers)))
 
+(provide 'elcomp/cmacros)
+
 ;;; cmacros.el ends here

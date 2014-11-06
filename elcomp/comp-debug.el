@@ -167,4 +167,6 @@ This is useful for debugging."
 	(elcomp--pp-compiler compiled-form))
       (pop-to-buffer buf))))
 
+(provide 'elcomp/comp-debug)
+
 ;;; comp-debug.el ends here
