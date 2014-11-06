@@ -123,10 +123,10 @@ However `:top' is used to represent the 'top' type,
 `:bottom' is used to represent the 'bottom' type,
 and `nil' is used to mean a typeless instruction.")
 
-(defmethod elcomp--compute-type (obj map)
+(defmethod elcomp--compute-type (_obj _map)
   nil)
 
-(defmethod elcomp--compute-type ((obj elcomp--constant) map)
+(defmethod elcomp--compute-type ((obj elcomp--constant) _map)
   (let ((value (oref obj :value)))
     (cl-case value
       ;; nil has a type of its own.
@@ -201,7 +201,7 @@ and `nil' is used to mean a typeless instruction.")
 	     (oref obj :args))
     (apply #'elcomp--merge-types arg-list)))
 
-(defmethod elcomp--compute-type ((obj elcomp--argument) map)
+(defmethod elcomp--compute-type ((obj elcomp--argument) _map)
   (if (oref obj :is-rest)
       'list
     :bottom))
@@ -244,7 +244,7 @@ Return non-nil if any changes were made."
 (defgeneric elcomp--type-map-propagate (insn infobj type-map)
   "FIXME")
 
-(defmethod elcomp--type-map-propagate (insn infobj type-map)
+(defmethod elcomp--type-map-propagate (_insn _infobj _type-map)
   nil)
 
 (defmethod elcomp--type-map-propagate ((insn elcomp--goto) infobj type-map)

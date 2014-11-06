@@ -15,7 +15,7 @@
 
 MAP is a hash table mapping old instructions to new ones.")
 
-(defmethod elcomp--rewrite-insn (insn map)
+(defmethod elcomp--rewrite-insn (insn _map)
   "Unhandled cases call `error'q."
   (error "unhandled case: %S" insn))
 
@@ -33,7 +33,7 @@ MAP is a hash table mapping old instructions to new ones.")
 	 (setf (car cell) new-insn))))
    (oref insn :args)))
 
-(defmethod elcomp--rewrite-insn ((insn elcomp--goto) map)
+(defmethod elcomp--rewrite-insn ((_insn elcomp--goto) _map)
   nil)
 
 (defmethod elcomp--rewrite-insn ((insn elcomp--if) map)

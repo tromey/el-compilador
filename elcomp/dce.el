@@ -35,23 +35,23 @@ instruction.
 Marking the instruction means adding it to the hash and then
 pushing the instruction's arguments onto the work list.")
 
-(defmethod elcomp--mark-necessary (insn dce just-intrinsic)
+(defmethod elcomp--mark-necessary (insn dce _just-intrinsic)
   "The default case is to mark a statement as needed."
   (puthash insn t (elcomp--dce-hash dce)))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--if) dce just-intrinsic)
+(defmethod elcomp--mark-necessary ((insn elcomp--if) dce _just-intrinsic)
   "`If' statements are marked as needed and their argument is pushed."
   ;; An IF is always needed.
   (puthash insn t (elcomp--dce-hash dce))
   ;; And so is its reference.
   (elcomp--dce-add (oref insn :sym) dce))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--goto) dce just-intrinsic)
+(defmethod elcomp--mark-necessary ((insn elcomp--goto) dce _just-intrinsic)
   "`Goto' statements are marked as needed."
   ;; A GOTO is always needed.
   (puthash insn t (elcomp--dce-hash dce)))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--return) dce just-intrinsic)
+(defmethod elcomp--mark-necessary ((insn elcomp--return) dce _just-intrinsic)
   "`Return' statements are marked as needed and their argument is pushed."
   ;; A RETURN is always needed.
   (puthash insn t (elcomp--dce-hash dce))

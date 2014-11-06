@@ -23,7 +23,7 @@
 
 (defgeneric elcomp--ssa-substitute (insn replacers))
 
-(defmethod elcomp--ssa-substitute (insn replacers)
+(defmethod elcomp--ssa-substitute (_insn _replacers)
   nil)
 
 (defmethod elcomp--ssa-substitute ((insn elcomp--set) replacers)

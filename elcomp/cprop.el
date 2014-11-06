@@ -77,4 +77,6 @@ copy-propagation.  It also evaluates `pure' functions."
 	(setf keep-going (elcomp--cprop-pure compiler))
 	(elcomp--dce-pass compiler)))))
 
+(provide 'elcomp/cprop)
+
 ;;; cprop.el ends here

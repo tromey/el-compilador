@@ -14,7 +14,7 @@
 (require 'elcomp)
 (require 'elcomp/eh-cleanup)
 
-(defun elcomp--ssa-require-phis-for-block (compiler bb)
+(defun elcomp--ssa-require-phis-for-block (_compiler bb)
   "Ensure that the `phis' slot for BB has been initialized."
   (unless (elcomp--basic-block-phis bb)
     (setf (elcomp--basic-block-phis bb) (make-hash-table))))
@@ -41,7 +41,7 @@ the existing phi nodes."
 	 (puthash value t (oref phi :args))))
      current-map)))
 
-(defun elcomp--ssa-note-lhs (compiler bb insn current-map)
+(defun elcomp--ssa-note-lhs (insn current-map)
   "Note the left-hand side of an assignment.
 
 If the left-hand-side of the assignment instruction INSN is
@@ -61,7 +61,7 @@ Returns t if CURRENT-MAP was updated, or nil if not."
   ;; FIXME - error if not found
   (gethash arg current-map arg))
 
-(defgeneric elcomp--ssa-rename (insn compiler bb current-map)
+(defgeneric elcomp--ssa-rename (insn compiler current-map)
   "Update the instruction INSN to account for SSA renamings.
 
 Operands of INSN are looked up in CURRENT-MAP and replaced.  If
@@ -70,34 +70,34 @@ INSN is an assignment, then the left-hand-side is also updated.
 This returns t if CURRENT-MAP was modified by this renaming, and
 nil otherwise.")
 
-(defmethod elcomp--ssa-rename ((insn elcomp--set) compiler bb current-map)
+(defmethod elcomp--ssa-rename ((insn elcomp--set) _compiler current-map)
   (setf (oref insn :value) (elcomp--ssa-rename-arg (oref insn :value)
 						   current-map))
-  (elcomp--ssa-note-lhs compiler bb insn current-map))
+  (elcomp--ssa-note-lhs insn current-map))
 
-(defmethod elcomp--ssa-rename ((insn elcomp--call) compiler bb current-map)
+(defmethod elcomp--ssa-rename ((insn elcomp--call) _compiler current-map)
   ;; FIXME the :func slot.
   (let ((cell (oref insn :args)))
     (while cell
       (setf (car cell) (elcomp--ssa-rename-arg (car cell) current-map))
       (setf cell (cdr cell))))
-  (elcomp--ssa-note-lhs compiler bb insn current-map))
+  (elcomp--ssa-note-lhs insn current-map))
 
-(defmethod elcomp--ssa-rename ((insn elcomp--goto) compiler bb current-map)
+(defmethod elcomp--ssa-rename ((insn elcomp--goto) compiler current-map)
   (elcomp--ssa-propagate compiler (oref insn :block) current-map)
   nil)
 
-(defmethod elcomp--ssa-rename ((insn elcomp--if) compiler bb current-map)
+(defmethod elcomp--ssa-rename ((insn elcomp--if) compiler current-map)
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
   (elcomp--ssa-propagate compiler (oref insn :block-true) current-map)
   (elcomp--ssa-propagate compiler (oref insn :block-false) current-map)
   nil)
 
-(defmethod elcomp--ssa-rename ((insn elcomp--return) compiler bb current-map)
+(defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
   nil)
 
-(defmethod elcomp--ssa-rename ((insn elcomp--return) compiler bb current-map)
+(defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
   nil)
 
@@ -146,12 +146,14 @@ nil otherwise.")
 	  (setf changed-since-exception nil))
 	;; Rename the operands and also see whether the map has
 	;; changed.
-	(when (elcomp--ssa-rename insn compiler bb current-map)
+	(when (elcomp--ssa-rename insn compiler current-map)
 	  (setf changed-since-exception t))))))
 
 (defun elcomp--into-ssa-pass (compiler)
   "A pass to convert the function in COMPILER into SSA form."
   (dolist (bb (elcomp--reverse-postorder compiler))
     (elcomp--block-into-ssa compiler bb)))
+
+(provide 'elcomp/ssa)
 
 ;;; ssa.el ends here

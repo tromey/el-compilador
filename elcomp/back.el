@@ -22,7 +22,7 @@ This sets all the back edges to nil."
 (defgeneric elcomp--add-links (insn block)
   "Add backlinks for the instruction INSN, which appears in BLOCK.")
 
-(defmethod elcomp--add-links (insn block)
+(defmethod elcomp--add-links (_insn _block)
   "The base case does nothing.  Most instructions don't have links."
   ;; Do nothing.
   )

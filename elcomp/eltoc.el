@@ -83,7 +83,7 @@
 (defgeneric elcomp--c-emit (insn eltoc)
   "FIXME")
 
-(defmethod elcomp--c-emit (insn eltoc)
+(defmethod elcomp--c-emit (insn _eltoc)
   (error "unhandled case: %S" insn))
 
 (defmethod elcomp--c-emit ((insn elcomp--set) eltoc)
@@ -111,7 +111,7 @@
 	(insert ")")
       (insert " }))"))))
 
-(defmethod elcomp--c-emit ((insn elcomp--goto) eltoc)
+(defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc)
   (insert "goto ")
   (elcomp--c-emit-label (oref insn :block)))
 
@@ -131,7 +131,7 @@
 ;;   (insert "goto ")
 ;;   (elcomp--c-emit-label (oref insn :goto)))
 
-(defmethod elcomp--c-emit ((insn elcomp--argument) eltoc)
+(defmethod elcomp--c-emit ((insn elcomp--argument) _eltoc)
   (insert "goto ")
   (elcomp--c-emit-label (oref insn :goto)))
 

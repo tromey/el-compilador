@@ -26,7 +26,8 @@
     (cl-assert (>= (oref first-exception :count) num))
     (if (> (oref first-exception :count) num)
 	(push (elcomp--fake-unwind-protect
-	       "fake" :count (- (oref first-exception :count) num)))))
+	       "fake" :count (- (oref first-exception :count) num))
+	      (elcomp--exceptions compiler))))
   (elcomp--make-block-current compiler (elcomp--label compiler)))
 
 (defun elcomp--new-var (compiler &optional symname)
@@ -488,66 +489,6 @@ sequence of objects.  FIXME ref the class docs"
 		       (cdr form))))
 	  ;; Make the call.
 	  (elcomp--add-call compiler result-location fn these-args)))))))
-
-(defun elcomp--extract-defun (compiler form)
-  (unless (eq 'defun (car form))
-    (error "not a defun"))
-  (push (cadr form) (elcomp--defuns compiler))
-  (setf (elcomp--defun compiler)
-	(list (cadr form) (cl-caddr form)))
-  (setf form (cl-cdddr form))
-  ;; The doc string.
-  (if (stringp (car form))
-      (progn
-	(setf (elcomp--defun compiler)
-	      (nconc (elcomp--defun compiler) (list (car form))))
-	(setf form (cdr form)))
-    (setf (elcomp--defun compiler) (nconc (elcomp--defun compiler) nil)))
-  ;; Skip declarations.
-  (while (and (consp (car form))
-	      (eq (caar form) 'declare))
-    (setf form (cdr form)))
-  ;; Interactive spec.
-  (if (and (consp (car form))
-	   (eq (caar form) 'interactive))
-      (progn
-	(setf (elcomp--defun compiler)
-	      (nconc (elcomp--defun compiler) (list (cadar form))))
-	(setf form (cdr form)))
-    (setf (elcomp--defun compiler) (nconc (elcomp--defun compiler) nil)))
-  (cons 'progn form))
-
-(defun elcomp--optimize (compiler)
-  (elcomp--thread-jumps-pass compiler nil)
-  (elcomp--eh-cleanup-pass compiler)
-  (elcomp--coalesce-pass compiler)
-  (elcomp--compute-dominators compiler)	; don't really need this right now
-  (elcomp--into-ssa-pass compiler)
-  (elcomp--cprop-pass compiler)
-  (elcomp--thread-jumps-pass compiler t)
-  (elcomp--coalesce-pass compiler)
-  (elcomp--dce-pass compiler)
-  (elcomp--infer-types-pass compiler))
-
-(defun elcomp--translate (form)
-  (byte-compile-close-variables
-   (let* ((byte-compile-macro-environment
-	   (cons '(condition-case . elcomp--macro-condition-case)
-		 (cons '(declare . elcomp--declare)
-		       byte-compile-macro-environment)))
-	  (compiler (make-elcomp))
-	  (result-var (elcomp--new-var compiler))
-	  (code nil))
-     (setf (elcomp--entry-block compiler) (elcomp--label compiler))
-     (setf (elcomp--current-block compiler) (elcomp--entry-block compiler))
-     (setf form (elcomp--extract-defun compiler form))
-     (elcomp--linearize compiler
-      (byte-optimize-form (macroexpand-all form
-					   byte-compile-macro-environment))
-      result-var)
-     (elcomp--add-return compiler result-var)
-     (elcomp--optimize compiler)
-     compiler)))
 
 (provide 'elcomp/linearize)
 

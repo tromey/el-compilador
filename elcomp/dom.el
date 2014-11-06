@@ -79,4 +79,6 @@
 	      (setf (elcomp--basic-block-immediate-dominator bb) new-idom)
 	      (setf changed t))))))))
 
+(provide 'elcomp/dom)
+
 ;;; dom.el ends here
