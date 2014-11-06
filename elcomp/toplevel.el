@@ -55,6 +55,11 @@
   (elcomp--dce-pass compiler)
   (elcomp--infer-types-pass compiler))
 
+;; See bug #18971.
+(defvar byte-compile-free-assignments)
+(defvar byte-compile-free-references)
+(defvar byte-compile--outbuffer)
+
 (defun elcomp--translate (form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
