@@ -24,7 +24,13 @@ of indirection is just because it is a pain to write -- automatic
 translation could eliminate this problem.
 
 I'm also interested in using the compiler to either write a JIT or a
-new register-based bytecode format.
+new register-based bytecode interpreter.  These could be done without
+modifying Emacs once the new FFI code lands.
+
+Finally, I think it is bad and wrong that Emacs has three bytecode
+interpreters (the Emacs Lisp one, the regexp engine, and CCL).  There
+can be only one, and we can use this work to push Emacs toward that
+goal.
 
 ## Use
 
