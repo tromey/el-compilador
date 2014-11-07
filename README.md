@@ -69,7 +69,8 @@ or `cl-defstruct` are used for most things.
 The compiler provides a number of optimization passes:
 
 * Jump threading, `elcomp/jump-thread.el`.  This also does some simple
-  optimizations on predicates, like `not` removal.
+  optimizations on predicates, like `not` removal.  This can sometimes
+  turn a `throw` into a `goto` when it is caught in the same `defun`.
 
 * Exception handling cleanup, `elcomp/eh-cleanup.el`.  This removes
   useless exception edges.
