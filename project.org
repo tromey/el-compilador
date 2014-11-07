@@ -13,6 +13,7 @@
     Except we have Vthrow_on_input ...
 *** Common Lisp uses block and return for lexical catch, so
     we should do that
+*** see the "emacs bugs" section below
 
 ** We can merge blocks with different exception handlers
    if one of them doesn't have any throwing instructions
@@ -25,19 +26,11 @@
 
 ** Remove "defuns" from compiler?
 
-** It's easy to see dumb code like
-
-   set G5030_5031 = argument arg
-   return G5030_5031
-
-   we'll optimize that away (eventually) but it would be nice perhaps
-   not to generate it in the first place
-
 ** We don't handle lambdas at all
-
-** Need to do closure-conversion
-
+*** Need to do closure-conversion
 *** Probably need to handle "closure"
+*** the C core would ideally need updates to handle native closures
+    but there is probably a way to work around this
 
 ** Some special forms are still not handled
 
@@ -105,12 +98,17 @@
 
 ** Bytecode
 
-* Emacs Bugs
+*** bytecode from this compiler is probably worse than what
+    emacs generates
+*** however, we could instead write a new bytecode interpreter
+    a register-based interpreter would likely be faster anyway
 
-** We should turn `nlistp' into a defsubst
+* Emacs Bugs
 
 ** There's no way to recapture the fact that some CL 'throw' constructs
    are lexical
+   we need our own special hack.  like maybe CL could put a special
+   property on the magic symbols it makes
 
 ** Some code uses the CLASS-child-p form, since the CLASS-p form didn't seem to work.
 
