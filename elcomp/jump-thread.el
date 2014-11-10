@@ -23,6 +23,7 @@ Otherwise return nil."
 	(car (oref call :args)))))
 
 (defun elcomp--constant-nil-p (cst)
+  "Return t if CST is an `elcomp--constant' whose value is nil."
   (and (elcomp--constant-child-p cst)
        (eq (oref cst :value) nil)))
 
@@ -63,16 +64,27 @@ INSN is the variable used by an `if'."
 	  (setf changed-one t)
 	  (setf (oref insn :sym) arg-to-eq))))))
 
-(defun elcomp--block-has-catch (block)
+(defun elcomp--block-has-catch (block tag)
   "If the block has a `catch' exception handler, return it.
-Otherwise return nil."
+Otherwise return nil.
+TAG is a constant that must be matched by the handler."
   (catch 'done
     (dolist (exception (elcomp--basic-block-exceptions block))
       (cond
        ((elcomp--catch-p exception)
-	(throw 'done exception))
+	(if (elcomp--constant-child-p (oref exception :tag))
+	    (if (equal tag (oref exception :tag))
+		(throw 'done exception)
+	      ;; The tag is a different constant, so we can ignore
+	      ;; this one and keep going.
+	      nil)
+	  ;; Non-constant tag could match anything.
+	  (throw 'done nil)))
        ((elcomp--fake-unwind-protect-p exception)
-	;; Keep going.
+	;; Keep going; we can handle these properly.
+	)
+       ((elcomp--condition-case-p exception)
+	;; Keep going; we can ignore these.
 	)
        ;; This requires re-linearizing the unwind-protect
        ;; original-form.  However we can't do this at present because
@@ -109,12 +121,9 @@ Otherwise return nil."
 	     ;; Argument to throw is a const.
 	     (elcomp--constant-child-p
 	      (car (oref insn :args))))
-    (let ((exception (elcomp--block-has-catch block)))
-      (when (and exception
-		 ;; With a constant tag.
-		 (elcomp--constant-child-p (oref exception :tag))
-		 ;; ... which is equal to the throw.
-		 (equal (car (oref insn :args)) (oref exception :tag)))
+    (let ((exception (elcomp--block-has-catch block
+					      (car (oref insn :args)))))
+      (when exception
 	;; Whew.  First drop the last instruction from the block.
 	(setf (elcomp--basic-block-code block)
 	      (nbutlast (elcomp--basic-block-code block) 1))
@@ -123,18 +132,18 @@ Otherwise return nil."
 	;; Emit `unbind' calls.  (Note that when we can handle real
 	;; unwind-protects we will re-linearize those here as well.)
 	(let ((iter (elcomp--basic-block-exceptions block)))
-	  ;; Really there can only be one with the current
-	  ;; implementation.
 	  (while (not (elcomp--catch-child-p (car iter)))
-	    (elcomp--add-to-basic-block
-	     block
-	     (elcomp--call "call"
-			   :sym nil
-			   :func :elcomp-unbind
-			   :args (list
-				  (elcomp--constant "constant"
-						    :value
-						    (oref (car iter) :count)))))
+	    (when (elcomp--fake-unwind-protect-p (car iter))
+	      (elcomp--add-to-basic-block
+	       block
+	       (elcomp--call "call"
+			     :sym nil
+			     :func :elcomp-unbind
+			     :args (list
+				    (elcomp--constant "constant"
+						      :value
+						      (oref (car iter)
+							    :count))))))
 	    (setf iter (cdr iter))))
 	;; Now add an instruction with an assignment and a goto, and
 	;; zap the `diediedie' instruction.
@@ -187,10 +196,18 @@ particular, it:
   Note that this leaves the computation of E in the code.  This may
   be eliminated later by DCE.
 
+* Similarly, removes (eq X nil) or (eq nil X)
+
 * Converts IF with a constant to a GOTO:
         if <<nil>> A; else B;
   =>
         goto B;
+
+* Converts a `throw' to a `goto' when it is provably correct.
+  This can be done when the `catch' and the `throw' both have a
+  constant tag argument, and when there are no intervening
+  `unwind-protect' calls (this latter restriction could be lifted
+  with some more work).
 
 Note that nothing here explicitly removes blocks.  This is not
 needed because the only links to blocks are the various branches;
