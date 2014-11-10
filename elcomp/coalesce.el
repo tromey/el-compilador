@@ -51,6 +51,11 @@ outgoing exception edges."
 		      (elcomp--basic-block-code succ)))
 	       (setf (elcomp--basic-block-code-link bb)
 		     (elcomp--basic-block-code-link succ))
+	       ;; If the current block was empty, then we need to take
+	       ;; the exceptions from the successor block.  It doesn't
+	       ;; hurt to do this unconditionally.
+	       (setf (elcomp--basic-block-exceptions bb)
+		     (elcomp--basic-block-exceptions succ))
 	       (setf rewrote-one t)
 	       (setf ever-rewrote-one t)))))))
     (when ever-rewrote-one
