@@ -63,9 +63,8 @@
 (defun elcomp--translate (form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
-	   (cons '(condition-case . elcomp--macro-condition-case)
-		 (cons '(declare . elcomp--declare)
-		       byte-compile-macro-environment)))
+	   (append elcomp--compiler-macros
+		   byte-compile-macro-environment))
 	  (compiler (make-elcomp))
 	  (result-var (elcomp--new-var compiler)))
      (setf (elcomp--entry-block compiler) (elcomp--label compiler))

@@ -8,7 +8,7 @@
 
 (require 'elcomp)
 
-(defun elcomp--declare (&rest specs)
+(defun elcomp--macro-declare (&rest specs)
   "A compiler macro for `declare'.
 
 This just ensures we preserve the declaration so the compiler can
@@ -30,6 +30,10 @@ nil."
 				 ,@(cdr handler))))
 		      handlers)
 	    handlers)))
+
+(defvar elcomp--compiler-macros
+  '((declare . elcomp--macro-declare)
+    (condition-case . elcomp--macro-condition-case)))
 
 (provide 'elcomp/cmacros)
 
