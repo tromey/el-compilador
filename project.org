@@ -45,12 +45,9 @@
 		    (push sym result))))
       result)
 
-*** (defconst defvar save-excursion
-     interactive save-restriction save-current-buffer function)
+*** (defconst defvar interactive function)
 
 *** (Note track-mouse turned into a macro)
-
-*** Some of these can be handled by unwind-protect plus an internal function
 
 ** can turn throw->catch into a goto
 

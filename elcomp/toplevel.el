@@ -7,6 +7,7 @@
 ;;; Code:
 
 (require 'elcomp/coalesce)
+(require 'elcomp/cmacros)
 (require 'elcomp/cprop)
 (require 'elcomp/dom)
 (require 'elcomp/eh-cleanup)
