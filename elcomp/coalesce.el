@@ -33,11 +33,17 @@ outgoing exception edges."
 	     (when (and
 		    ;; and the successor block has a single predecessor...
 		    (= (hash-table-count (elcomp--basic-block-parents succ)) 1)
-		    ;; and the exception regions are the same -- we can
-		    ;; use `eq' due to how the exception lists are
-		    ;; constructed...
-		    (eq (elcomp--basic-block-exceptions bb)
-			(elcomp--basic-block-exceptions succ)))
+		    ;; and either...
+		    (or
+		     ;; the exception regions are the same -- we can
+		     ;; use `eq' due to how the exception lists are
+		     ;; constructed...
+		     (eq (elcomp--basic-block-exceptions bb)
+			 (elcomp--basic-block-exceptions succ))
+		     ;; or this block is empty, in which case its
+		     ;; exception regions are immaterial...
+		     (eq (elcomp--basic-block-code bb)
+			 (elcomp--basic-block-code-link bb))))
 	       ;; ... we can coalesce the blocks.
 	       (setf (elcomp--basic-block-code bb)
 		     (append
