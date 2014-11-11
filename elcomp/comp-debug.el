@@ -7,7 +7,6 @@
 ;;; Code:
 
 (require 'elcomp)
-(require 'elcomp/toplevel)
 (require 'elcomp/typeinf)
 
 (defgeneric elcomp--pp (obj verbose)
@@ -152,20 +151,9 @@ VERBOSE non-nil means to write a more verbose description.")
   (elcomp--iterate-over-bbs compiler #'elcomp--pp-basic-block)
   (insert "\n=============================================================\n"))
 
-;; Temporary function for hacking.
-(defun elcomp--do (form)
-  "Convert the defun FORM to compiler-internal form and print to a buffer.
-
-This is useful for debugging."
-  (let ((buf (get-buffer-create "*ELCOMP*")))
-    (with-current-buffer buf
-      (erase-buffer)
-      ;; Use "let*" so we can hack debugging prints into the compiler
-      ;; and have them show up in the temporary buffer.
-      (let* ((standard-output buf)
-	     (compiled-form (elcomp--translate form)))
-	(elcomp--pp-compiler compiled-form))
-      (pop-to-buffer buf))))
+(defun elcomp--pp-unit (unit)
+  (maphash (lambda (_ignore compiler) (elcomp--pp-compiler compiler))
+	   (elcomp--compilation-unit-defuns unit)))
 
 (provide 'elcomp/comp-debug)
 

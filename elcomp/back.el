@@ -59,7 +59,7 @@ Otherwise, it recreates the links."
     (elcomp--reset-back-edges compiler nil)
     (setf (elcomp--back-edges-valid compiler) nil)))
 
-(declare-function elcomp--clear-dominators "elcomp/dom.el")
+(declare-function elcomp--clear-dominators "elcomp/dom")
 
 (defun elcomp--invalidate-cfg (compiler)
   (elcomp--clear-dominators compiler)

@@ -19,7 +19,6 @@
 (defun elcomp--extract-defun (compiler form)
   (unless (eq 'defun (car form))
     (error "not a defun"))
-  (push (cadr form) (elcomp--defuns compiler))
   (setf (elcomp--defun compiler)
 	(list (cadr form) (cl-caddr form)))
   (setf form (cl-cdddr form))
@@ -61,23 +60,55 @@
 (defvar byte-compile-free-references)
 (defvar byte-compile--outbuffer)
 
-(defun elcomp--translate (form)
+(defun elcomp--translate (unit form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
 	   (append elcomp--compiler-macros
 		   byte-compile-macro-environment))
 	  (compiler (make-elcomp))
 	  (result-var (elcomp--new-var compiler)))
+     (puthash form compiler (elcomp--compilation-unit-defuns unit))
+     (setf (elcomp--unit compiler) unit)
      (setf (elcomp--entry-block compiler) (elcomp--label compiler))
      (setf (elcomp--current-block compiler) (elcomp--entry-block compiler))
      (setf form (elcomp--extract-defun compiler form))
-     (elcomp--linearize compiler
+     (elcomp--linearize
+      compiler
       (byte-optimize-form (macroexpand-all form
 					   byte-compile-macro-environment))
       result-var)
      (elcomp--add-return compiler result-var)
-     (elcomp--optimize compiler)
-     compiler)))
+     (elcomp--optimize compiler))))
+
+(defun elcomp--translate-all (unit)
+  (while (elcomp--compilation-unit-work-list unit)
+    (let ((form (pop (elcomp--compilation-unit-work-list unit))))
+      (elcomp--translate unit form))))
+
+(defun elcomp--plan-to-compile (unit form)
+  (unless (gethash form (elcomp--compilation-unit-defuns unit))
+    (puthash form t (elcomp--compilation-unit-defuns unit))
+    (push form (elcomp--compilation-unit-work-list unit))))
+
+(declare-function elcomp--pp-unit "elcomp/comp-debug")
+
+(defun elcomp--do (form-or-forms &optional backend)
+  (unless backend
+    (setf backend #'elcomp--pp-unit))
+  (let ((buf (get-buffer-create "*ELCOMP*")))
+    (with-current-buffer buf
+      (erase-buffer)
+      ;; Use "let*" so we can hack debugging prints into the compiler
+      ;; and have them show up in the temporary buffer.
+      (let* ((standard-output buf)
+	     (unit (make-elcomp--compilation-unit)))
+	(if (memq (car form-or-forms) '(defun lambda))
+	    (elcomp--plan-to-compile unit form-or-forms)
+	  (dolist (form form-or-forms)
+	    (elcomp--plan-to-compile unit form)))
+	(elcomp--translate-all unit)
+	(funcall backend unit))
+      (pop-to-buffer buf))))
 
 (provide 'elcomp/toplevel)
 

@@ -160,7 +160,7 @@
 	    "  (Lisp_Object arg)"	;FIXME args
 	    "\n")))
 
-(defun elcomp--c-translate (compiler)
+(defun elcomp--c-translate-one (compiler)
   (let ((eltoc (make-elcomp--c :decls (make-hash-table)
 			       :decl-marker (make-marker))))
     (elcomp--c-generate-defun compiler)
@@ -171,24 +171,23 @@
     (elcomp--iterate-over-bbs compiler
 			      (lambda (bb)
 				(elcomp--c-emit-block eltoc bb)))
-    (insert "}\n")
-
-    ;; This next part belongs in an outer loop.
-    (insert "\n\n")
-    (insert "void\nsyms_of_FIXME (void)\n{\n")
-    (dolist (one-def (elcomp--defuns compiler))
-      (insert "  defsubr (&S" (elcomp--c-name one-def) ");\n"))
-    (insert "}\n")
-
+    (insert "}\n\n")
     (set-marker (elcomp--c-decl-marker eltoc) nil)))
 
-;; Temporary function for hacking.
-(defun elcomp--c-do (form)
-  (let ((buf (get-buffer-create "*ELTOC*")))
-    (with-current-buffer buf
-      (erase-buffer)
-      (elcomp--c-translate (elcomp--translate form))
-      (pop-to-buffer buf))))
+(defun elcomp--c-translate (unit)
+  (maphash
+   (lambda (_ignore compiler)
+     (elcomp--c-translate-one compiler))
+   (elcomp--compilation-unit-defuns unit))
+  (insert "\n")
+  (insert "void\nsyms_of_FIXME (void)\n{\n")
+  (maphash
+   (lambda (_ignore compiler)
+     (let ((name (car (elcomp--defun compiler))))
+       (when name
+	 (insert "  defsubr (&S" (elcomp--c-name name) ");\n"))))
+   (elcomp--compilation-unit-defuns unit))
+  (insert "}\n"))
 
 (provide 'elcomp/eltoc)
 

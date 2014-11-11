@@ -28,9 +28,20 @@
   exceptions
   ;; The current defun being compiled.
   ;; This is a list (NAME ARGLIST DOC INTERACTIVE).
+  ;; NAME is nil for an anonymous function.
+  ;; FIXME this should just be separate slots of this struct.
   defun
-  ;; A list of all defun symbols being compiled.
-  defuns)
+  ;; A back link to the compilation unit.  This is needed so we can
+  ;; push new functions into the compilation unit as we go.
+  unit)
+
+(cl-defstruct elcomp--compilation-unit
+  ;; A hash table mapping a cons (a defun or a lambda) to a compiler
+  ;; object.  If the value is t then the function hasn't been compiled
+  ;; yet.
+  (defuns (make-hash-table))
+  ;; The work-list.  This is separate from `defuns' for convenience.
+  work-list)
 
 (cl-defstruct elcomp--basic-block
   ;; Block number.

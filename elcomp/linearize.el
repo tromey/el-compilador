@@ -7,6 +7,7 @@
 ;;; Code:
 
 (require 'elcomp)
+(require 'elcomp/props)
 
 (defun elcomp--push-fake-unwind-protect (compiler num)
   (let* ((first-exception (car (elcomp--exceptions compiler)))
@@ -156,6 +157,8 @@ A variable is a symbol that is not a keyword."
       (elcomp--linearize compiler form var)
       var))))
  
+(declare-function elcomp--plan-to-compile "elcomp/toplevel")
+
 (defun elcomp--linearize (compiler form result-location)
   "Linearize FORM and return the result.
 
@@ -172,6 +175,7 @@ sequence of objects.  FIXME ref the class docs"
 	    (elcomp--add-set compiler result-location
 			     (elcomp--operand compiler form))))
        ((eq 'lambda (car-safe fn))
+	;; Shouldn't this use 'function?
 	(error "lambda not supported"))
        ((eq fn 'let)
 	;; Arrange to reset the rewriting table outside the 'let'.
@@ -472,6 +476,9 @@ sequence of objects.  FIXME ref the class docs"
 
        ((eq fn 'interactive)
 	nil)
+
+       ((eq fn 'function)
+	(elcomp--plan-to-compile (elcomp--unit compiler) (cadr form)))
 
        ((not (symbolp fn))
 	;; FIXME - lambda or the like

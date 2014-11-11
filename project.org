@@ -2,6 +2,9 @@
 
 * To Do
 
+** clean up the calls to declare-function
+   I think ideally they should not be needed
+
 ** A "catch" with a non-constant tag will still require
    special handling in the IR, e.g. when converting to SSA form
    this isn't done now
