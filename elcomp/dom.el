@@ -37,15 +37,17 @@
 	(setf f2 (gethash bb2 postorder-number))))
     bb1))
 
-(defun elcomp--compute-dominators (compiler)
-  ;; Require back edges.
-  (elcomp--require-back-edges compiler)
-
+(defun elcomp--clear-dominators (compiler)
   ;; Clear out the old dominators.
   (elcomp--iterate-over-bbs
    compiler
    (lambda (bb)
-     (setf (elcomp--basic-block-immediate-dominator bb) nil)))
+     (setf (elcomp--basic-block-immediate-dominator bb) nil))))
+
+(defun elcomp--compute-dominators (compiler)
+  ;; Require back edges.
+  (elcomp--require-back-edges compiler)
+  (elcomp--clear-dominators compiler)
 
   (let ((nodes (elcomp--postorder compiler))
 	reversed

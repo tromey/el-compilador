@@ -2,9 +2,6 @@
 
 * To Do
 
-** block coalescing doesn't update idom
-   (nor should it but it seems like it should invalidate)
-
 ** A "catch" with a non-constant tag will still require
    special handling in the IR, e.g. when converting to SSA form
    this isn't done now
