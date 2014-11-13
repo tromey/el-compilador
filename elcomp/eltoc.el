@@ -59,8 +59,9 @@
       (insert "  Lisp_Object " (elcomp--c-name sym) ";\n")
       (puthash sym t (elcomp--c-decls eltoc)))))
 
-(defun elcomp--c-symbol (eltoc sym)
-  (elcomp--c-declare eltoc sym)
+(defun elcomp--c-symbol (eltoc sym &optional no-declare)
+  (unless no-declare
+    (elcomp--c-declare eltoc sym))
   (insert (elcomp--c-name sym)))
 
 (defun elcomp--c-emit-symref (eltoc insn)
@@ -74,6 +75,8 @@
    ((elcomp--phi-child-p insn)
     ;; FIXME??
     (elcomp--c-symbol eltoc (oref insn :original-name)))
+   ((elcomp--argument-child-p insn)
+    (elcomp--c-symbol eltoc (oref insn :original-name) t))
    (t
     (error "unhandled case: %S" insn))))
 

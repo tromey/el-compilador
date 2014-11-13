@@ -2,6 +2,11 @@
 
 * To Do
 
+** make sure calls to a lambda work ok
+   C BE should make a static function
+   the call should resolve to a call to the compiled function somehow
+   -> ?
+
 ** clean up the calls to declare-function
    I think ideally they should not be needed
 
@@ -48,7 +53,7 @@
 		    (push sym result))))
       result)
 
-*** (defconst defvar interactive function)
+*** (defconst defvar interactive)
 
 *** (Note track-mouse turned into a macro)
 
@@ -101,7 +106,7 @@
 
 ** Bytecode
 
-*** bytecode from this compiler is probably worse than what
+*** bytecode from this compiler would probably be worse than what
     emacs generates
 *** however, we could instead write a new bytecode interpreter
     a register-based interpreter would likely be faster anyway

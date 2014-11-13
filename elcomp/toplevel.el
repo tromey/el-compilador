@@ -17,11 +17,18 @@
 (require 'bytecomp)
 
 (defun elcomp--extract-defun (compiler form)
-  (unless (eq 'defun (car form))
-    (error "not a defun"))
-  (setf (elcomp--defun compiler)
-	(list (cadr form) (cl-caddr form)))
-  (setf form (cl-cdddr form))
+  (cond
+   ((eq (car form) 'defun)
+    (setf (elcomp--defun compiler)
+	  (list (cadr form) (cl-caddr form)))
+    (setf form (cl-cdddr form)))
+   ((eq (car form) 'lambda)
+    (setf (elcomp--defun compiler)
+	  (list nil (cadr form)))
+    (setf form (cddr form)))
+   (t
+    (error "neither defun nor lambda")))
+
   ;; The doc string.
   (if (stringp (car form))
       (progn

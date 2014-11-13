@@ -156,7 +156,7 @@ A variable is a symbol that is not a keyword."
     (let ((var (elcomp--new-var compiler)))
       (elcomp--linearize compiler form var)
       var))))
- 
+
 (declare-function elcomp--plan-to-compile "elcomp/toplevel")
 
 (defun elcomp--linearize (compiler form result-location)
@@ -478,7 +478,11 @@ sequence of objects.  FIXME ref the class docs"
 	nil)
 
        ((eq fn 'function)
-	(elcomp--plan-to-compile (elcomp--unit compiler) (cadr form)))
+	(when (listp (cadr form))
+	  (elcomp--plan-to-compile (elcomp--unit compiler) (cadr form)))
+	(when result-location
+	  (elcomp--add-set compiler result-location
+			   (elcomp--constant "constant" :value (cadr form)))))
 
        ((not (symbolp fn))
 	;; FIXME - lambda or the like
