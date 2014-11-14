@@ -14,6 +14,9 @@
 (require 'elcomp/linearize)
 (require 'elcomp/props)
 
+;; FIXME - emacs must supply this value
+(defconst elcomp--c-max-args 8)
+
 (cl-defstruct elcomp--c
   decls
   decl-marker)
@@ -146,28 +149,77 @@
     (elcomp--c-emit insn eltoc)
     (insert ";\n")))
 
+(defun elcomp--c-parse-args (arg-list)
+  (let ((min-args 0))
+    (while (and arg-list (not (memq (car arg-list) '(&optional &rest))))
+      (pop arg-list)
+      (cl-incf min-args))
+    (let ((max-args min-args))
+      (while (eq (car arg-list) '&optional)
+	(pop arg-list)
+	(pop arg-list)
+	(cl-incf max-args))
+      (if (or (eq (car arg-list) '&rest)
+	      (> max-args elcomp--c-max-args))
+	  '(0 . "MANY")
+	(cons min-args max-args)))))
+
 (defun elcomp--c-generate-defun (compiler)
   (let* ((info (elcomp--defun compiler))
 	 (sym (car info))
-	 (c-name (elcomp--c-name sym))) ; FIXME mangling
-    (insert "DEFUN (\"" (symbol-name sym) ;FIXME quoting
-	    "\", F" c-name
-	    ", S" c-name ", FIXME, FIXME,\n" ;args
-	    ;; Interactive.
-	    ;; FIXME: quoting for the interactive spec
-	    ;; Note that we can have a whole lisp form here.
-	    "      " (or (nth 3 info) "0") ",\n"
-	    "       doc: /* "
-	    (or (nth 2 info) "nothing??") ;FIXME anything?
-	    " */)\n"
-	    "  (Lisp_Object arg)"	;FIXME args
-	    "\n")))
+	 (c-name (elcomp--c-name sym)) ; FIXME mangling
+	 (arg-info (elcomp--c-parse-args (cadr info))))
+    (insert
+     (format "DEFUN (\"%s\", F%s, S%s, %s, %s,\n    %s,\n    doc: /* %s */)\n"
+	     (symbol-name sym) ;FIXME quoting
+	     c-name c-name
+	     (car arg-info) (cdr arg-info)
+	     ;; Interactive.
+	     ;; FIXME: quoting for the interactive spec
+	     ;; Note that we can have a whole lisp form here.
+	     (or (nth 3 info) "0")
+	     ;; Doc string.  FIXME.
+	     (or (nth 2 info) "nothing??"))) ;FIXME anything?
+    (if (equal (cdr arg-info) "MANY")
+	(progn
+	  (insert "  (ptrdiff_t nargs, Lisp_Object *args)\n{\n")
+	  ;; We need special parsing for &rest arguments or when the
+	  ;; number of format arguments is greater than the maximum.
+	  ;; First emit the declarations.
+	  (dolist (arg (cadr info))
+	    (unless (memq arg '(&optional &rest))
+	      (insert "  Lisp_Object " (symbol-name arg) " = Qnil;\n")))
+	  ;; Now initialize each one.
+	  (let ((is-rest nil))
+	    (dolist (arg (cadr info))
+	      (cond
+	       ((eq arg '&rest)
+		(setf is-rest t))
+	       ((eq arg '&optional)
+		;; Nothing.
+		)
+	       (t
+		(if is-rest
+		    (insert "  " (symbol-name arg) " = Flist (nargs, args);\n")
+		  (insert "  if (nargs > 0)\n")
+		  (insert "    {\n")
+		  (insert "      " (symbol-name arg) " = *args++;\n")
+		  (insert "      --nargs;\n")
+		  (insert "    }\n")))))))
+      (insert "  (")
+      (let ((first t))
+	(dolist (arg (cadr info))
+	  (unless (eq arg '&optional)
+	    (unless first
+	      (insert ", "))
+	    (setf first nil)
+	    (insert (symbol-name arg)))))
+      (insert ")\n{\n"))))
 
 (defun elcomp--c-translate-one (compiler)
   (let ((eltoc (make-elcomp--c :decls (make-hash-table)
 			       :decl-marker (make-marker))))
     (elcomp--c-generate-defun compiler)
-    (insert "{\n")
     (set-marker (elcomp--c-decl-marker eltoc) (point))
     (insert "\n")
     (set-marker-insertion-type (elcomp--c-decl-marker eltoc) t)

@@ -113,6 +113,10 @@
 
 * Emacs Bugs
 
+** in the c code we can get a vector of args
+   but elisp is always going to want a list for &rest
+   we could do better with &vector-rest
+
 ** There's no way to recapture the fact that some CL 'throw' constructs
    are lexical
    we need our own special hack.  like maybe CL could put a special
