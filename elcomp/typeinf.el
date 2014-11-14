@@ -49,7 +49,7 @@
 
 (defun elcomp--nullable-type-p (type)
   "Return t if value of type TYPE can nil."
-  (memq type '(atom list symbol boolean :bottom)))
+  (memq type '(cons list symbol boolean :bottom)))
 
 (defun elcomp--sequence-type-p (type)
   "Return t if TYPE is a sequence type."

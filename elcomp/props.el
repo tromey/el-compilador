@@ -37,7 +37,7 @@ Defined properties are:
                              tests for TYPE.
   :elcomp-noreturn t|nil     If t, FUNC does not return normally.
   :elcomp-nothrow t|nil      If t, FUNC cannot `throw' or `signal'.
-  :elcomp-direct t|nil      If t, generated C code can call this directly."
+  :elcomp-direct t|nil       If t, generated C code can call this directly."
   ;; add more?
   ;; :malloc - allocates new object
   ;; :primitive - assume this can never be rewritten, e.g. car
@@ -138,8 +138,25 @@ things, so that advice continues to work."
 
 (elcomp-declare :elcomp-fetch-condition :elcomp-const t)
 
-;; FIXME - add lots more
-(dolist (iter '(cons car cdr funcall apply))
+;; This list comes from the bytecode interpreter.
+;; We could add more.
+(dolist (iter '(nth symbolp consp stringp lisp eq memq not car cdr
+		    cons list length aref aset symbol-value
+		    symbol-function set fset get substring concat
+		    1- 1+ = > < <= >= - + max min * point
+		    goto-char insert point-max point-min char-after
+		    following-char preceding-char current-column
+		    indent-to eolp eobp bolp bobp current-buffer
+		    set-buffer interactive-p forward-char forward-word
+		    skip-chars-forward skip-chars-backward forward-line
+		    char-syntax buffer-substring delete-region
+		    narrow-to-region widen end-of-line
+		    set-marker match-beginning match-end upcase
+		    downcase string= string< equal nthcdr elt
+		    member assq nreverse setcar setcdr car-safe cdr-safe
+		    nconc / % numberp integerp
+		    ;; These aren't from bytecode.c.
+		    funcall apply))
   (elcomp-declare iter :elcomp-direct t))
 
 (provide 'elcomp/props)
