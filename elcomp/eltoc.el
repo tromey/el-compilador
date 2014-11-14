@@ -213,7 +213,7 @@
 	    (unless first
 	      (insert ", "))
 	    (setf first nil)
-	    (insert (symbol-name arg)))))
+	    (insert "Lisp_Object " (symbol-name arg)))))
       (insert ")\n{\n"))))
 
 (defun elcomp--c-translate-one (compiler)

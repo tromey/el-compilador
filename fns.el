@@ -21,6 +21,8 @@ Elements of ALIST that are not conses are also shared."
     list))
 
 (defun nth (n list)
+  "Return the Nth element of LIST.
+N counts from zero.  If LIST is not that long, nil is returned."
   (car (nthcdr n list)))
 
 (defun elt (sequence n)
