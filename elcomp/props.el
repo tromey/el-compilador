@@ -138,8 +138,9 @@ things, so that advice continues to work."
 
 (elcomp-declare :elcomp-fetch-condition :elcomp-const t)
 
-;; This list comes from the bytecode interpreter.
-;; We could add more.
+;; This first part of this list comes from the bytecode interpreter.
+;; Then there are some useful additions.  It's important not to add
+;; things here which the user might want to advise.
 (dolist (iter '(nth symbolp consp stringp lisp eq memq not car cdr
 		    cons list length aref aset symbol-value
 		    symbol-function set fset get substring concat
