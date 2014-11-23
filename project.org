@@ -111,7 +111,9 @@
 *** however, we could instead write a new bytecode interpreter
     a register-based interpreter would likely be faster anyway
 
-* Emacs Bugs
+* Emacs Bugs and Changes
+
+** we need hacks to emacs for unwinding, see eltoc.el
 
 ** in the c code we can get a vector of args
    but elisp is always going to want a list for &rest

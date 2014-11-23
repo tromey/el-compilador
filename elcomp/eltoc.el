@@ -19,7 +19,8 @@
 
 (cl-defstruct elcomp--c
   decls
-  decl-marker)
+  decl-marker
+  (eh-count 0))
 
 (defconst elcomp--c-types
   "Map Lisp types to unchecked C accessor macros."
@@ -62,6 +63,13 @@
       (insert "  Lisp_Object " (elcomp--c-name sym) ";\n")
       (puthash sym t (elcomp--c-decls eltoc)))))
 
+(defun elcomp--c-declare-handler (eltoc)
+  (let ((name (format "h%d" (cl-incf (elcomp--c-eh-count eltoc)))))
+    (save-excursion
+      (goto-char (elcomp--c-decl-marker eltoc))
+      (insert "  struct handler *" name ";\n")
+      name)))
+
 (defun elcomp--c-symbol (eltoc sym &optional no-declare)
   (unless no-declare
     (elcomp--c-declare eltoc sym))
@@ -80,6 +88,9 @@
     (elcomp--c-symbol eltoc (oref insn :original-name)))
    ((elcomp--argument-child-p insn)
     (elcomp--c-symbol eltoc (oref insn :original-name) t))
+   ((elcomp--constant-p insn)
+    ;; FIXME
+    (princ (oref insn :value)))
    (t
     (error "unhandled case: %S" insn))))
 
@@ -98,8 +109,9 @@
   (elcomp--c-emit-symref eltoc (oref insn :value)))
 
 (defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
-  (elcomp--c-emit-symref eltoc (oref insn :sym))
-  (insert " = ")
+  (when (oref insn :sym)
+    (elcomp--c-emit-symref eltoc (oref insn :sym))
+    (insert " = "))
   (let ((arg-list (oref insn :args))
 	(is-direct (elcomp--func-direct-p (oref insn :func))))
     (if is-direct
@@ -133,17 +145,97 @@
   (insert "return ")
   (elcomp--c-emit-symref eltoc (oref insn :sym)))
 
-;; (defmethod elcomp--c-emit ((insn elcomp--constant))
-;;   (insert "goto ")
-;;   (elcomp--c-emit-label (oref insn :goto)))
-
 (defmethod elcomp--c-emit ((insn elcomp--argument) _eltoc)
   (insert "goto ")
   (elcomp--c-emit-label (oref insn :goto)))
 
+(defmethod elcomp--c-emit ((insn elcomp--catch) eltoc)
+  (let ((name (elcomp--c-declare-handler eltoc)))
+    (insert "  PUSH_HANDLER (" name ", ")
+    (elcomp--c-emit-symref eltoc (oref insn :tag))
+    (insert ", CATCHER);\n")
+    (insert "  if (sys_setjmp (" name "->jmp))\n")
+    (insert "    {\n")
+    (insert "      handlerlist = handlerlist->next;\n")
+    (insert "      goto ")
+    (elcomp--c-emit-label (oref insn :handler))
+    (insert ";\n")
+    (insert "    }\n")))
+
+(defmethod elcomp--c-emit ((_insn elcomp--condition-case) _eltoc)
+  ;; This one is handled specially for efficiency.
+  (error "should not be called"))
+
+(defmethod elcomp--c-emit ((insn elcomp--unwind-protect) eltoc)
+  (let ((name (elcomp--c-declare-handler eltoc)))
+    ;; Emacs doesn't actually have anything for this yet.
+    (insert "  PUSH_HANDLER (" name ", Qnil, UNWIND_PROTECT);\n")
+    (insert "  if (sys_setjmp (" name "->jmp))\n")
+    (insert "    {\n")
+    (insert "      handlerlist = handlerlist->next;\n")
+    (insert "      goto ")
+    (elcomp--c-emit-label (oref insn :handler))
+    (insert ";\n")
+    (insert "    }\n")))
+
+(defmethod elcomp--c-emit ((_insn elcomp--fake-unwind-protect) _eltoc)
+  ;; Nothing.
+  )
+
+(defun elcomp--c-emit-condition-case (eltoc eh-from eh-to)
+  (let ((name (elcomp--c-declare-handler eltoc)))
+    ;; FIXME - not really correct for Emacs, we'll have to fix that.
+    (insert "  PUSH_HANDLER (" name ", Qnil, CONDITION_CASE);\n")
+    (insert "  if (sys_setjmp (" name "->jmp))\n")
+    (insert "    {\n")
+    (insert "      handlerlist = handlerlist->next;\n")
+    (while (and (not (eq eh-from eh-to))
+		(elcomp--condition-case-p (car eh-from)))
+      (insert "      if (handler_matches (FIXME, ")
+      (elcomp--c-emit-symref eltoc (oref (car eh-from) :condition-name))
+      (insert "))\n")
+      (insert "        goto ")
+      (elcomp--c-emit-label (oref (car eh-from) :handler))
+      (insert ";\n")
+      (setf eh-from (cdr eh-from)))
+    (insert "    }\n"))
+  eh-from)
+
+(defun elcomp--c-first-parent (block)
+  (catch 'done
+    (maphash (lambda (parent _ignore) (throw 'done parent))
+	     (elcomp--basic-block-parents block))))
+
+(defun elcomp--c-emit-exceptions (eltoc block)
+  (let* ((first-parent (elcomp--c-first-parent block))
+	 (parent-eh (if first-parent
+			(elcomp--basic-block-exceptions first-parent)
+		      ;; No parent means it is the first block.
+		      nil)))
+    (let ((bb-eh (elcomp--basic-block-exceptions block)))
+      (if (or (memq (car bb-eh) parent-eh)
+	      (and parent-eh (not bb-eh)))
+	  ;; If our first exception appears in the parent list, then
+	  ;; we may need to pop some items.
+	  (while (not (eq bb-eh parent-eh))
+	    ;; Ignore fake unwind-protects.
+	    (unless (elcomp--fake-unwind-protect-child-p (car bb-eh))
+	      (insert "  handlerlist = handlerlist->next;\n"))
+	    (setf parent-eh (cdr parent-eh)))
+	(when bb-eh
+	  ;; If our first exception does not appear in the parent
+	  ;; list, then we have to push at least one.
+	  (while (not (eq bb-eh parent-eh))
+	    (if (elcomp--condition-case-p (car bb-eh))
+		(setf bb-eh (elcomp--c-emit-condition-case eltoc bb-eh
+							   parent-eh))
+	      (elcomp--c-emit (car bb-eh) eltoc)
+	      (setf bb-eh (cdr bb-eh)))))))))
+
 (defun elcomp--c-emit-block (eltoc bb)
   (elcomp--c-emit-label bb)
   (insert ":\n")
+  (elcomp--c-emit-exceptions eltoc bb)
   (dolist (insn (elcomp--basic-block-code bb))
     (insert "  ")
     (elcomp--c-emit insn eltoc)
@@ -217,6 +309,7 @@
       (insert ")\n{\n"))))
 
 (defun elcomp--c-translate-one (compiler)
+  (elcomp--require-back-edges compiler)
   (let ((eltoc (make-elcomp--c :decls (make-hash-table)
 			       :decl-marker (make-marker))))
     (elcomp--c-generate-defun compiler)
