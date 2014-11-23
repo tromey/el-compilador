@@ -147,7 +147,7 @@
 	    (setf first nil)
 	  (insert ", "))
 	(elcomp--c-emit-symref eltoc arg)))
-    (if is-direct
+    (if (or is-direct (keywordp (oref insn :func)))
 	(insert ")")
       (insert " }))"))))
 
