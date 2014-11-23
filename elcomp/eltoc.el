@@ -130,8 +130,6 @@
     (elcomp--c-emit-symref eltoc (oref insn :sym))
     (insert " = "))
   (let ((arg-list (oref insn :args))
-	;; For now treat keywords as direct.  FIXME they also need a
-	;; name translation.
 	(is-direct (elcomp--func-direct-p (oref insn :func))))
     (cond
      ((keywordp (oref insn :func))
