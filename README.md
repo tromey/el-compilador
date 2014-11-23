@@ -2,14 +2,14 @@ Welcome to El Compilador, a compiler for Emacs Lisp.
 
 ## Dreams
 
-I've long wanted to write a compiler for Emacs Lisp.  Here it is.  In
-the long term I have a few goals for Emacs and Emacs Lisp that are
-served by this project:
+I've long wanted to write a compiler for Emacs Lisp.  Here it is.
+Well, the start of it.  In the long term I have a few goals for Emacs
+and Emacs Lisp that are served by this project:
 
-I think Emacs should move more strongly toward self-hosting.  I think
-too much of Emacs is written in C, and in the long term this should be
-migrated to lisp.  Beyond just being more fun to hack, having Emacs
-written in Emacs Lisp would make it simpler to upgrade the language
+I think Emacs should move more strongly toward self-hosting.  Too much
+of Emacs is written in C, and in the long term this should be migrated
+to lisp.  Beyond just being more fun to hack, having Emacs written in
+Emacs Lisp would make it simpler to upgrade the language
 implementation.
 
 There are plenty of functions currently written in C which were either
@@ -20,16 +20,16 @@ reasons to write in C.
 The C core is also badly behaved about making direct calls.  This is
 ok for primitives like `cons`, but not ok for functions that one might
 reasonably want to advise or rewrite, like `read`.  Normally this lack
-of indirection is just because it is a pain to write -- automatic
-translation could eliminate this problem.
+of indirection is just because it is a pain to write out in C -- but
+automatic translation could eliminate this problem.
 
 I'm also interested in using the compiler to either write a JIT or a
 new register-based bytecode interpreter.  These could be done without
 modifying Emacs once the new FFI code lands.
 
-Finally, I think it is bad and wrong that Emacs has three bytecode
+Finally, it is bad and wrong that Emacs has three bytecode
 interpreters (the Emacs Lisp one, the regexp engine, and CCL).  There
-can be only one, and we can use this work to push Emacs toward that
+should be only one, and we can use this work to push Emacs toward that
 goal.
 
 ## Use
@@ -55,9 +55,9 @@ compiler and then use the two handy entry points:
 		 list)))
 ```
 
-* `elcomp--c-do`.  This is like `elcomp--do` but uses the "C" back
-  end.  You will note that while the output is vaguely C-like, it will
-  not compile.
+* You can pass `elcomp--c-translate` as the third argument to
+  `elcomp--do` to use the "C" back end.  You will note that while the
+  output is vaguely C-like, it will not compile.
 
 ## Implementation
 
