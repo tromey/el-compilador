@@ -4,6 +4,13 @@
 
 ;; A backend to generate Emacs-flavored C.
 
+;; TO DO:
+;; emit symbols properly; Qmumble etc
+;; emit constants properly
+;; handle phi nodes
+;; GCPRO (if that is still needed?)
+;; emit lambdas without using DEFUN; call them directly
+
 ;;; Code:
 
 ;; We should also allow a declaration that allows a direct C
@@ -125,8 +132,7 @@
   (let ((arg-list (oref insn :args))
 	;; For now treat keywords as direct.  FIXME they also need a
 	;; name translation.
-	(is-direct (or (keywordp (oref insn :func))
-		       (elcomp--func-direct-p (oref insn :func)))))
+	(is-direct (elcomp--func-direct-p (oref insn :func))))
     (cond
      ((keywordp (oref insn :func))
       (insert (cdr (assq (oref insn :func) elcomp--c-direct-renames))
