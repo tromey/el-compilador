@@ -219,7 +219,7 @@
 	  ;; we may need to pop some items.
 	  (while (not (eq bb-eh parent-eh))
 	    ;; Ignore fake unwind-protects.
-	    (unless (elcomp--fake-unwind-protect-child-p (car bb-eh))
+	    (unless (elcomp--fake-unwind-protect-child-p (car parent-eh))
 	      (insert "  handlerlist = handlerlist->next;\n"))
 	    (setf parent-eh (cdr parent-eh)))
 	(when bb-eh
