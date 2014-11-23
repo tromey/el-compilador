@@ -108,17 +108,35 @@
   (insert " = ")
   (elcomp--c-emit-symref eltoc (oref insn :value)))
 
+(defconst elcomp--c-direct-renames
+  '((:elcomp-specbind . "specbind")
+    (:elcomp-unbind . "unbind_n")
+    (:elcomp-fetch-condition . "fetch_condition")
+    (:save-excursion-save . "save_excursion")
+    (:save-excursion-restore . "restore_excursion")
+    (:save-restriction-save . "save_restriction")
+    (:save-restriction-restore . "restore_restrction")
+    (:unwind-protect-continue . "unwind_protect_continue")))
+
 (defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
   (when (oref insn :sym)
     (elcomp--c-emit-symref eltoc (oref insn :sym))
     (insert " = "))
   (let ((arg-list (oref insn :args))
-	(is-direct (elcomp--func-direct-p (oref insn :func))))
-    (if is-direct
-	(insert "F" (elcomp--c-name (oref insn :func)) " (")
+	;; For now treat keywords as direct.  FIXME they also need a
+	;; name translation.
+	(is-direct (or (keywordp (oref insn :func))
+		       (elcomp--func-direct-p (oref insn :func)))))
+    (cond
+     ((keywordp (oref insn :func))
+      (insert (cdr (assq (oref insn :func) elcomp--c-direct-renames))
+	      " ("))
+     (is-direct
+      (insert "F" (elcomp--c-name (oref insn :func)) " ("))
+     (t
       (push (oref insn :func) arg-list)
       ;; FIXME - what if not a symbol, etc.
-      (insert (format "Ffuncall (%d, ((Lisp_Object[]) { " (length arg-list))))
+      (insert (format "Ffuncall (%d, ((Lisp_Object[]) { " (length arg-list)))))
     (let ((first t))
       (dolist (arg arg-list)
 	(if first

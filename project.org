@@ -2,6 +2,8 @@
 
 * To Do
 
+** typeinf.el doesn't handle keywordp specially, but should
+
 ** make sure calls to a lambda work ok
    C BE should make a static function
    the call should resolve to a call to the compiled function somehow
