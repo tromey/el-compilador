@@ -20,7 +20,6 @@
 		    "elcomp/iter"
 		    "elcomp/jump-thread"
 		    "elcomp/linearize"
-		    "elcomp/phiopt"
 		    "elcomp/props"
 		    "elcomp/ssa"
 		    "elcomp/subst"

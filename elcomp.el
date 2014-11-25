@@ -163,6 +163,11 @@ This can only be for a call to a `nothrow' function.")
       (elcomp--return-child-p obj)
       (elcomp--diediedie-child-p obj)))
 
+(defun elcomp--any-hash-key (hash)
+  "Return any key of the hash table HASH, or nil."
+  (catch 'done
+    (maphash (lambda (key _ignore) (throw 'done key)) hash)))
+
 (provide 'elcomp)
 
 ;;; elcomp.el ends here

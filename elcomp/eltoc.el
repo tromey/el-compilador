@@ -224,9 +224,7 @@
   eh-from)
 
 (defun elcomp--c-first-parent (block)
-  (catch 'done
-    (maphash (lambda (parent _ignore) (throw 'done parent))
-	     (elcomp--basic-block-parents block))))
+  (elcomp--any-hash-key (elcomp--basic-block-parents block)))
 
 (defun elcomp--c-emit-exceptions (eltoc block)
   (let* ((first-parent (elcomp--c-first-parent block))

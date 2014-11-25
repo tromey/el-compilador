@@ -42,10 +42,20 @@ Return non-nil if anything was changed."
     t))
 
 (defun elcomp--cprop-pure (compiler)
-  (let ((rewrites nil))
+  (let ((rewrites (make-hash-table)))
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)
+       ;; Remove phis that have a single argument.
+       ;; FIXME with a loop can we see ϕ1 -> ϕ1 ϕ2?
+       ;; That is a self-reference?
+       (maphash
+	(lambda (_ignore phi)
+	  (when (eq (hash-table-count (oref phi :args)) 1)
+	    (elcomp--cprop-insert rewrites phi
+				  (elcomp--any-hash-key (oref phi :args)))))
+	(elcomp--basic-block-phis bb))
+       ;; Perform other optimizations.
        (dolist (insn (elcomp--basic-block-code bb))
 	 (when (and (elcomp--call-child-p insn)
 		    (elcomp--func-pure-p (oref insn :func))
@@ -55,13 +65,11 @@ Return non-nil if anything was changed."
 			 (mapcar (lambda (arg)
 				   (oref arg :value))
 				 (oref insn :args)))))
-	     (unless rewrites
-	       (setf rewrites (make-hash-table)))
 	     (elcomp--cprop-insert rewrites insn
 				   (elcomp--constant "constant"
 						     :value new-value)))))))
 
-    (when rewrites
+    (when (> (hash-table-count rewrites) 0)
       (elcomp--rewrite-using-map compiler rewrites)
       t)))
 
@@ -69,7 +77,8 @@ Return non-nil if anything was changed."
   "A constant- and copy-propagation pass.
 
 This pass operates on COMPILER, performing constant- and
-copy-propagation.  It also evaluates `pure' functions."
+copy-propagation.  It also evaluates `pure' functions and removes
+unnecessary phis."
   (let ((keep-going t))
     (while keep-going
       (setf keep-going nil)
