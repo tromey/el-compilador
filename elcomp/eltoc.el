@@ -343,12 +343,15 @@
     (set-marker (elcomp--c-decl-marker eltoc) nil)))
 
 (defun elcomp--c-translate (unit)
+  (insert "#include <config.h>\n"
+	  "#include <lisp.h>\n\n"
+	  "int plugin_is_GPL_compatible;\n\n")
   (maphash
    (lambda (_ignore compiler)
      (elcomp--c-translate-one compiler))
    (elcomp--compilation-unit-defuns unit))
-  (insert "\n")
-  (insert "void\nsyms_of_FIXME (void)\n{\n")
+  (insert "\n"
+	  "void\ninit (void)\n{\n")
   (maphash
    (lambda (_ignore compiler)
      (let ((name (car (elcomp--defun compiler))))
