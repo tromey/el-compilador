@@ -314,8 +314,9 @@ This is used for references to global symbols."
 	     ;; Doc string.  FIXME.
 	     (or (nth 2 info) "nothing??"))) ;FIXME anything?
     (if (equal (cdr arg-info) "MANY")
-	(progn
-	  (insert "  (ptrdiff_t nargs, Lisp_Object *args)\n{\n")
+	(let ((nargs (elcomp--c-name (cl-gensym "nargs")))
+	      (args (elcomp--c-name (cl-gensym "args"))))
+	  (insert "  (ptrdiff_t " nargs ", Lisp_Object *" args ")\n{\n")
 	  ;; We need special parsing for &rest arguments or when the
 	  ;; number of format arguments is greater than the maximum.
 	  ;; First emit the declarations.
@@ -333,12 +334,13 @@ This is used for references to global symbols."
 		)
 	       (t
 		(if is-rest
-		    (insert "  " (symbol-name arg) " = Flist (nargs, args);\n")
-		  (insert "  if (nargs > 0)\n")
-		  (insert "    {\n")
-		  (insert "      " (symbol-name arg) " = *args++;\n")
-		  (insert "      --nargs;\n")
-		  (insert "    }\n")))))))
+		    (insert "  " (symbol-name arg) " = Flist ("
+			    nargs ", " args ");\n")
+		  (insert "  if (" nargs " > 0)\n"
+			  "    {\n"
+			  "      " (symbol-name arg) " = *" args "++;\n"
+			  "      --" nargs ";\n"
+			  "    }\n")))))))
       (insert "  (")
       (let ((first t))
 	(dolist (arg (cadr info))
