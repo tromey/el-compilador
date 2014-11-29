@@ -27,6 +27,8 @@
 (cl-defstruct elcomp--c
   decls
   decl-marker
+  ;; Map symbols to their C names.
+  interned-symbols
   (eh-count 0))
 
 (defconst elcomp--c-types
@@ -49,6 +51,13 @@
        ;; FIXME check for dups!
        (t char))))
    (symbol-name symbol) ""))
+
+(defun elcomp--c-intern-symbol (eltoc symbol)
+  "Mark a symbol for init-time interning and return its name.
+This is used for references to global symbols."
+  (or (gethash symbol (elcomp--c-interned-symbols eltoc))
+      (puthash symbol (concat "Q" (elcomp--c-name symbol))
+	       (elcomp--c-interned-symbols eltoc))))
 
 (defun elcomp--c-atom-to-expr (atom lhs-type)
   (cond
@@ -85,7 +94,7 @@
 (defun elcomp--c-emit-symref (eltoc insn)
   (cond
    ((symbolp insn)
-    (elcomp--c-symbol eltoc insn))
+    (insert (elcomp--c-intern-symbol eltoc insn)))
    ((elcomp--set-child-p insn)
     (elcomp--c-symbol eltoc (oref insn :name)))
    ((elcomp--call-child-p insn)
@@ -96,8 +105,20 @@
    ((elcomp--argument-child-p insn)
     (elcomp--c-symbol eltoc (oref insn :original-name) t))
    ((elcomp--constant-p insn)
-    ;; FIXME
-    (princ (oref insn :value)))
+    (let ((value (oref insn :value)))
+      (cond
+       ((symbolp value)
+	(insert (elcomp--c-intern-symbol eltoc value)))
+       ((integerp value)
+	;; FIXME - this makes unbind_to take a Lisp_Object
+	;; rather than a plain int...
+	(insert "make_number (" (number-to-string value) ")"))
+       ((stringp value)
+	;; FIXME - quoting
+	;; FIXME - make_string
+	(insert "\"" value "\""))
+       (t
+	(error "unhandled constant of type %S" (type-of value))))))
    (t
     (error "unhandled case: %S" insn))))
 
@@ -127,7 +148,7 @@
 
 (defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
   (when (oref insn :sym)
-    (elcomp--c-emit-symref eltoc (oref insn :sym))
+    (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
   (let ((arg-list (oref insn :args))
 	(is-direct (elcomp--func-direct-p (oref insn :func))))
@@ -273,7 +294,7 @@
 	(cl-incf max-args))
       (if (or (eq (car arg-list) '&rest)
 	      (> max-args elcomp--c-max-args))
-	  '(0 . "MANY")
+	  (cons min-args "MANY")
 	(cons min-args max-args)))))
 
 (defun elcomp--c-generate-defun (compiler)
@@ -328,10 +349,11 @@
 	    (insert "Lisp_Object " (symbol-name arg)))))
       (insert ")\n{\n"))))
 
-(defun elcomp--c-translate-one (compiler)
+(defun elcomp--c-translate-one (compiler symbol-hash)
   (elcomp--require-back-edges compiler)
   (let ((eltoc (make-elcomp--c :decls (make-hash-table)
-			       :decl-marker (make-marker))))
+			       :decl-marker (make-marker)
+			       :interned-symbols symbol-hash)))
     (elcomp--c-generate-defun compiler)
     (set-marker (elcomp--c-decl-marker eltoc) (point))
     (insert "\n")
@@ -343,22 +365,38 @@
     (set-marker (elcomp--c-decl-marker eltoc) nil)))
 
 (defun elcomp--c-translate (unit)
-  (insert "#include <config.h>\n"
-	  "#include <lisp.h>\n\n"
-	  "int plugin_is_GPL_compatible;\n\n")
-  (maphash
-   (lambda (_ignore compiler)
-     (elcomp--c-translate-one compiler))
-   (elcomp--compilation-unit-defuns unit))
-  (insert "\n"
-	  "void\ninit (void)\n{\n")
-  (maphash
-   (lambda (_ignore compiler)
-     (let ((name (car (elcomp--defun compiler))))
-       (when name
-	 (insert "  defsubr (&S" (elcomp--c-name name) ");\n"))))
-   (elcomp--compilation-unit-defuns unit))
-  (insert "}\n"))
+  (let ((symbol-hash (make-hash-table)))
+    (maphash
+     (lambda (_ignore compiler)
+       (elcomp--c-translate-one compiler symbol-hash))
+     (elcomp--compilation-unit-defuns unit))
+    ;; Define the symbol variables.
+    (save-excursion
+      (goto-char (point-min))
+      (insert "#include <config.h>\n"
+	      "#include <lisp.h>\n\n"
+	      "int plugin_is_GPL_compatible;\n\n")
+      (maphash (lambda (_symbol c-name)
+		 (insert "static Lisp_Object " c-name ";\n"))
+	       symbol-hash)
+      (insert "\n"))
+    (insert "\n"
+	    "void\ninit (void)\n{\n")
+    ;; Intern all the symbols we refer to.
+    (maphash (lambda (symbol c-name)
+	       (insert "  " c-name " = intern (\""
+		       (symbol-name symbol) ;; FIXME
+		       "\");\n"))
+	     symbol-hash)
+    (insert "\n")
+    ;; Register our exported functions with Lisp.
+    (maphash
+     (lambda (_ignore compiler)
+       (let ((name (car (elcomp--defun compiler))))
+	 (when name
+	   (insert "  defsubr (&S" (elcomp--c-name name) ");\n"))))
+     (elcomp--compilation-unit-defuns unit))
+    (insert "}\n")))
 
 (provide 'elcomp/eltoc)
 
