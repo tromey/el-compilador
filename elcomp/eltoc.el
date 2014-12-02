@@ -395,9 +395,9 @@ argument."
 	    "void\ninit (void)\n{\n")
     ;; Intern all the symbols we refer to.
     (maphash (lambda (symbol c-name)
-	       (insert "  " c-name " = intern (\""
-		       (symbol-name symbol) ;; FIXME
-		       "\");\n"))
+	       (insert "  " c-name " = intern ("
+		       (elcomp--c-quote-string (symbol-name symbol))
+		       ");\n"))
 	     symbol-hash)
     (insert "\n")
     ;; Register our exported functions with Lisp.
