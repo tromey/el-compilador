@@ -67,19 +67,6 @@ This is used for references to global symbols."
       (puthash symbol (concat "Q" (elcomp--c-name symbol))
 	       (elcomp--c-interned-symbols eltoc))))
 
-(defun elcomp--c-atom-to-expr (atom lhs-type)
-  (cond
-   ((stringp atom)
-    (elcomp--c-quote-string atom))	;FIXME: must box
-   ((integerp atom)			;FIXME: integerp
-    (if (memq lhs-type '(integer float))
-	(int-to-string atom)
-      (format "make_number (%s)" atom)))
-   ((symbolp atom)
-    (symbol-name atom))
-   (t
-    (error "???"))))
-
 (defun elcomp--c-declare (eltoc sym)
   (unless (gethash sym (elcomp--c-decls eltoc))
     (save-excursion
@@ -120,8 +107,9 @@ This is used for references to global symbols."
        ((integerp value)
 	(insert "make_number (" (number-to-string value) ")"))
        ((stringp value)
-	;; FIXME - make_string
-	(insert (elcomp--c-quote-string value)))
+	;; Could use make_string, but there's little point since GCC
+	;; will optimize the strlen anyhow.
+	(insert "build_string (" (elcomp--c-quote-string value) ")"))
        (t
 	(error "unhandled constant of type %S" (type-of value))))))
    (t
