@@ -333,7 +333,6 @@ sequence of objects.  FIXME ref the class docs"
 	  (if result-location
 	      (elcomp--add-set compiler result-location
 			       (elcomp--operand compiler nil)))
-	  ;; FIXME: set the result-location
 	  (elcomp--make-block-current compiler label-top)
 	  ;; The condition expression and goto.
 	  (elcomp--linearize compiler (cadr form) cond-var)
