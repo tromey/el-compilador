@@ -5,7 +5,6 @@
 ;; A backend to generate Emacs-flavored C.
 
 ;; TO DO:
-;; emit symbols properly; Qmumble etc
 ;; emit constants properly
 ;; handle phi nodes
 ;; GCPRO (if that is still needed?)
@@ -40,6 +39,15 @@
 (defconst elcomp--simple-math
   '(< <= > >= /= + - * / 1+))
 
+(defun elcomp--c-quote-string (str)
+  "Quote a Lisp string according to C rules."
+  (concat "\"" (mapconcat (lambda (c)
+			    (if (memq c '(?\\ ?\" ?\n))
+				(string ?\\ c)
+			      (string c)))
+			  str "")
+	  "\""))
+
 (defun elcomp--c-name (symbol)
   "Compute the C name for a symbol."
   (mapconcat
@@ -62,7 +70,7 @@ This is used for references to global symbols."
 (defun elcomp--c-atom-to-expr (atom lhs-type)
   (cond
    ((stringp atom)
-    atom)				;FIXME: should c-quote and box
+    (elcomp--c-quote-string atom))	;FIXME: must box
    ((integerp atom)			;FIXME: integerp
     (if (memq lhs-type '(integer float))
 	(int-to-string atom)
@@ -114,9 +122,8 @@ This is used for references to global symbols."
 	;; rather than a plain int...
 	(insert "make_number (" (number-to-string value) ")"))
        ((stringp value)
-	;; FIXME - quoting
 	;; FIXME - make_string
-	(insert "\"" value "\""))
+	(insert (elcomp--c-quote-string value)))
        (t
 	(error "unhandled constant of type %S" (type-of value))))))
    (t
@@ -303,15 +310,15 @@ This is used for references to global symbols."
 	 (c-name (elcomp--c-name sym)) ; FIXME mangling
 	 (arg-info (elcomp--c-parse-args (cadr info))))
     (insert
-     (format "DEFUN (\"%s\", F%s, S%s, %s, %s,\n    %s,\n    doc: /* %s */)\n"
-	     (symbol-name sym) ;FIXME quoting
+     (format "DEFUN (%s, F%s, S%s, %s, %s,\n    %s,\n    doc: /* %s */)\n"
+	     (elcomp--c-quote-string (symbol-name sym))
 	     c-name c-name
 	     (car arg-info) (cdr arg-info)
 	     ;; Interactive.
 	     ;; FIXME: quoting for the interactive spec
 	     ;; Note that we can have a whole lisp form here.
 	     (or (nth 3 info) "0")
-	     ;; Doc string.  FIXME.
+	     ;; Doc string.  FIXME - comment quoting
 	     (or (nth 2 info) "nothing??"))) ;FIXME anything?
     (if (equal (cdr arg-info) "MANY")
 	(let ((nargs (elcomp--c-name (cl-gensym "nargs")))
