@@ -485,9 +485,7 @@ sequence of objects.  FIXME ref the class docs"
 			   (elcomp--constant "constant" :value (cadr form)))))
 
        ((not (symbolp fn))
-	;; FIXME - lambda or the like
-	(error "not supported: %S" fn)
-	)
+	(error "not supported: %S" fn))
 
        ((special-form-p (symbol-function fn))
 	(error "unhandled special form: %s" (symbol-name fn)))
