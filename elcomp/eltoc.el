@@ -309,7 +309,7 @@ argument."
 (defun elcomp--c-generate-defun (compiler)
   (let* ((info (elcomp--defun compiler))
 	 (sym (car info))
-	 (c-name (elcomp--c-name sym)) ; FIXME mangling
+	 (c-name (elcomp--c-name sym))
 	 (arg-info (elcomp--c-parse-args (cadr info))))
     (insert
      (format "DEFUN (%s, F%s, S%s, %s, %s,\n    %s,\n    doc: /* %s */)\n"
