@@ -118,8 +118,6 @@ This is used for references to global symbols."
        ((symbolp value)
 	(insert (elcomp--c-intern-symbol eltoc value)))
        ((integerp value)
-	;; FIXME - this makes unbind_to take a Lisp_Object
-	;; rather than a plain int...
 	(insert "make_number (" (number-to-string value) ")"))
        ((stringp value)
 	;; FIXME - make_string
@@ -143,9 +141,22 @@ This is used for references to global symbols."
   (insert " = ")
   (elcomp--c-emit-symref eltoc (oref insn :value)))
 
+(defun elcomp--unbind-emitter (eltoc insn)
+  "Emit a call to :elcomp-unbind.
+This must be handled specially for now to avoid boxing the
+argument."
+  (let* ((args (oref insn :args))
+	 (first-arg (car args)))
+  (cl-assert (eq (length args) 1))
+  (cl-assert (elcomp--constant-p first-arg))
+  (let ((value (oref first-arg :value)))
+    (cl-assert (integerp value))
+    (insert "unbind_to (SPECPDL_INDEX - "
+	    (number-to-string value)
+	    ", Qnil)"))))
+
 (defconst elcomp--c-direct-renames
   '((:elcomp-specbind . "specbind")
-    (:elcomp-unbind . "unbind_n")
     (:elcomp-fetch-condition . "fetch_condition")
     (:save-excursion-save . "save_excursion")
     (:save-excursion-restore . "restore_excursion")
@@ -157,27 +168,30 @@ This is used for references to global symbols."
   (when (oref insn :sym)
     (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
-  (let ((arg-list (oref insn :args))
-	(is-direct (elcomp--func-direct-p (oref insn :func))))
-    (cond
-     ((keywordp (oref insn :func))
-      (insert (cdr (assq (oref insn :func) elcomp--c-direct-renames))
-	      " ("))
-     (is-direct
-      (insert "F" (elcomp--c-name (oref insn :func)) " ("))
-     (t
-      (push (oref insn :func) arg-list)
-      ;; FIXME - what if not a symbol, etc.
-      (insert (format "Ffuncall (%d, ((Lisp_Object[]) { " (length arg-list)))))
-    (let ((first t))
-      (dolist (arg arg-list)
-	(if first
-	    (setf first nil)
-	  (insert ", "))
-	(elcomp--c-emit-symref eltoc arg)))
-    (if (or is-direct (keywordp (oref insn :func)))
-	(insert ")")
-      (insert " }))"))))
+  (if (eq (oref insn :func) :elcomp-unbind)
+      (elcomp--unbind-emitter eltoc insn)
+    (let ((arg-list (oref insn :args))
+	  (is-direct (elcomp--func-direct-p (oref insn :func))))
+      (cond
+       ((keywordp (oref insn :func))
+	(insert (cdr (assq (oref insn :func) elcomp--c-direct-renames))
+		" ("))
+       (is-direct
+	(insert "F" (elcomp--c-name (oref insn :func)) " ("))
+       (t
+	(push (oref insn :func) arg-list)
+	;; FIXME - what if not a symbol, etc.
+	(insert (format "Ffuncall (%d, ((Lisp_Object[]) { "
+			(length arg-list)))))
+      (let ((first t))
+	(dolist (arg arg-list)
+	  (if first
+	      (setf first nil)
+	    (insert ", "))
+	  (elcomp--c-emit-symref eltoc arg)))
+      (if (or is-direct (keywordp (oref insn :func)))
+	  (insert ")")
+	(insert " }))")))))
 
 (defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc)
   (insert "goto ")
