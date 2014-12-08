@@ -129,7 +129,7 @@ This is used for references to global symbols."
   (insert " = ")
   (elcomp--c-emit-symref eltoc (oref insn :value)))
 
-(defun elcomp--unbind-emitter (eltoc insn)
+(defun elcomp--unbind-emitter (insn)
   "Emit a call to :elcomp-unbind.
 This must be handled specially for now to avoid boxing the
 argument."
@@ -157,7 +157,7 @@ argument."
     (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
   (if (eq (oref insn :func) :elcomp-unbind)
-      (elcomp--unbind-emitter eltoc insn)
+      (elcomp--unbind-emitter insn)
     (let ((arg-list (oref insn :args))
 	  (is-direct (elcomp--func-direct-p (oref insn :func))))
       (cond
