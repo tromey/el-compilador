@@ -46,13 +46,13 @@ compiler and then use the two handy entry points:
   `nthcdr` from `fns.c`:
 
 ```elisp
-(elcomp--do '(defun defun (num list)
-	       (cl-check-type num integer)
-	       (let ((i 0))
-		 (while (and (< i num) list)
-		   (setq list (cdr list))
-		   (setq i (1+ i)))
-		 list)))
+(elcomp--do '(defun nthcdr (num list)
+               (cl-check-type num integer)
+               (let ((i 0))
+                 (while (and (< i num) list)
+                   (setq list (cdr list))
+                   (setq i (1+ i)))
+                 list)))
 ```
 
 * You can pass `elcomp--c-translate` as the third argument to
