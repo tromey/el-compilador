@@ -395,7 +395,7 @@ argument."
 	    "void\ninit (void)\n{\n")
     ;; Intern all the symbols we refer to.
     (maphash (lambda (symbol c-name)
-	       (insert "  " c-name " = intern ("
+	       (insert "  DEFSYM (" c-name ", "
 		       (elcomp--c-quote-string (symbol-name symbol))
 		       ");\n"))
 	     symbol-hash)
