@@ -2,6 +2,8 @@
 
 * To Do
 
+** need staticpro in c back end
+
 ** typeinf.el doesn't handle keywordp specially, but should
 
 ** make sure calls to a lambda work ok
