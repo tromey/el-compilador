@@ -30,15 +30,6 @@
   interned-symbols
   (eh-count 0))
 
-(defconst elcomp--c-types
-  "Map Lisp types to unchecked C accessor macros."
-  '((integer "XINT")
-    (float "XFLOAT_DATA")
-    (symbol "XSYMBOL")))
-
-(defconst elcomp--simple-math
-  '(< <= > >= /= + - * / 1+))
-
 (defun elcomp--c-quote-string (str)
   "Quote a Lisp string according to C rules."
   (concat "\"" (mapconcat (lambda (c)
