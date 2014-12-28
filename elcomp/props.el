@@ -104,10 +104,18 @@ things, so that advice continues to work."
 		      sqrt))
   (elcomp-declare func :elcomp-const t :elcomp-type 'float))
 
-(dolist (func '(lsh ash logand logior logxor lognot byteorder))
+(dolist (func '(lsh ash logand logior logxor lognot byteorder sxhash))
   (elcomp-declare func :elcomp-const t :elcomp-type 'integer))
 
-(elcomp-declare 'cons :elcomp-type 'list)
+(elcomp-declare 'cons :elcomp-type 'cons)
+(elcomp-declare 'list :elcomp-type 'list)
+(elcomp-declare 'vector :elcomp-type 'vector)
+(elcomp-declare 'make-vector :elcomp-type 'vector)
+(elcomp-declare 'string :elcomp-type 'string)
+(elcomp-declare 'make-string :elcomp-type 'string)
+(elcomp-declare 'make-hash-table :elcomp-type 'hash-table)
+(elcomp-declare 'intern :elcomp-type 'symbol)
+(elcomp-declare 'make-symbol :elcomp-type 'symbol)
 
 ;; There are a few type predicates not on the list.  They could be
 ;; added if needed.  See (elisp) Type Predicates.
@@ -133,7 +141,7 @@ things, so that advice continues to work."
 (dolist (iter '(throw signal error user-error :unwind-protect-continue))
   (elcomp-declare iter :elcomp-noreturn t))
 
-(dolist (iter '(car-safe cdr-safe))
+(dolist (iter '(car-safe cdr-safe sxhash))
   (elcomp-declare iter :elcomp-nothrow t))
 
 (elcomp-declare :elcomp-fetch-condition :elcomp-const t)
@@ -157,7 +165,7 @@ things, so that advice continues to work."
 		    member assq nreverse setcar setcdr car-safe cdr-safe
 		    nconc / % numberp integerp
 		    ;; These aren't from bytecode.c.
-		    funcall apply))
+		    funcall apply sxhash))
   (elcomp-declare iter :elcomp-direct t))
 
 (provide 'elcomp/props)
