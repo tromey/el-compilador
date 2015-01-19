@@ -69,24 +69,64 @@
   type-map)
 
 (defclass elcomp--set nil
-  ((sym :initform nil :initarg :sym)
-   (value :initform nil :initarg :value)))
+  ((sym :initform nil :initarg :sym
+	:documentation "The local variable being assigned to.
+Initially this is a symbol.
+After transformation to SSA, this will be an SSA name;
+see `elcomp--ssa-name-p'.")
+   (value :initform nil :initarg :value
+	  :documentation "The value being assigned.
+Initially this is a symbol.
+After transformation to SSA, this will be an SSA name."))
+  "A `set' instruction.
+
+This represents a simple assignment to a local variable.")
 
 (defclass elcomp--call nil
-  ((sym :initform nil :initarg :sym)
-   (func :initform nil :initarg :func)
-   (args :initform nil :initarg :args)))
+  ((sym :initform nil :initarg :sym
+	:documentation "The local variable being assigned to.
+This can be `nil' if the result of the call is not used.
+Initially this is a symbol.
+After transformation to SSA, this will be an SSA name;
+see `elcomp--ssa-name-p'.")
+   (func :initform nil :initarg :func
+	 :documentation "The function to call.
+This may be a symbol or a `lambda' list.")
+   (args :initform nil :initarg :args
+	 ;; FIXME - can a symbol wind up in here or do we make
+	 ;; symbol-value explicit?
+	 :documentation "The arguments to the function.
+Initially this is a list of symbols.
+After transformation to SSA, this will be a list of SSA names."))
+  "A function call instruction.")
 
 (defclass elcomp--goto nil
-  ((block :initform nil :initarg :block)))
+  ((block :initform nil :initarg :block
+	  :documentation "The target block."))
+  "A `goto' instruction.
+This instruction terminates a block.")
 
 (defclass elcomp--if nil
-  ((sym :initform nil :initarg :sym)
-   (block-true :initform nil :initarg :block-true)
-   (block-false :initform nil :initarg :block-false)))
+  ((sym :initform nil :initarg :sym
+	:documentation "The condition to check.
+Initially this is a symbol.
+After transformation to SSA, this will be an SSA name;
+see `elcomp--ssa-name-p'.")
+   (block-true :initform nil :initarg :block-true
+	       :documentation "The target block if the value is non-`nil'.")
+   (block-false :initform nil :initarg :block-false
+		:documentation "The target block if the value is `nil'."))
+  "An `if' instruction.
+This branches to one of two blocks based on whether or not the
+argument is `nil'.  This instruction terminates a block.")
 
 (defclass elcomp--return nil
-  ((sym :initform nil :initarg :sym)))
+  ((sym :initform nil :initarg :sym
+	:documentation "The value to return.
+Initially this is a symbol.
+After transformation to SSA, this will be an SSA name;
+see `elcomp--ssa-name-p'."))
+  "A `return' instruction.")
 
 (defclass elcomp--diediedie (elcomp--call)
   ()
@@ -94,37 +134,60 @@
 
 This can only be for a call to a `nothrow' function.")
 
-;; An SSA operand representing a constant.
 (defclass elcomp--constant nil
-  ((value :initform nil :initarg :value)))
+  ((value :initform nil :initarg :value
+	  :documentation "The value of the constant."))
+  "This represents a constant after transformation to SSA form.")
 
 (defclass elcomp--phi nil
-  ((original-name :initform nil :initarg :original-name)
-   ;; Keys in this map are the possible source values for the PHI.
-   ;; The values in the map are meaningless.
-   (args :initform (make-hash-table) :initarg :args)))
+  ((original-name :initform nil :initarg :original-name
+		  :documentation "The original name of this node.
+This is handy for debugging.")
+   (args :initform (make-hash-table) :initarg :args
+	 :documentation "Arguments to this node.
+This is a hash table whose keys are possible source values for the phi.
+The values in the hash table are meaningless."))
+  "A `phi' node.
+
+See any good source of information about SSA to understand this.")
 
 (defclass elcomp--argument nil
-  ((original-name :initform nil :initarg :original-name)
-   (is-rest :initform nil :initarg :is-rest)))
+  ((original-name :initform nil :initarg :original-name
+		  :documentation "The original name of this node.
+This is handy for debugging.")
+   (is-rest :initform nil :initarg :is-rest
+	    :documentation "True if this argument was from `&rest'."))
+  "A function argument.  This is only used in SSA form.")
 
-;; An exception edge.
 (defclass elcomp--exception nil
-  ((handler :initform nil :initarg :handler)))
+  ((handler :initform nil :initarg :handler
+	    :documentation "The target block of this exception edge."))
+  "An exception edge.
 
-;; A catch.
+A block's `exceptions' slot is a list of all the active exception
+handlers, though in most cases only the first one is ever
+taken.")
+
 (defclass elcomp--catch (elcomp--exception)
-  ((tag :initform nil :initarg :tag)))
+  ((tag :initform nil :initarg :tag
+	:documentation "The tag of the `catch'."))
+  "An exception edge representing a `catch'.")
 
-;; A single condition-case handler.
 (defclass elcomp--condition-case (elcomp--exception)
-  ((condition-name :initform nil :initarg :condition-name)))
+  ((condition-name :initform nil :initarg :condition-name
+		   :documentation "The name of the condition being handled.
 
-;; An unwind-protect.
+This is either a symbol or nil.  Note that the variable that can
+be bound by `condition-case' is explicit in the target block."))
+  "An exception edge representing a single `condition-case' handler.")
+
 (defclass elcomp--unwind-protect (elcomp--exception)
   ;; The original form is used when optimizing "catch".
   ;; Well.. it will be someday.  FIXME.
-  ((original-form :initform nil :initarg :original-form)))
+  ((original-form :initform nil :initarg :original-form
+		  :documentation "The original form.
+This is not used now but may be later for `catch' optimization."))
+  "An exception edge representing an `unwind-protect'.")
 
 ;; A fake unwind-protect that is used to represent the unbind
 ;; operation from a `let' of a special variable.  This is needed to
@@ -132,9 +195,19 @@ This can only be for a call to a `nothrow' function.")
 ;; (catch 'x (let* ((var1 (something)) (var2 (throw 'x 99))) ...))
 ;; Here, the `throw' has to unbind "var1".
 (defclass elcomp--fake-unwind-protect (elcomp--exception)
-  ((count :initform nil :initarg :count)))
+  ((count :initform nil :initarg :count
+	  :documentation "The number of unbinds that this represents."))
+  "An exception edge representing the unbind operation from a `let'
+of a special variable.  These unbinds are done implicitly, so this
+exception edge does not represent any ordinary code -- but it is needed
+to properly deal do the `catch' optimization from inside a `let', like:
+
+    (catch 'x (let* ((var1 (something)) (var2 (throw 'x 99))) ...))
+
+Here, the `throw' has to unbind `var1'.")
 
 (defun elcomp--ssa-name-p (arg)
+  "Return t if ARG is an SSA name."
   (or
    (elcomp--set-child-p arg)
    (elcomp--phi-child-p arg)
@@ -142,22 +215,27 @@ This can only be for a call to a `nothrow' function.")
    (elcomp--argument-child-p arg)))
 
 (defun elcomp--last-instruction (block)
+  "Return the last instruction in BLOCK."
   (car (elcomp--basic-block-code-link block)))
 
 (gv-define-setter elcomp--last-instruction (val block)
   `(setcar (elcomp--basic-block-code-link ,block) ,val))
 
 (defun elcomp--first-instruction (block)
+  "Return the first instruction in BLOCK."
   (car (elcomp--basic-block-code block)))
 
 (gv-define-setter elcomp--first-instruction (val block)
   `(setcar (elcomp--basic-block-code ,block) ,val))
 
 (defun elcomp--nonreturn-terminator-p (obj)
+  "Return t if OBJ is a block-terminating instruction other than
+`return' or `diediedie'."
   (or (elcomp--goto-child-p obj)
       (elcomp--if-child-p obj)))
 
 (defun elcomp--terminator-p (obj)
+  "Return t if OBJ terminates a block."
   (or (elcomp--goto-child-p obj)
       (elcomp--if-child-p obj)
       (elcomp--return-child-p obj)
