@@ -215,14 +215,18 @@ Here, the `throw' has to unbind `var1'.")
    (elcomp--argument-child-p arg)))
 
 (defun elcomp--last-instruction (block)
-  "Return the last instruction in BLOCK."
+  "Return the last instruction in BLOCK.
+
+This can be used with `setf'."
   (car (elcomp--basic-block-code-link block)))
 
 (gv-define-setter elcomp--last-instruction (val block)
   `(setcar (elcomp--basic-block-code-link ,block) ,val))
 
 (defun elcomp--first-instruction (block)
-  "Return the first instruction in BLOCK."
+  "Return the first instruction in BLOCK.
+
+This can be used with `setf'."
   (car (elcomp--basic-block-code block)))
 
 (gv-define-setter elcomp--first-instruction (val block)
