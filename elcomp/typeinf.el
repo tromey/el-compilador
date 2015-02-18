@@ -414,6 +414,7 @@ Update MAP with mappings from old to new instructions."
   (let ((rewrite-map (make-hash-table)))
     (elcomp--rewrite-type-predicates compiler rewrite-map)
     (elcomp--rewrite-using-map compiler rewrite-map))
+  (elcomp--cprop-pass compiler)
   (elcomp--thread-jumps-pass compiler t)
   (elcomp--coalesce-pass compiler)
   (elcomp--dce-pass compiler))
