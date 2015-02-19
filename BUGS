@@ -6,20 +6,6 @@
    it's kinda weird here
 
 
-(elcomp--do '(defun zzq (&rest args)
-	       (cl-check-type args list)
-	       (length args)))
-
-=>
-
-    [BB 0 (idom: 0)]
-    call G22482_22492 = length(ϕ:args_22487)
-    return G22482_22492
-
-... this is missing the phi definition, etc
-
-
-
 (elcomp--do '(defun zzzq (arg)
 	       (catch 'bob
 		 (something)
