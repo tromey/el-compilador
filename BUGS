@@ -17,3 +17,4 @@
 
 somewhat better but missing the phi definition
 ... coalesce isn't merging phis in SSA mode
+... it propagates constants into a phi
