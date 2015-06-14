@@ -2,6 +2,13 @@
 
 * To Do
 
+** need to go through and see what happens to dynamic vars
+   it seems like symbol-value should maybe be explicit?
+   or...?
+   at least the docs need updating
+
+** arguments need types set to :bottom
+
 ** typeinf.el doesn't handle keywordp specially, but should
 
 ** make sure calls to a lambda work ok
@@ -99,6 +106,9 @@
 
 ** C Code
 
+*** if we're generating code to compile and dlopen then we don't really
+    need DEFUN, and generating a doc comment is the wrong thing to do
+
 *** Currently does not handle QUIT etc.
 
 *** Could use Aurélien's "FFI" / DSO thing
@@ -114,6 +124,13 @@
     a register-based interpreter would likely be faster anyway
 
 * Emacs Bugs and Changes
+
+** the emacs core needs to support a SUBR in a `closure' list
+
+** we need the number of arguments constant exported
+   see eltoc.el
+   if we write some kind of jit back end, we'll need many more
+   constants, like how to unbox
 
 ** we need hacks to emacs for unwinding, see eltoc.el
 
