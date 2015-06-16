@@ -31,14 +31,17 @@
   ;; NAME is nil for an anonymous function.
   ;; FIXME this should just be separate slots of this struct.
   defun
+  ;; The name of the defun, a symbol.  This must be computed using
+  ;; elcomp--get-name, as this is either set lazily from 'defun', or
+  ;; generated for lambdas.
+  name
   ;; A back link to the compilation unit.  This is needed so we can
   ;; push new functions into the compilation unit as we go.
   unit)
 
 (cl-defstruct elcomp--compilation-unit
   ;; A hash table mapping a cons (a defun or a lambda) to a compiler
-  ;; object.  If the value is t then the function hasn't been compiled
-  ;; yet.
+  ;; object.
   (defuns (make-hash-table))
   ;; The work-list.  This is separate from `defuns' for convenience.
   work-list)
@@ -249,6 +252,15 @@ This can be used with `setf'."
   "Return any key of the hash table HASH, or nil."
   (catch 'done
     (maphash (lambda (key _ignore) (throw 'done key)) hash)))
+
+(defun elcomp--get-name (elcomp)
+  "Get the name of the function represented by ELCOMP."
+  (unless (elcomp--name elcomp)
+    (setf (elcomp--name elcomp)
+	  (if (car (elcomp--defun elcomp))
+	      (car (elcomp--defun elcomp))
+	    (cl-gensym "__lambda"))))
+  (elcomp--name elcomp))
 
 (provide 'elcomp)
 

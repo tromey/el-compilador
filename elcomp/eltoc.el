@@ -77,6 +77,7 @@ This is used for references to global symbols."
     (elcomp--c-declare eltoc sym))
   (insert (elcomp--c-name sym)))
 
+;; FIXME - in emacs 25 this can be a generic.
 (defun elcomp--c-emit-symref (eltoc insn)
   (cond
    ((symbolp insn)
@@ -93,6 +94,7 @@ This is used for references to global symbols."
    ((elcomp--constant-p insn)
     (let ((value (oref insn :value)))
       (cond
+       ;; FIXME - in emacs 25 this can be a generic.
        ((symbolp value)
 	(insert (elcomp--c-intern-symbol eltoc value)))
        ((integerp value)
@@ -101,6 +103,8 @@ This is used for references to global symbols."
 	;; Could use make_string, but there's little point since GCC
 	;; will optimize the strlen anyhow.
 	(insert "build_string (" (elcomp--c-quote-string value) ")"))
+       ((cl-typep value 'elcomp)
+	(insert "K" (symbol-name (elcomp--get-name value))))
        (t
 	(error "unhandled constant of type %S" (type-of value))))))
    (t
@@ -299,7 +303,7 @@ argument."
 
 (defun elcomp--c-generate-defun (compiler)
   (let* ((info (elcomp--defun compiler))
-	 (sym (car info))
+	 (sym (elcomp--get-name compiler))
 	 (c-name (elcomp--c-name sym))
 	 (arg-info (elcomp--c-parse-args (cadr info))))
     (insert
@@ -381,22 +385,38 @@ argument."
       (maphash (lambda (_symbol c-name)
 		 (insert "static Lisp_Object " c-name ";\n"))
 	       symbol-hash)
+      (insert "\n")
+
+      ;; Create "K" values that are are tagged SUBR values for all the
+      ;; functions.
+      (maphash
+       (lambda (_ignore compiler)
+	 (let ((name (elcomp--get-name compiler)))
+	   (insert "static K" (symbol-name name) ";\n")))
+       (elcomp--compilation-unit-defuns unit))
       (insert "\n"))
     (insert "\n"
 	    "void\ninit (void)\n{\n")
     ;; Intern all the symbols we refer to.
     (maphash (lambda (symbol c-name)
-	       (insert "  DEFSYM (" c-name ", "
+	       (insert "  " c-name " = intern_c_string (" 
 		       (elcomp--c-quote-string (symbol-name symbol))
-		       ");\n"))
+		       ");\n")
+	       (insert "  staticpro (&" c-name ");\n"))
 	     symbol-hash)
     (insert "\n")
     ;; Register our exported functions with Lisp.
     (maphash
      (lambda (_ignore compiler)
        (let ((name (car (elcomp--defun compiler))))
-	 (when name
-	   (insert "  defsubr (&S" (elcomp--c-name name) ");\n"))))
+	 (if name
+	     (insert "  defsubr (&S" (elcomp--c-name name) ");\n")
+	   (insert "  XSETPVECTYPE (&S"
+		   (symbol-name (elcomp--get-name compiler))
+		   ", PVEC_SUBR);\n"))
+	 (insert "  XSETSUBR (K" (symbol-name (elcomp--get-name compiler))
+		 ", &S" (symbol-name (elcomp--get-name compiler))
+		 ");\n")))
      (elcomp--compilation-unit-defuns unit))
     (insert "}\n")))
 

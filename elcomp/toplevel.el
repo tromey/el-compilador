@@ -67,14 +67,12 @@
 (defvar byte-compile-free-references)
 (defvar byte-compile--outbuffer)
 
-(defun elcomp--translate (unit form)
+(defun elcomp--translate (unit compiler form)
   (byte-compile-close-variables
    (let* ((byte-compile-macro-environment
 	   (append elcomp--compiler-macros
 		   byte-compile-macro-environment))
-	  (compiler (make-elcomp))
 	  (result-var (elcomp--new-var compiler)))
-     (puthash form compiler (elcomp--compilation-unit-defuns unit))
      (setf (elcomp--unit compiler) unit)
      (setf (elcomp--entry-block compiler) (elcomp--label compiler))
      (setf (elcomp--current-block compiler) (elcomp--entry-block compiler))
@@ -89,13 +87,21 @@
 
 (defun elcomp--translate-all (unit)
   (while (elcomp--compilation-unit-work-list unit)
-    (let ((form (pop (elcomp--compilation-unit-work-list unit))))
-      (elcomp--translate unit form))))
+    (let ((args (pop (elcomp--compilation-unit-work-list unit))))
+      (apply #'elcomp--translate unit args))))
 
 (defun elcomp--plan-to-compile (unit form)
+  "Add FORM to the list of functions to be compiled by UNIT.
+
+FORM is a function definition.
+UNIT is a compilation unit object.
+
+This returns the new compiler object."
   (unless (gethash form (elcomp--compilation-unit-defuns unit))
-    (puthash form t (elcomp--compilation-unit-defuns unit))
-    (push form (elcomp--compilation-unit-work-list unit))))
+    (let ((compiler (make-elcomp)))
+      (puthash form compiler (elcomp--compilation-unit-defuns unit))
+      (push (list compiler form) (elcomp--compilation-unit-work-list unit))
+      compiler)))
 
 (declare-function elcomp--pp-unit "elcomp/comp-debug")
 

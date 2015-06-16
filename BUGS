@@ -1,11 +1,3 @@
-(elcomp--do '((defun zzq (ll)
-		(mapcar (lambda (x) x) ll)))
-	    #'elcomp--c-translate)
-
-=> error
-   it's kinda weird here
-
-
 (elcomp--do '(defun zzzq (arg)
 	       (catch 'bob
 		 (something)

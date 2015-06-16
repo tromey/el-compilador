@@ -477,11 +477,16 @@ sequence of objects.  FIXME ref the class docs"
 	nil)
 
        ((eq fn 'function)
-	(when (listp (cadr form))
-	  (elcomp--plan-to-compile (elcomp--unit compiler) (cadr form)))
-	(when result-location
-	  (elcomp--add-set compiler result-location
-			   (elcomp--constant "constant" :value (cadr form)))))
+	(let ((the-function (cadr form)))
+	  ;; For (function (lambda ...)), arrange to compile it and
+	  ;; put use the new compiler object as the constant.
+	  (when (listp (cadr form))
+	    (setf the-function (elcomp--plan-to-compile (elcomp--unit compiler)
+							the-function)))
+	  (when result-location
+	    (elcomp--add-set compiler result-location
+			     (elcomp--constant "constant"
+					       :value the-function)))))
 
        ((not (symbolp fn))
 	(error "not supported: %S" fn))
