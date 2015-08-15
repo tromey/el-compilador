@@ -300,7 +300,7 @@ sequence of objects.  FIXME ref the class docs"
 		(elcomp--linearize compiler val rewritten-sym)
 		(when stored-variable
 		  ;; Return the value.
-		  (elcomp--add-set compiler result-location stored-variable)))))))
+		  (elcomp--add-set compiler stored-variable rewritten-sym)))))))
 
        ((eq fn 'cond)
 	(let ((label-done (elcomp--label compiler)))
