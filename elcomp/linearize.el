@@ -360,7 +360,10 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; The false branch.
 	  (elcomp--make-block-current compiler label-false)
 	  (if (cl-cdddr form)
-	      (elcomp--linearize-body compiler (cl-cdddr form) result-location))
+	      (elcomp--linearize-body compiler (cl-cdddr form) result-location)
+	    (elcomp--add-set compiler result-location
+			     (elcomp--constant "constant"
+					       :value nil)))
 	  ;; The end of the statement.
 	  (elcomp--make-block-current compiler label-done)))
 
