@@ -43,15 +43,20 @@
 REF can be a symbol, in which case it is rewritten following
 `elcomp--rewrite-alist' and returned.
 Or REF can be a constant, in which case it is returned unchanged."
-  (if (elcomp--constant-child-p ref)
-      ref
-    ;; Temporary.
-    (if (special-variable-p ref)
-	(error "special variables not supported yet: %s" ref))
+  (cond
+   ((elcomp--constant-child-p ref)
+    ref)
+   ((special-variable-p ref)
+    (let ((var (elcomp--new-var compiler)))
+      (elcomp--add-call compiler var
+			'symbol-value
+			(list (elcomp--constant "constant" :value ref)))
+      var))
+   (t
     (let ((tem (assq ref (elcomp--rewrite-alist compiler))))
       (if tem
 	  (cdr tem)
-	ref))))
+	ref)))))
 
 (defun elcomp--label (compiler)
   (prog1
