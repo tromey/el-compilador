@@ -38,8 +38,8 @@ The value is actually the tail of LIST whose car is ELT."
 	(result nil))
     (while (and (not result) (consp tail))
       (let ((tem (car tail)))
-	(if (equal elt tem)
-	    (setq result elt))))
+	(when (equal elt tem)
+	  (setq result elt))))
     result))
 
 (defun memq (elt list)
@@ -49,8 +49,8 @@ The value is actually the tail of LIST whose car is ELT."
 	(result nil))
     (while (and (not result) (consp tail))
       (let ((tem (car tail)))
-	(if (eq elt tem)
-	    (setq result elt))))
+	(when (eq elt tem)
+	  (setq result elt))))
     result))
 
 (defun memql (elt list)
@@ -60,8 +60,8 @@ The value is actually the tail of LIST whose car is ELT."
 	(result nil))
     (while (and (not result) (consp tail))
       (let ((tem (car tail)))
-	(if (eql elt tem)
-	    (setq result elt))))
+	(when (eql elt tem)
+	  (setq result elt))))
     result))
 
 (defun assq (key list)
@@ -133,13 +133,14 @@ Return the reversed list.  Expects a properly nil-terminated list."
 (defun provide (feature subfeatures)
   (cl-check-type feature symbol)
   (cl-check-type subfeatures list)
-  (if autoload-queue
-      (push (cons 0 features) autoload-queue))
+  (when autoload-queue
+    (push (cons 0 features) autoload-queue))
   (unless (memq feature features)
     (push feature features))
-  (if subfeatures
-      (put feature 'subfeatures subfeatures))
-  ;; LOADHIST_ATTACH (Fcons (Qprovide, feature));
+  (when subfeatures
+    (put feature 'subfeatures subfeatures))
+  ;; if (initialized) <- add back
+  (push (cons 'provide feature) current-load-list)
   (let ((tem (assq feature after-load-alist)))
     (if (consp tem)
 	(mapc #'funcall (cdr tem))))
