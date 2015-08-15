@@ -83,7 +83,7 @@ This is used for references to global symbols."
    ((symbolp insn)
     (insert (elcomp--c-intern-symbol eltoc insn)))
    ((elcomp--set-child-p insn)
-    (elcomp--c-symbol eltoc (oref insn :name)))
+    (elcomp--c-symbol eltoc (oref insn :sym)))
    ((elcomp--call-child-p insn)
     (elcomp--c-symbol eltoc (oref insn :sym)))
    ((elcomp--phi-child-p insn)
