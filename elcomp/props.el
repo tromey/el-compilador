@@ -56,8 +56,7 @@ Defined properties are:
 
 (defun elcomp--func-pure-p (func)
   "Return t if FUNC can be considered 'pure'."
-  (or (elcomp--func-const-p func)
-      (get func :elcomp-pure)
+  (or (get func :elcomp-pure)
       (get func 'pure)))
 
 (defun elcomp--func-type (func)
