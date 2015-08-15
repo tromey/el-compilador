@@ -46,8 +46,7 @@ Or REF can be a constant, in which case it is returned unchanged."
   (if (elcomp--constant-child-p ref)
       ref
     ;; Temporary.
-    (if (and (special-variable-p ref)
-	     (not (memq ref '(nil t))))
+    (if (special-variable-p ref)
 	(error "special variables not supported yet: %s" ref))
     (let ((tem (assq ref (elcomp--rewrite-alist compiler))))
       (if tem
