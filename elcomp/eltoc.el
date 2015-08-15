@@ -392,7 +392,7 @@ argument."
       (maphash
        (lambda (_ignore compiler)
 	 (let ((name (elcomp--get-name compiler)))
-	   (insert "static K" (symbol-name name) ";\n")))
+	   (insert "static Lisp_Object K" (symbol-name name) ";\n")))
        (elcomp--compilation-unit-defuns unit))
       (insert "\n"))
     (insert "\n"
