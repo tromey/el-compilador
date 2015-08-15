@@ -321,6 +321,11 @@ sequence of objects.  FIXME ref the class docs"
 	      ;; another pass, so we can be a bit lazy here.
 	      (elcomp--add-goto compiler label-done)
 	      (elcomp--make-block-current compiler next-label)))
+	  ;; Emit a final case for the cond.  This will be optimized
+	  ;; away as needed.
+	  (when result-location
+	    (elcomp--add-set compiler result-location
+			     (elcomp--constant "constant" :value nil)))
 	  (elcomp--make-block-current compiler label-done)))
 
        ((memq fn '(progn inline))
@@ -361,9 +366,9 @@ sequence of objects.  FIXME ref the class docs"
 	  (elcomp--make-block-current compiler label-false)
 	  (if (cl-cdddr form)
 	      (elcomp--linearize-body compiler (cl-cdddr form) result-location)
-	    (elcomp--add-set compiler result-location
-			     (elcomp--constant "constant"
-					       :value nil)))
+	    (when result-location
+	      (elcomp--add-set compiler result-location
+			       (elcomp--constant "constant" :value nil))))
 	  ;; The end of the statement.
 	  (elcomp--make-block-current compiler label-done)))
 
