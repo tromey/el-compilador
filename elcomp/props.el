@@ -149,7 +149,7 @@ things, so that advice continues to work."
 ;; This first part of this list comes from the bytecode interpreter.
 ;; Then there are some useful additions.  It's important not to add
 ;; things here which the user might want to advise.
-(dolist (iter '(nth symbolp consp stringp lisp eq memq not car cdr
+(dolist (iter '(nth symbolp consp stringp listp eq memq not car cdr
 		    cons list length aref aset symbol-value
 		    symbol-function set fset get substring concat
 		    1- 1+ = > < <= >= - + max min * point
