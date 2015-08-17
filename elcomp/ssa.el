@@ -61,7 +61,7 @@ Returns t if CURRENT-MAP was updated, or nil if not."
   ;; FIXME - error if not found
   (gethash arg current-map arg))
 
-(defgeneric elcomp--ssa-rename (insn compiler current-map)
+(cl-defgeneric elcomp--ssa-rename (insn compiler current-map)
   "Update the instruction INSN to account for SSA renamings.
 
 Operands of INSN are looked up in CURRENT-MAP and replaced.  If
@@ -70,12 +70,12 @@ INSN is an assignment, then the left-hand-side is also updated.
 This returns t if CURRENT-MAP was modified by this renaming, and
 nil otherwise.")
 
-(defmethod elcomp--ssa-rename ((insn elcomp--set) _compiler current-map)
+(cl-defmethod elcomp--ssa-rename ((insn elcomp--set) _compiler current-map)
   (setf (oref insn :value) (elcomp--ssa-rename-arg (oref insn :value)
 						   current-map))
   (elcomp--ssa-note-lhs insn current-map))
 
-(defmethod elcomp--ssa-rename ((insn elcomp--call) _compiler current-map)
+(cl-defmethod elcomp--ssa-rename ((insn elcomp--call) _compiler current-map)
   ;; FIXME the :func slot.
   (let ((cell (oref insn :args)))
     (while cell
@@ -83,21 +83,21 @@ nil otherwise.")
       (setf cell (cdr cell))))
   (elcomp--ssa-note-lhs insn current-map))
 
-(defmethod elcomp--ssa-rename ((insn elcomp--goto) compiler current-map)
+(cl-defmethod elcomp--ssa-rename ((insn elcomp--goto) compiler current-map)
   (elcomp--ssa-propagate compiler (oref insn :block) current-map)
   nil)
 
-(defmethod elcomp--ssa-rename ((insn elcomp--if) compiler current-map)
+(cl-defmethod elcomp--ssa-rename ((insn elcomp--if) compiler current-map)
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
   (elcomp--ssa-propagate compiler (oref insn :block-true) current-map)
   (elcomp--ssa-propagate compiler (oref insn :block-false) current-map)
   nil)
 
-(defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
+(cl-defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
   nil)
 
-(defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
+(cl-defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
   nil)
 

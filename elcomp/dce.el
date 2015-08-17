@@ -24,7 +24,7 @@ It holds data internal to the pass."
   "Add INSN to the work list of DCE, unless it is already marked."
   (push insn (elcomp--dce-work-list dce)))
 
-(defgeneric elcomp--mark-necessary (insn dce just-intrinsic)
+(cl-defgeneric elcomp--mark-necessary (insn dce just-intrinsic)
   "Possibly mark the instruction INSN as necessary.
 DCE is the DCE state object for the pass.
 
@@ -35,30 +35,30 @@ instruction.
 Marking the instruction means adding it to the hash and then
 pushing the instruction's arguments onto the work list.")
 
-(defmethod elcomp--mark-necessary (insn dce _just-intrinsic)
+(cl-defmethod elcomp--mark-necessary (insn dce _just-intrinsic)
   "The default case is to mark a statement as needed."
   (puthash insn t (elcomp--dce-hash dce)))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--if) dce _just-intrinsic)
+(cl-defmethod elcomp--mark-necessary ((insn elcomp--if) dce _just-intrinsic)
   "`If' statements are marked as needed and their argument is pushed."
   ;; An IF is always needed.
   (puthash insn t (elcomp--dce-hash dce))
   ;; And so is its reference.
   (elcomp--dce-add (oref insn :sym) dce))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--goto) dce _just-intrinsic)
+(cl-defmethod elcomp--mark-necessary ((insn elcomp--goto) dce _just-intrinsic)
   "`Goto' statements are marked as needed."
   ;; A GOTO is always needed.
   (puthash insn t (elcomp--dce-hash dce)))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--return) dce _just-intrinsic)
+(cl-defmethod elcomp--mark-necessary ((insn elcomp--return) dce _just-intrinsic)
   "`Return' statements are marked as needed and their argument is pushed."
   ;; A RETURN is always needed.
   (puthash insn t (elcomp--dce-hash dce))
   ;; And so is its reference.
   (elcomp--dce-add (oref insn :sym) dce))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--set) dce just-intrinsic)
+(cl-defmethod elcomp--mark-necessary ((insn elcomp--set) dce just-intrinsic)
   "Mark a `set' statement as necessary.
 
 In the first pass, do nothing.  A `set' is not intrinsically needed.
@@ -69,7 +69,7 @@ its references on the work list."
     (puthash insn t (elcomp--dce-hash dce))
     (elcomp--dce-add (oref insn :value) dce)))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--phi) dce just-intrinsic)
+(cl-defmethod elcomp--mark-necessary ((insn elcomp--phi) dce just-intrinsic)
   "Mark a `phi' statement as necessary.
 
 In the first pass, do nothing.  A `phi' is not intrinsically needed.
@@ -82,7 +82,7 @@ its references on the work list."
 	       (elcomp--dce-add arg dce))
 	     (oref insn :args))))
 
-(defmethod elcomp--mark-necessary ((insn elcomp--call) dce just-intrinsic)
+(cl-defmethod elcomp--mark-necessary ((insn elcomp--call) dce just-intrinsic)
   "Mark a `call' statement as necessary."
   (let ((push-args nil))
     (if just-intrinsic

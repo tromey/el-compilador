@@ -115,7 +115,7 @@
 	  (setf result :bottom)))))
     result))
 
-(defgeneric elcomp--compute-type (obj map)
+(cl-defgeneric elcomp--compute-type (obj map)
   "Compute the type of OBJ in a basic block, given a type map.
 
 The type is generally the result of `type-of'.
@@ -123,10 +123,10 @@ However `:top' is used to represent the 'top' type,
 `:bottom' is used to represent the 'bottom' type,
 and `nil' is used to mean a typeless instruction.")
 
-(defmethod elcomp--compute-type (_obj _map)
+(cl-defmethod elcomp--compute-type (_obj _map)
   nil)
 
-(defmethod elcomp--compute-type ((obj elcomp--constant) _map)
+(cl-defmethod elcomp--compute-type ((obj elcomp--constant) _map)
   (let ((value (oref obj :value)))
     (cl-case value
       ;; nil has a type of its own.
@@ -135,7 +135,7 @@ and `nil' is used to mean a typeless instruction.")
       ((t) t)
       (t (type-of value)))))
 
-(defmethod elcomp--compute-type ((obj elcomp--set) map)
+(cl-defmethod elcomp--compute-type ((obj elcomp--set) map)
   (elcomp--find-type (oref obj :value) map))
 
 (defun elcomp--merge-math-types (arguments map)
@@ -174,7 +174,7 @@ and `nil' is used to mean a typeless instruction.")
 
     result))
 
-(defmethod elcomp--compute-type ((obj elcomp--call) map)
+(cl-defmethod elcomp--compute-type ((obj elcomp--call) map)
   (if (not (oref obj :sym))
       ;; No symbol means no type.
       nil
@@ -192,7 +192,7 @@ and `nil' is used to mean a typeless instruction.")
 	;; Nothing special.
 	:bottom)))))
 
-(defmethod elcomp--compute-type ((obj elcomp--phi) map)
+(cl-defmethod elcomp--compute-type ((obj elcomp--phi) map)
   (let ((arg-list nil))
     (maphash (lambda (var _ignore)
 	       ;; We treat phis specially: any input that isn't found
@@ -201,7 +201,7 @@ and `nil' is used to mean a typeless instruction.")
 	     (oref obj :args))
     (apply #'elcomp--merge-types arg-list)))
 
-(defmethod elcomp--compute-type ((obj elcomp--argument) _map)
+(cl-defmethod elcomp--compute-type ((obj elcomp--argument) _map)
   (if (oref obj :is-rest)
       'list
     :bottom))
@@ -241,18 +241,18 @@ Return non-nil if any changes were made."
     (unless (memq bb (elcomp--typeinf-worklist infobj))
       (push bb (elcomp--typeinf-worklist infobj)))))
 
-(defgeneric elcomp--type-map-propagate (insn infobj type-map)
+(cl-defgeneric elcomp--type-map-propagate (insn infobj type-map)
   "FIXME")
 
-(defmethod elcomp--type-map-propagate (_insn _infobj _type-map)
+(cl-defmethod elcomp--type-map-propagate (_insn _infobj _type-map)
   nil)
 
-(defmethod elcomp--type-map-propagate ((insn elcomp--goto) infobj type-map)
+(cl-defmethod elcomp--type-map-propagate ((insn elcomp--goto) infobj type-map)
   (elcomp--type-map-propagate-one infobj (oref insn :block) type-map))
 
 (defun elcomp--find-type-predicate (sym)
   "Return type tested by the statement INSN, or nil."
-  (when (elcomp--call-child-p sym)
+  (when (elcomp--call-p sym)
     (elcomp--func-type-predicate (oref sym :func))))
 
 (defun elcomp--pretend-eval-type-predicate (predicate-type arg-type)
@@ -290,7 +290,7 @@ Return non-nil if any changes were made."
 
    (t nil)))
 
-(defmethod elcomp--type-map-propagate ((insn elcomp--if) infobj type-map)
+(cl-defmethod elcomp--type-map-propagate ((insn elcomp--if) infobj type-map)
   (let* ((sym (oref insn :sym))
 	 (predicated-type (elcomp--find-type-predicate sym))
 	 (predicate-arg (if predicated-type
@@ -385,7 +385,7 @@ Update MAP with mappings from old to new instructions."
      (let ((iter (elcomp--basic-block-code bb)))
        (while iter
 	 (let ((insn (car iter)))
-	   (when (elcomp--call-child-p insn)
+	   (when (elcomp--call-p insn)
 	     (let* ((predicated-type (elcomp--find-type-predicate insn))
 		    (predicate-arg (if predicated-type
 				       (car (oref insn :args))

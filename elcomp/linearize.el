@@ -44,7 +44,7 @@ REF can be a symbol, in which case it is rewritten following
 `elcomp--rewrite-alist' and returned.
 Or REF can be a constant, in which case it is returned unchanged."
   (cond
-   ((elcomp--constant-child-p ref)
+   ((elcomp--constant-p ref)
     ref)
    ((special-variable-p ref)
     (let ((var (elcomp--new-var compiler)))

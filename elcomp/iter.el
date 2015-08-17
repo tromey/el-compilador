@@ -12,9 +12,9 @@
     (let ((obj (elcomp--last-instruction bb)))
       (cond
        ;; FIXME why is the -child- variant needed here?
-       ((elcomp--goto-child-p obj)
+       ((elcomp--goto-p obj)
 	(elcomp--do-iterate hash callback (oref obj :block) postorder))
-       ((elcomp--if-child-p obj)
+       ((elcomp--if-p obj)
 	(elcomp--do-iterate hash callback (oref obj :block-true) postorder)
 	(elcomp--do-iterate hash callback (oref obj :block-false) postorder))))
     (dolist (exception (elcomp--basic-block-exceptions bb))

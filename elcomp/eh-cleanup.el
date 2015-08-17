@@ -10,31 +10,31 @@
 (require 'elcomp/back)
 (require 'elcomp/props)
 
-(defgeneric elcomp--can-throw (insn)
+(cl-defgeneric elcomp--can-throw (insn)
   "Return t if INSN can `throw' or `signal', otherwise nil."
   )
 
-(defmethod elcomp--can-throw (_insn)
+(cl-defmethod elcomp--can-throw (_insn)
   "The base case is to assume any instruction can throw."
   t)
 
-(defmethod elcomp--can-throw ((_insn elcomp--set))
+(cl-defmethod elcomp--can-throw ((_insn elcomp--set))
   "A `set' instruction cannot throw."
   nil)
 
-(defmethod elcomp--can-throw ((_insn elcomp--goto))
+(cl-defmethod elcomp--can-throw ((_insn elcomp--goto))
   "A `goto' instruction cannot throw."
   nil)
 
-(defmethod elcomp--can-throw ((_insn elcomp--if))
+(cl-defmethod elcomp--can-throw ((_insn elcomp--if))
   "An `if' instruction cannot throw."
   nil)
 
-(defmethod elcomp--can-throw ((_insn elcomp--return))
+(cl-defmethod elcomp--can-throw ((_insn elcomp--return))
   "A `return' instruction cannot throw."
   nil)
 
-(defmethod elcomp--can-throw ((insn elcomp--call))
+(cl-defmethod elcomp--can-throw ((insn elcomp--call))
   "A `call' instruction usually can throw.
 A function marked `nothrow' will not throw."
   ;; Note that we can't really be picky about `signal' or `throw'
@@ -44,7 +44,7 @@ A function marked `nothrow' will not throw."
       nil
     t))
 
-(defmethod elcomp--can-throw ((_insn elcomp--diediedie))
+(cl-defmethod elcomp--can-throw ((_insn elcomp--diediedie))
   "A `diediedie' instruction always throws."
   t)
 

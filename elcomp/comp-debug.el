@@ -9,20 +9,20 @@
 (require 'elcomp)
 (require 'elcomp/typeinf)
 
-(defgeneric elcomp--pp (obj verbose)
+(cl-defgeneric elcomp--pp (obj verbose)
   "Pretty-print a compiler object.
 
 OBJ is the object to pretty-print.
 VERBOSE non-nil means to write a more verbose description.")
 
-(defmethod elcomp--pp (_obj _verbose)
+(cl-defmethod elcomp--pp (_obj _verbose)
   (error "unrecognized instruction"))
 
-(defmethod elcomp--pp (obj _verbose)
+(cl-defmethod elcomp--pp (obj _verbose)
   (princ obj))
 
-;; FIXME eldoc for defmethod is messed up
-(defmethod elcomp--pp ((obj elcomp--set) verbose)
+;; FIXME eldoc for cl-defmethod is messed up
+(cl-defmethod elcomp--pp ((obj elcomp--set) verbose)
   (if verbose
       (progn
 	(princ "set ")
@@ -31,7 +31,7 @@ VERBOSE non-nil means to write a more verbose description.")
 	(elcomp--pp (oref obj :value) nil))
     (elcomp--pp (oref obj :sym) nil)))
 
-(defmethod elcomp--pp ((obj elcomp--call) verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--call) verbose)
   (if verbose
       (progn
 	(princ "call ")
@@ -47,11 +47,11 @@ VERBOSE non-nil means to write a more verbose description.")
 	    (princ ")"))))
     (elcomp--pp (oref obj :sym) nil)))
 
-(defmethod elcomp--pp ((obj elcomp--goto) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--goto) _verbose)
   (princ "goto BB ")
   (princ (elcomp--basic-block-number (oref obj :block))))
 
-(defmethod elcomp--pp ((obj elcomp--if) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--if) _verbose)
   (princ "if ")
   (elcomp--pp (oref obj :sym) nil)
   (princ " BB ")
@@ -59,16 +59,16 @@ VERBOSE non-nil means to write a more verbose description.")
   (princ " else BB ")
   (princ (elcomp--basic-block-number (oref obj :block-false))))
 
-(defmethod elcomp--pp ((obj elcomp--return) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--return) _verbose)
   (princ "return ")
   (elcomp--pp (oref obj :sym) nil))
 
-(defmethod elcomp--pp ((obj elcomp--constant) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--constant) _verbose)
   (princ "<< ")
   (princ (oref obj :value))
   (princ " >>"))
 
-(defmethod elcomp--pp ((obj elcomp--phi) verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--phi) verbose)
   (princ "ϕ:")
   (princ (oref obj :original-name))
   (when verbose
@@ -78,27 +78,27 @@ VERBOSE non-nil means to write a more verbose description.")
 	       (elcomp--pp item nil))
 	     (oref obj :args))))
 
-(defmethod elcomp--pp ((obj elcomp--argument) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--argument) _verbose)
   (princ "argument ")
   (princ (oref obj :original-name)))
 
-(defmethod elcomp--pp ((obj elcomp--catch) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--catch) _verbose)
   (princ "catch ")
   (princ (oref obj :tag))
   (princ " => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))
 
-(defmethod elcomp--pp ((obj elcomp--condition-case) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--condition-case) _verbose)
   (princ "condition-case ")
   (princ (oref obj :condition-name))
   (princ " => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))
 
-(defmethod elcomp--pp ((obj elcomp--unwind-protect) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--unwind-protect) _verbose)
   (princ "unwind-protect => BB ")
   (princ (elcomp--basic-block-number (oref obj :handler))))
 
-(defmethod elcomp--pp ((obj elcomp--fake-unwind-protect) _verbose)
+(cl-defmethod elcomp--pp ((obj elcomp--fake-unwind-protect) _verbose)
   (princ "fake-unwind-protect ")
   (princ (oref obj :count)))
 

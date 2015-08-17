@@ -82,14 +82,14 @@ This is used for references to global symbols."
   (cond
    ((symbolp insn)
     (insert (elcomp--c-name insn)))
-   ((elcomp--set-child-p insn)
+   ((elcomp--set-p insn)
     (elcomp--c-symbol eltoc (oref insn :sym)))
-   ((elcomp--call-child-p insn)
+   ((elcomp--call-p insn)
     (elcomp--c-symbol eltoc (oref insn :sym)))
-   ((elcomp--phi-child-p insn)
+   ((elcomp--phi-p insn)
     ;; FIXME??
     (elcomp--c-symbol eltoc (oref insn :original-name)))
-   ((elcomp--argument-child-p insn)
+   ((elcomp--argument-p insn)
     (elcomp--c-symbol eltoc (oref insn :original-name) t))
    ((elcomp--constant-p insn)
     (let ((value (oref insn :value)))
@@ -113,13 +113,13 @@ This is used for references to global symbols."
 (defun elcomp--c-emit-label (block)
   (insert (format "BB_%d" (elcomp--basic-block-number block))))
 
-(defgeneric elcomp--c-emit (insn eltoc)
+(cl-defgeneric elcomp--c-emit (insn eltoc)
   "FIXME")
 
-(defmethod elcomp--c-emit (insn _eltoc)
+(cl-defmethod elcomp--c-emit (insn _eltoc)
   (error "unhandled case: %S" insn))
 
-(defmethod elcomp--c-emit ((insn elcomp--set) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--set) eltoc)
   (elcomp--c-emit-symref eltoc insn)
   (insert " = ")
   (elcomp--c-emit-symref eltoc (oref insn :value)))
@@ -147,7 +147,7 @@ argument."
     (:save-restriction-restore . "restore_restrction")
     (:unwind-protect-continue . "unwind_protect_continue")))
 
-(defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
   (when (oref insn :sym)
     (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
@@ -176,11 +176,11 @@ argument."
 	  (insert ")")
 	(insert " }))")))))
 
-(defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc)
   (insert "goto ")
   (elcomp--c-emit-label (oref insn :block)))
 
-(defmethod elcomp--c-emit ((insn elcomp--if) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--if) eltoc)
   (insert "if (!NILP (")
   (elcomp--c-emit-symref eltoc (oref insn :sym))
   (insert ")) goto ")
@@ -188,15 +188,15 @@ argument."
   (insert "; else goto ")
   (elcomp--c-emit-label (oref insn :block-false)))
 
-(defmethod elcomp--c-emit ((insn elcomp--return) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--return) eltoc)
   (insert "return ")
   (elcomp--c-emit-symref eltoc (oref insn :sym)))
 
-(defmethod elcomp--c-emit ((insn elcomp--argument) _eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--argument) _eltoc)
   (insert "goto ")
   (elcomp--c-emit-label (oref insn :goto)))
 
-(defmethod elcomp--c-emit ((insn elcomp--catch) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--catch) eltoc)
   (let ((name (elcomp--c-declare-handler eltoc)))
     (insert "  PUSH_HANDLER (" name ", ")
     (elcomp--c-emit-symref eltoc (oref insn :tag))
@@ -209,11 +209,11 @@ argument."
     (insert ";\n")
     (insert "    }\n")))
 
-(defmethod elcomp--c-emit ((_insn elcomp--condition-case) _eltoc)
+(cl-defmethod elcomp--c-emit ((_insn elcomp--condition-case) _eltoc)
   ;; This one is handled specially for efficiency.
   (error "should not be called"))
 
-(defmethod elcomp--c-emit ((insn elcomp--unwind-protect) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--unwind-protect) eltoc)
   (let ((name (elcomp--c-declare-handler eltoc)))
     ;; Emacs doesn't actually have anything for this yet.
     (insert "  PUSH_HANDLER (" name ", Qnil, UNWIND_PROTECT);\n")
@@ -225,7 +225,7 @@ argument."
     (insert ";\n")
     (insert "    }\n")))
 
-(defmethod elcomp--c-emit ((_insn elcomp--fake-unwind-protect) _eltoc)
+(cl-defmethod elcomp--c-emit ((_insn elcomp--fake-unwind-protect) _eltoc)
   ;; Nothing.
   )
 
@@ -264,7 +264,7 @@ argument."
 	  ;; we may need to pop some items.
 	  (while (not (eq bb-eh parent-eh))
 	    ;; Ignore fake unwind-protects.
-	    (unless (elcomp--fake-unwind-protect-child-p (car parent-eh))
+	    (unless (elcomp--fake-unwind-protect-p (car parent-eh))
 	      (insert "  handlerlist = handlerlist->next;\n"))
 	    (setf parent-eh (cdr parent-eh)))
 	(when bb-eh

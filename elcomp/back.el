@@ -19,19 +19,19 @@ This sets all the back edges to nil."
      (setf (elcomp--basic-block-parents bb)
 	   (if init (make-hash-table) nil)))))
 
-(defgeneric elcomp--add-links (insn block)
+(cl-defgeneric elcomp--add-links (insn block)
   "Add backlinks for the instruction INSN, which appears in BLOCK.")
 
-(defmethod elcomp--add-links (_insn _block)
+(cl-defmethod elcomp--add-links (_insn _block)
   "The base case does nothing.  Most instructions don't have links."
   ;; Do nothing.
   )
 
-(defmethod elcomp--add-links ((insn elcomp--goto) block)
+(cl-defmethod elcomp--add-links ((insn elcomp--goto) block)
   "Add backlinks for a `goto'."
   (puthash block t (elcomp--basic-block-parents (oref insn :block))))
 
-(defmethod elcomp--add-links ((insn elcomp--if) block)
+(cl-defmethod elcomp--add-links ((insn elcomp--if) block)
   "Add backlinks for an `if'."
   (puthash block t (elcomp--basic-block-parents (oref insn :block-true)))
   (puthash block t (elcomp--basic-block-parents (oref insn :block-false))))

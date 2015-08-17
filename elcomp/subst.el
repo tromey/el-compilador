@@ -10,21 +10,21 @@
 
 (require 'elcomp)
 
-(defgeneric elcomp--rewrite-insn (insn map)
+(cl-defgeneric elcomp--rewrite-insn (insn map)
   "Rewrite INSN according to MAP.
 
 MAP is a hash table mapping old instructions to new ones.")
 
-(defmethod elcomp--rewrite-insn (insn _map)
+(cl-defmethod elcomp--rewrite-insn (insn _map)
   "Unhandled cases call `error'q."
   (error "unhandled case: %S" insn))
 
-(defmethod elcomp--rewrite-insn ((insn elcomp--set) map)
+(cl-defmethod elcomp--rewrite-insn ((insn elcomp--set) map)
   (let ((new-insn (gethash (oref insn :value) map)))
     (when new-insn
       (setf (oref insn :value) new-insn))))
 
-(defmethod elcomp--rewrite-insn ((insn elcomp--call) map)
+(cl-defmethod elcomp--rewrite-insn ((insn elcomp--call) map)
   ;; FIXME: the :func slot?
   (cl-mapl
    (lambda (cell)
@@ -33,20 +33,20 @@ MAP is a hash table mapping old instructions to new ones.")
 	 (setf (car cell) new-insn))))
    (oref insn :args)))
 
-(defmethod elcomp--rewrite-insn ((_insn elcomp--goto) _map)
+(cl-defmethod elcomp--rewrite-insn ((_insn elcomp--goto) _map)
   nil)
 
-(defmethod elcomp--rewrite-insn ((insn elcomp--if) map)
+(cl-defmethod elcomp--rewrite-insn ((insn elcomp--if) map)
   (let ((new-insn (gethash (oref insn :sym) map)))
     (when new-insn
       (setf (oref insn :sym) new-insn))))
 
-(defmethod elcomp--rewrite-insn ((insn elcomp--return) map)
+(cl-defmethod elcomp--rewrite-insn ((insn elcomp--return) map)
   (let ((new-insn (gethash (oref insn :sym) map)))
     (when new-insn
       (setf (oref insn :sym) new-insn))))
 
-(defmethod elcomp--rewrite-insn ((insn elcomp--phi) map)
+(cl-defmethod elcomp--rewrite-insn ((insn elcomp--phi) map)
   ;; Ugh.
   (let ((new-hash (make-hash-table)))
     (maphash

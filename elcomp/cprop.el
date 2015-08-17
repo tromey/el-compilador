@@ -25,7 +25,7 @@ Return non-nil if anything was changed."
        (dolist (insn (elcomp--basic-block-code bb))
 	 ;; We can eliminate SET instructions in general.  This
 	 ;; handles both constant and copy propagation.
-	 (when (elcomp--set-child-p insn)
+	 (when (elcomp--set-p insn)
 	   (unless rewrites
 	     (setf rewrites (make-hash-table)))
 	   (elcomp--cprop-insert rewrites insn (oref insn :value))))))
@@ -37,7 +37,7 @@ Return non-nil if anything was changed."
 (defun elcomp--all-arguments-constant (call)
   (catch 'done
     (dolist (arg (oref call :args))
-      (unless (elcomp--constant-child-p arg)
+      (unless (elcomp--constant-p arg)
 	(throw 'done nil)))
     t))
 
@@ -57,7 +57,7 @@ Return non-nil if anything was changed."
 	(elcomp--basic-block-phis bb))
        ;; Perform other optimizations.
        (dolist (insn (elcomp--basic-block-code bb))
-	 (when (and (elcomp--call-child-p insn)
+	 (when (and (elcomp--call-p insn)
 		    (elcomp--func-pure-p (oref insn :func))
 		    (elcomp--all-arguments-constant insn))
 	   (let ((new-value

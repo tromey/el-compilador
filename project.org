@@ -143,8 +143,6 @@
    we need our own special hack.  like maybe CL could put a special
    property on the magic symbols it makes
 
-** Some code uses the CLASS-child-p form, since the CLASS-p form didn't seem to work.
-
 ** There doesn't seem to be a way to fetch an object's name
    (there is - you can inherit from eieio-named)
 

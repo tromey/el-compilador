@@ -1,3 +1,30 @@
+can't compile widget-get from fns.el
+
+miscompiles featurep -> constant prop into PHI
+
+C back end writes some bogus symbol names
+
+test (cond)
+(elcomp--do '(defun zzq ()
+	       (cond ((x) (y))
+		     ;; (t t)
+		     )))
+-> this fails maybe due to constant prop into PHI??
+
+
+
+================================================================
+
+(elcomp--do '(defun elt (sequence n)
+  (cl-check-type n integer)
+  (if (listp sequence)
+      (car (nthcdr n sequence))
+    (aref sequence n))))
+
+=> error
+
+================================================================
+
 (elcomp--do '(defun zzzq (arg)
 	       (catch 'bob
 		 (something)
@@ -10,3 +37,7 @@
 somewhat better but missing the phi definition
 ... coalesce isn't merging phis in SSA mode
 ... it propagates constants into a phi
+
+================================================================
+
+document the compilation / linkage model

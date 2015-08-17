@@ -18,13 +18,13 @@ INSN is an 'if' instruction.  If the condition was defined by a
 call to 'not' (or 'null'), return the argument to the 'not'.
 Otherwise return nil."
   (let ((call (oref insn :sym)))
-    (if (and (elcomp--call-child-p call)
+    (if (and (elcomp--call-p call)
 	     (memq (oref call :func) '(not null)))
 	(car (oref call :args)))))
 
 (defun elcomp--constant-nil-p (cst)
   "Return t if CST is an `elcomp--constant' whose value is nil."
-  (and (elcomp--constant-child-p cst)
+  (and (elcomp--constant-p cst)
        (eq (oref cst :value) nil)))
 
 (defun elcomp--get-eq-argument (insn)
@@ -33,9 +33,9 @@ Otherwise return nil."
 INSN is an `if' instruction.  If the condition is of the
 form `(eq V nil)' or `(eq nil V)', return V.  Otherwise return
 nil."
-  (cl-assert (elcomp--if-child-p insn))
+  (cl-assert (elcomp--if-p insn))
   (let ((call (oref insn :sym)))
-    (if (and (elcomp--call-child-p call)
+    (if (and (elcomp--call-p call)
 	     (memq (oref call :func) '(eq equal)))
 	(let ((args (oref call :args)))
 	  (cond
@@ -72,7 +72,7 @@ TAG is a constant that must be matched by the handler."
     (dolist (exception (elcomp--basic-block-exceptions block))
       (cond
        ((elcomp--catch-p exception)
-	(if (elcomp--constant-child-p (oref exception :tag))
+	(if (elcomp--constant-p (oref exception :tag))
 	    (if (equal tag (oref exception :tag))
 		(throw 'done exception)
 	      ;; The tag is a different constant, so we can ignore
@@ -99,27 +99,27 @@ TAG is a constant that must be matched by the handler."
 
 (defun elcomp--get-catch-symbol (exception)
   "Given a `catch' exception object, return the symbol holding the `throw' value."
-  (cl-assert (elcomp--catch-child-p exception))
+  (cl-assert (elcomp--catch-p exception))
   (let ((insn (car (elcomp--basic-block-code (oref exception :handler)))))
-    (cl-assert (elcomp--call-child-p insn))
+    (cl-assert (elcomp--call-p insn))
     (cl-assert (eq (oref insn :func) :catch-value))
     (oref insn :sym)))
 
 (defun elcomp--get-catch-target (exception)
   "Given a `catch' exception object, return the basic block of the `catch' itself."
-  (cl-assert (elcomp--catch-child-p exception))
+  (cl-assert (elcomp--catch-p exception))
   (let ((insn (cadr (elcomp--basic-block-code (oref exception :handler)))))
-    (cl-assert (elcomp--goto-child-p insn))
+    (cl-assert (elcomp--goto-p insn))
     (oref insn :block)))
 
 (defun elcomp--maybe-replace-catch (block insn)
   ;; A `throw' with a constant tag can be transformed into an
   ;; assignment and a GOTO when the current block's outermost handler
   ;; is a `catch' of the same tag.
-  (when (and (elcomp--diediedie-child-p insn)
+  (when (and (elcomp--diediedie-p insn)
 	     (eq (oref insn :func) 'throw)
 	     ;; Argument to throw is a const.
-	     (elcomp--constant-child-p
+	     (elcomp--constant-p
 	      (car (oref insn :args))))
     (let ((exception (elcomp--block-has-catch block
 					      (car (oref insn :args)))))
@@ -132,7 +132,7 @@ TAG is a constant that must be matched by the handler."
 	;; Emit `unbind' calls.  (Note that when we can handle real
 	;; unwind-protects we will re-linearize those here as well.)
 	(let ((iter (elcomp--basic-block-exceptions block)))
-	  (while (not (elcomp--catch-child-p (car iter)))
+	  (while (not (elcomp--catch-p (car iter)))
 	    (when (elcomp--fake-unwind-protect-p (car iter))
 	      (elcomp--add-to-basic-block
 	       block
@@ -228,7 +228,7 @@ collector."
 	       (setf rewrote-one t)))
 	   ;; A GOTO to a block holding just another branch (of any kind)
 	   ;; can be replaced by the instruction at the target.
-	   (when (and (elcomp--goto-child-p insn)
+	   (when (and (elcomp--goto-p insn)
 		      ;; Exclude a self-goto.
 		      (not (eq block
 			       (oref insn :block)))
@@ -242,15 +242,15 @@ collector."
 
 	   ;; If a target of an IF is a GOTO, the destination can be
 	   ;; hoisted.
-	   (when (and (elcomp--if-child-p insn)
-		      (elcomp--goto-child-p (elcomp--first-instruction
+	   (when (and (elcomp--if-p insn)
+		      (elcomp--goto-p (elcomp--first-instruction
 					     (oref insn :block-true))))
 	     (oset insn :block-true
 		   (oref (elcomp--first-instruction (oref insn :block-true))
 			 :block))
 	     (setf rewrote-one t))
-	   (when (and (elcomp--if-child-p insn)
-		      (elcomp--goto-child-p (elcomp--first-instruction
+	   (when (and (elcomp--if-p insn)
+		      (elcomp--goto-p (elcomp--first-instruction
 					     (oref insn :block-false))))
 	     (oset insn :block-false
 		   (oref (elcomp--first-instruction (oref insn :block-false))
@@ -259,7 +259,7 @@ collector."
 
 	   ;; If both branches of an IF point to the same spot, turn
 	   ;; it into a GOTO.
-	   (when (and (elcomp--if-child-p insn)
+	   (when (and (elcomp--if-p insn)
 		      (eq (oref insn :block-true)
 			  (oref insn :block-false)))
 	     (setf insn (elcomp--goto "goto" :block (oref insn :block-true)))
@@ -268,16 +268,16 @@ collector."
 
 	   ;; If the condition for an IF was a call to 'not', then the
 	   ;; call can be bypassed and the targets swapped.
-	   (when (and in-ssa-form (elcomp--if-child-p insn))
+	   (when (and in-ssa-form (elcomp--if-p insn))
 	     (elcomp--peel-condition insn))
 
 	   ;; If the argument to the IF is a constant, turn the IF
 	   ;; into a GOTO.
-	   (when (and in-ssa-form (elcomp--if-child-p insn))
+	   (when (and in-ssa-form (elcomp--if-p insn))
 	     (let ((condition (oref insn :sym)))
 	       ;; FIXME could also check for calls known not to return
 	       ;; nil.
-	       (when (elcomp--constant-child-p condition)
+	       (when (elcomp--constant-p condition)
 		 (let ((goto-block (if (oref condition :value)
 				       (oref insn :block-true)
 				     (oref insn :block-false))))
@@ -287,9 +287,9 @@ collector."
 
 	   ;; If a target of an IF is another IF, and the conditions are the
 	   ;; same, then the target IF can be hoisted.
-	   (when (elcomp--if-child-p insn)
+	   (when (elcomp--if-p insn)
 	     ;; Thread the true branch.
-	     (when (and (elcomp--if-child-p (elcomp--first-instruction
+	     (when (and (elcomp--if-p (elcomp--first-instruction
 					     (oref insn :block-true)))
 			(eq (oref insn :sym)
 			    (oref (elcomp--first-instruction
@@ -300,7 +300,7 @@ collector."
 			    (oref insn :block-true))
 			   :block-true)))
 	     ;; Thread the false branch.
-	     (when (and (elcomp--if-child-p (elcomp--first-instruction
+	     (when (and (elcomp--if-p (elcomp--first-instruction
 					     (oref insn :block-false)))
 			(eq (oref insn :sym)
 			    (oref (elcomp--first-instruction

@@ -212,10 +212,10 @@ Here, the `throw' has to unbind `var1'.")
 (defun elcomp--ssa-name-p (arg)
   "Return t if ARG is an SSA name."
   (or
-   (elcomp--set-child-p arg)
-   (elcomp--phi-child-p arg)
-   (elcomp--call-child-p arg)
-   (elcomp--argument-child-p arg)))
+   (elcomp--set-p arg)
+   (elcomp--phi-p arg)
+   (elcomp--call-p arg)
+   (elcomp--argument-p arg)))
 
 (defun elcomp--last-instruction (block)
   "Return the last instruction in BLOCK.
@@ -238,15 +238,15 @@ This can be used with `setf'."
 (defun elcomp--nonreturn-terminator-p (obj)
   "Return t if OBJ is a block-terminating instruction other than
 `return' or `diediedie'."
-  (or (elcomp--goto-child-p obj)
-      (elcomp--if-child-p obj)))
+  (or (elcomp--goto-p obj)
+      (elcomp--if-p obj)))
 
 (defun elcomp--terminator-p (obj)
   "Return t if OBJ terminates a block."
-  (or (elcomp--goto-child-p obj)
-      (elcomp--if-child-p obj)
-      (elcomp--return-child-p obj)
-      (elcomp--diediedie-child-p obj)))
+  (or (elcomp--goto-p obj)
+      (elcomp--if-p obj)
+      (elcomp--return-p obj)
+      (elcomp--diediedie-p obj)))
 
 (defun elcomp--any-hash-key (hash)
   "Return any key of the hash table HASH, or nil."

@@ -27,7 +27,7 @@ outgoing exception edges."
        (while rewrote-one
 	 (setf rewrote-one nil)
 	 (when ;; If there is just one successor...
-	     (elcomp--goto-child-p (elcomp--last-instruction bb))
+	     (elcomp--goto-p (elcomp--last-instruction bb))
 	   (let ((succ
 		  (oref (elcomp--last-instruction bb) :block)))
 	     (when (and
