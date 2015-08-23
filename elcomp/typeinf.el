@@ -186,7 +186,7 @@ and `nil' is used to mean a typeless instruction.")
 
        ;; Handle simple numerics.
        ((elcomp--func-simple-numeric-p func)
-	(elcomp--merge-math-types (oref obj :args) map))
+	(elcomp--merge-math-types (elcomp--args obj) map))
 
        (t
 	;; Nothing special.
@@ -198,7 +198,7 @@ and `nil' is used to mean a typeless instruction.")
 	       ;; We treat phis specially: any input that isn't found
 	       ;; is just defaulted to :top.
 	       (push (gethash var map :top) arg-list))
-	     (oref obj :args))
+	     (elcomp--args obj))
     (apply #'elcomp--merge-types arg-list)))
 
 (cl-defmethod elcomp--compute-type ((obj elcomp--argument) _map)
@@ -294,7 +294,7 @@ Return non-nil if any changes were made."
   (let* ((sym (oref insn :sym))
 	 (predicated-type (elcomp--find-type-predicate sym))
 	 (predicate-arg (if predicated-type
-			    (car (oref sym :args))
+			    (car (elcomp--args sym))
 			  nil))
 	 ;; See whether the type predicate is known to be always true
 	 ;; or always false here.
@@ -308,7 +308,7 @@ Return non-nil if any changes were made."
     ;; type in the true branch.
     (when (memq branches '(t :both))
       (if predicated-type
-	  (let ((predicate-arg (car (oref sym :args))))
+	  (let ((predicate-arg (car (elcomp--args sym))))
 	    (cl-letf (((gethash predicate-arg type-map)))
 	      (puthash predicate-arg predicated-type type-map)
 	      (elcomp--type-map-propagate-one infobj (elcomp--block-true insn)
@@ -388,7 +388,7 @@ Update MAP with mappings from old to new instructions."
 	   (when (elcomp--call-p insn)
 	     (let* ((predicated-type (elcomp--find-type-predicate insn))
 		    (predicate-arg (if predicated-type
-				       (car (oref insn :args))
+				       (car (elcomp--args insn))
 				     nil))
 		    (branches (if predicated-type
 				  (elcomp--pretend-eval-type-predicate

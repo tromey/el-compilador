@@ -31,7 +31,7 @@ MAP is a hash table mapping old instructions to new ones.")
      (let ((new-insn (gethash (car cell) map)))
        (when new-insn
 	 (setf (car cell) new-insn))))
-   (oref insn :args)))
+   (elcomp--args insn)))
 
 (cl-defmethod elcomp--rewrite-insn ((_insn elcomp--goto) _map)
   nil)
@@ -52,8 +52,8 @@ MAP is a hash table mapping old instructions to new ones.")
     (maphash
      (lambda (phi _ignore)
        (puthash (or (gethash phi map) phi) t new-hash))
-     (oref insn :args))
-    (setf (oref insn :args) new-hash)))
+     (elcomp--args insn))
+    (setf (elcomp--args insn) new-hash)))
 
 ;; FIXME `elcomp--catch's :tag?
 

@@ -36,7 +36,7 @@ Return non-nil if anything was changed."
 
 (defun elcomp--all-arguments-constant (call)
   (catch 'done
-    (dolist (arg (oref call :args))
+    (dolist (arg (elcomp--args call))
       (unless (elcomp--constant-p arg)
 	(throw 'done nil)))
     t))
@@ -51,9 +51,9 @@ Return non-nil if anything was changed."
        ;; That is a self-reference?
        (maphash
 	(lambda (_ignore phi)
-	  (when (eq (hash-table-count (oref phi :args)) 1)
+	  (when (eq (hash-table-count (elcomp--args phi)) 1)
 	    (elcomp--cprop-insert rewrites phi
-				  (elcomp--any-hash-key (oref phi :args)))))
+				  (elcomp--any-hash-key (elcomp--args phi)))))
 	(elcomp--basic-block-phis bb))
        ;; Perform other optimizations.
        (dolist (insn (elcomp--basic-block-code bb))
@@ -64,7 +64,7 @@ Return non-nil if anything was changed."
 		  (apply (elcomp--func insn)
 			 (mapcar (lambda (arg)
 				   (oref arg :value))
-				 (oref insn :args)))))
+				 (elcomp--args insn)))))
 	     (elcomp--cprop-insert rewrites insn
 				   (elcomp--constant :value new-value)))))))
 

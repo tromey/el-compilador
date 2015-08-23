@@ -80,7 +80,7 @@ its references on the work list."
     (puthash insn t (elcomp--dce-hash dce))
     (maphash (lambda (arg _ignore)
 	       (elcomp--dce-add arg dce))
-	     (oref insn :args))))
+	     (elcomp--args insn))))
 
 (cl-defmethod elcomp--mark-necessary ((insn elcomp--call) dce just-intrinsic)
   "Mark a `call' statement as necessary."
@@ -98,7 +98,7 @@ its references on the work list."
       (setf push-args t))
     (when push-args
       ;; Push the arguments on the work list.
-      (dolist (arg (oref insn :args))
+      (dolist (arg (elcomp--args insn))
 	(elcomp--dce-add arg dce)))))
 
 (defun elcomp--dce-mark-intrinsically-necessary (compiler dce)

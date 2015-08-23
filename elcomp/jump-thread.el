@@ -20,7 +20,7 @@ Otherwise return nil."
   (let ((call (oref insn :sym)))
     (if (and (elcomp--call-p call)
 	     (memq (elcomp--func call) '(not null)))
-	(car (oref call :args)))))
+	(car (elcomp--args call)))))
 
 (defun elcomp--constant-nil-p (cst)
   "Return t if CST is an `elcomp--constant' whose value is nil."
@@ -37,7 +37,7 @@ nil."
   (let ((call (oref insn :sym)))
     (if (and (elcomp--call-p call)
 	     (memq (elcomp--func call) '(eq equal)))
-	(let ((args (oref call :args)))
+	(let ((args (elcomp--args call)))
 	  (cond
 	   ((elcomp--constant-nil-p (car args))
 	    (cadr args))
@@ -120,9 +120,9 @@ TAG is a constant that must be matched by the handler."
 	     (eq (elcomp--func insn) 'throw)
 	     ;; Argument to throw is a const.
 	     (elcomp--constant-p
-	      (car (oref insn :args))))
+	      (car (elcomp--args insn))))
     (let ((exception (elcomp--block-has-catch block
-					      (car (oref insn :args)))))
+					      (car (elcomp--args insn)))))
       (when exception
 	;; Whew.  First drop the last instruction from the block.
 	(setf (elcomp--basic-block-code block)
@@ -148,7 +148,7 @@ TAG is a constant that must be matched by the handler."
 	(elcomp--add-to-basic-block
 	 block
 	 (elcomp--set :sym (elcomp--get-catch-symbol exception)
-		      :value (cadr (oref insn :args))))
+		      :value (cadr (elcomp--args insn))))
 	(elcomp--add-to-basic-block
 	 block
 	 (elcomp--goto :block (elcomp--get-catch-target exception)))

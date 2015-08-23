@@ -128,7 +128,7 @@ This is used for references to global symbols."
   "Emit a call to :elcomp-unbind.
 This must be handled specially for now to avoid boxing the
 argument."
-  (let* ((args (oref insn :args))
+  (let* ((args (elcomp--args insn))
 	 (first-arg (car args)))
   (cl-assert (eq (length args) 1))
   (cl-assert (elcomp--constant-p first-arg))
@@ -153,7 +153,7 @@ argument."
     (insert " = "))
   (if (eq (elcomp--func insn) :elcomp-unbind)
       (elcomp--unbind-emitter insn)
-    (let ((arg-list (oref insn :args))
+    (let ((arg-list (elcomp--args insn))
 	  (is-direct (elcomp--func-direct-p (elcomp--func insn))))
       (cond
        ((keywordp (elcomp--func insn))

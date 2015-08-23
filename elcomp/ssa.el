@@ -37,7 +37,7 @@ the existing phi nodes."
 	   (setf phi (elcomp--phi ;; FIXME "original-" is a misnomer
 				  :original-name (elcomp--ssa-new-name name)))
 	   (puthash name phi to-block-phis))
-	 (puthash value t (oref phi :args))))
+	 (puthash value t (elcomp--args phi))))
      current-map)))
 
 (defun elcomp--ssa-note-lhs (insn current-map)
@@ -76,7 +76,7 @@ nil otherwise.")
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--call) _compiler current-map)
   ;; FIXME the :func slot.
-  (let ((cell (oref insn :args)))
+  (let ((cell (elcomp--args insn)))
     (while cell
       (setf (car cell) (elcomp--ssa-rename-arg (car cell) current-map))
       (setf cell (cdr cell))))

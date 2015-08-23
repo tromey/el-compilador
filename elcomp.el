@@ -97,6 +97,7 @@ see `elcomp--ssa-name-p'.")
 	 :documentation "The function to call.
 This may be a symbol or a `lambda' list.")
    (args :initform nil :initarg :args
+	 :accessor elcomp--args
 	 ;; FIXME - can a symbol wind up in here or do we make
 	 ;; symbol-value explicit?
 	 :documentation "The arguments to the function.
@@ -151,6 +152,7 @@ This can only be for a call to a `nothrow' function.")
 		  :documentation "The original name of this node.
 This is handy for debugging.")
    (args :initform (make-hash-table) :initarg :args
+	 :accessor elcomp--args
 	 :documentation "Arguments to this node.
 This is a hash table whose keys are possible source values for the phi.
 The values in the hash table are meaningless."))
