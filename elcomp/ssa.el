@@ -88,8 +88,8 @@ nil otherwise.")
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--if) compiler current-map)
   (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
-  (elcomp--ssa-propagate compiler (oref insn :block-true) current-map)
-  (elcomp--ssa-propagate compiler (oref insn :block-false) current-map)
+  (elcomp--ssa-propagate compiler (elcomp--block-true insn) current-map)
+  (elcomp--ssa-propagate compiler (elcomp--block-false insn) current-map)
   nil)
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)

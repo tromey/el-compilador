@@ -55,8 +55,8 @@ INSN is the variable used by an `if'."
       (let ((arg-to-not (elcomp--get-not-argument insn)))
 	(when arg-to-not
 	  (setf changed-one t)
-	  (cl-rotatef (oref insn :block-true)
-		      (oref insn :block-false))
+	  (cl-rotatef (elcomp--block-true insn)
+		      (elcomp--block-false insn))
 	  (setf (oref insn :sym) arg-to-not)))
       ;; Change (eq V nil) or (eq nil V) to plain V.
       (let ((arg-to-eq (elcomp--get-eq-argument insn)))
@@ -240,25 +240,25 @@ collector."
 	   ;; hoisted.
 	   (when (and (elcomp--if-p insn)
 		      (elcomp--goto-p (elcomp--first-instruction
-					     (oref insn :block-true))))
-	     (oset insn :block-true
-		   (oref (elcomp--first-instruction (oref insn :block-true))
+				       (elcomp--block-true insn))))
+	     (setf (elcomp--block-true insn)
+		   (oref (elcomp--first-instruction (elcomp--block-true insn))
 			 :block))
 	     (setf rewrote-one t))
 	   (when (and (elcomp--if-p insn)
 		      (elcomp--goto-p (elcomp--first-instruction
-					     (oref insn :block-false))))
-	     (oset insn :block-false
-		   (oref (elcomp--first-instruction (oref insn :block-false))
+					     (elcomp--block-false insn))))
+	     (setf (elcomp--block-false insn)
+		   (oref (elcomp--first-instruction (elcomp--block-false insn))
 			 :block))
 	     (setf rewrote-one t))
 
 	   ;; If both branches of an IF point to the same spot, turn
 	   ;; it into a GOTO.
 	   (when (and (elcomp--if-p insn)
-		      (eq (oref insn :block-true)
-			  (oref insn :block-false)))
-	     (setf insn (elcomp--goto :block (oref insn :block-true)))
+		      (eq (elcomp--block-true insn)
+			  (elcomp--block-false insn)))
+	     (setf insn (elcomp--goto :block (elcomp--block-true insn)))
 	     (setf (elcomp--last-instruction block) insn)
 	     (setf rewrote-one t))
 
@@ -275,8 +275,8 @@ collector."
 	       ;; nil.
 	       (when (elcomp--constant-p condition)
 		 (let ((goto-block (if (oref condition :value)
-				       (oref insn :block-true)
-				     (oref insn :block-false))))
+				       (elcomp--block-true insn)
+				     (elcomp--block-false insn))))
 		   (setf insn (elcomp--goto :block goto-block))
 		   (setf (elcomp--last-instruction block) insn)
 		   (setf rewrote-one t)))))
@@ -286,26 +286,24 @@ collector."
 	   (when (elcomp--if-p insn)
 	     ;; Thread the true branch.
 	     (when (and (elcomp--if-p (elcomp--first-instruction
-					     (oref insn :block-true)))
+					     (elcomp--block-true insn)))
 			(eq (oref insn :sym)
 			    (oref (elcomp--first-instruction
-				   (oref insn :block-true))
+				   (elcomp--block-true insn))
 				  :sym)))
-	       (oset insn :block-true
-		     (oref (elcomp--first-instruction
-			    (oref insn :block-true))
-			   :block-true)))
+	       (setf (elcomp--block-true insn)
+		     (elcomp--block-true (elcomp--first-instruction
+					  (elcomp--block-true insn)))))
 	     ;; Thread the false branch.
 	     (when (and (elcomp--if-p (elcomp--first-instruction
-					     (oref insn :block-false)))
+					     (elcomp--block-false insn)))
 			(eq (oref insn :sym)
 			    (oref (elcomp--first-instruction
-				   (oref insn :block-false))
+				   (elcomp--block-false insn))
 				  :sym)))
-	       (oset insn :block-false
-		     (oref (elcomp--first-instruction
-			    (oref insn :block-false))
-			   :block-false)))))))
+	       (setf (elcomp--block-false insn)
+		     (elcomp--block-false (elcomp--first-instruction
+					   (elcomp--block-false insn)))))))))
 
       (when rewrote-one
 	(elcomp--invalidate-cfg compiler)))))

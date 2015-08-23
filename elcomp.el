@@ -116,12 +116,15 @@ Initially this is a symbol.
 After transformation to SSA, this will be an SSA name;
 see `elcomp--ssa-name-p'.")
    (block-true :initform nil :initarg :block-true
+	       :accessor elcomp--block-true
 	       :documentation "The target block if the value is non-`nil'.")
    (block-false :initform nil :initarg :block-false
+		:accessor elcomp--block-false
 		:documentation "The target block if the value is `nil'."))
   "An `if' instruction.
 This branches to one of two blocks based on whether or not the
 argument is `nil'.  This instruction terminates a block.")
+
 
 (defclass elcomp--return nil
   ((sym :initform nil :initarg :sym

@@ -184,9 +184,9 @@ argument."
   (insert "if (!NILP (")
   (elcomp--c-emit-symref eltoc (oref insn :sym))
   (insert ")) goto ")
-  (elcomp--c-emit-label (oref insn :block-true))
+  (elcomp--c-emit-label (elcomp--block-true insn))
   (insert "; else goto ")
-  (elcomp--c-emit-label (oref insn :block-false)))
+  (elcomp--c-emit-label (elcomp--block-false insn)))
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--return) eltoc)
   (insert "return ")

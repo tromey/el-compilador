@@ -33,8 +33,8 @@ This sets all the back edges to nil."
 
 (cl-defmethod elcomp--add-links ((insn elcomp--if) block)
   "Add backlinks for an `if'."
-  (puthash block t (elcomp--basic-block-parents (oref insn :block-true)))
-  (puthash block t (elcomp--basic-block-parents (oref insn :block-false))))
+  (puthash block t (elcomp--basic-block-parents (elcomp--block-true insn)))
+  (puthash block t (elcomp--basic-block-parents (elcomp--block-false insn))))
 
 (defun elcomp--require-back-edges (compiler)
   "Require the back links in COMPILER to be valid.

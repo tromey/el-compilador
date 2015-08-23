@@ -311,15 +311,15 @@ Return non-nil if any changes were made."
 	  (let ((predicate-arg (car (oref sym :args))))
 	    (cl-letf (((gethash predicate-arg type-map)))
 	      (puthash predicate-arg predicated-type type-map)
-	      (elcomp--type-map-propagate-one infobj (oref insn :block-true)
+	      (elcomp--type-map-propagate-one infobj (elcomp--block-true insn)
 					      type-map)))
-	(elcomp--type-map-propagate-one infobj (oref insn :block-true)
+	(elcomp--type-map-propagate-one infobj (elcomp--block-true insn)
 					type-map)))
 
     ;; In theory we could use an "inverted type" here, but my guess is
     ;; that it isn't worthwhile.
     (when (memq branches '(nil :both))
-      (elcomp--type-map-propagate-one infobj (oref insn :block-false)
+      (elcomp--type-map-propagate-one infobj (elcomp--block-false insn)
 				      type-map))))
 
 (defun elcomp--type-map-propagate-exception (infobj bb type-map)
