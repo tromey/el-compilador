@@ -151,18 +151,18 @@ argument."
   (when (oref insn :sym)
     (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
-  (if (eq (oref insn :func) :elcomp-unbind)
+  (if (eq (elcomp--func insn) :elcomp-unbind)
       (elcomp--unbind-emitter insn)
     (let ((arg-list (oref insn :args))
-	  (is-direct (elcomp--func-direct-p (oref insn :func))))
+	  (is-direct (elcomp--func-direct-p (elcomp--func insn))))
       (cond
-       ((keywordp (oref insn :func))
-	(insert (cdr (assq (oref insn :func) elcomp--c-direct-renames))
+       ((keywordp (elcomp--func insn))
+	(insert (cdr (assq (elcomp--func insn) elcomp--c-direct-renames))
 		" ("))
        (is-direct
-	(insert "F" (elcomp--c-name (oref insn :func)) " ("))
+	(insert "F" (elcomp--c-name (elcomp--func insn)) " ("))
        (t
-	(push (oref insn :func) arg-list)
+	(push (elcomp--func insn) arg-list)
 	;; FIXME - what if not a symbol, etc.
 	(insert (format "Ffuncall (%d, ((Lisp_Object[]) { "
 			(length arg-list)))))
@@ -172,7 +172,7 @@ argument."
 	      (setf first nil)
 	    (insert ", "))
 	  (elcomp--c-emit-symref eltoc arg)))
-      (if (or is-direct (keywordp (oref insn :func)))
+      (if (or is-direct (keywordp (elcomp--func insn)))
 	  (insert ")")
 	(insert " }))")))))
 

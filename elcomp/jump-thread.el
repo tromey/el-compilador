@@ -19,7 +19,7 @@ call to 'not' (or 'null'), return the argument to the 'not'.
 Otherwise return nil."
   (let ((call (oref insn :sym)))
     (if (and (elcomp--call-p call)
-	     (memq (oref call :func) '(not null)))
+	     (memq (elcomp--func call) '(not null)))
 	(car (oref call :args)))))
 
 (defun elcomp--constant-nil-p (cst)
@@ -36,7 +36,7 @@ nil."
   (cl-assert (elcomp--if-p insn))
   (let ((call (oref insn :sym)))
     (if (and (elcomp--call-p call)
-	     (memq (oref call :func) '(eq equal)))
+	     (memq (elcomp--func call) '(eq equal)))
 	(let ((args (oref call :args)))
 	  (cond
 	   ((elcomp--constant-nil-p (car args))
@@ -102,7 +102,7 @@ TAG is a constant that must be matched by the handler."
   (cl-assert (elcomp--catch-p exception))
   (let ((insn (car (elcomp--basic-block-code (oref exception :handler)))))
     (cl-assert (elcomp--call-p insn))
-    (cl-assert (eq (oref insn :func) :catch-value))
+    (cl-assert (eq (elcomp--func insn) :catch-value))
     (oref insn :sym)))
 
 (defun elcomp--get-catch-target (exception)
@@ -117,7 +117,7 @@ TAG is a constant that must be matched by the handler."
   ;; assignment and a GOTO when the current block's outermost handler
   ;; is a `catch' of the same tag.
   (when (and (elcomp--diediedie-p insn)
-	     (eq (oref insn :func) 'throw)
+	     (eq (elcomp--func insn) 'throw)
 	     ;; Argument to throw is a const.
 	     (elcomp--constant-p
 	      (car (oref insn :args))))

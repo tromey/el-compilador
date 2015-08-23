@@ -93,6 +93,7 @@ Initially this is a symbol.
 After transformation to SSA, this will be an SSA name;
 see `elcomp--ssa-name-p'.")
    (func :initform nil :initarg :func
+	 :accessor elcomp--func
 	 :documentation "The function to call.
 This may be a symbol or a `lambda' list.")
    (args :initform nil :initarg :args

@@ -90,7 +90,7 @@ its references on the work list."
 	;; it specially so we can determine whether its LHS is needed
 	;; as well.  Note that the "const" check also picks up the
 	;; "diediedie" statements.
-	(unless (elcomp--func-const-p (oref insn :func))
+	(unless (elcomp--func-const-p (elcomp--func insn))
 	  (puthash insn :call (elcomp--dce-hash dce))
 	  (setf push-args t))
       ;; Otherwise, we're propagating.

@@ -58,10 +58,10 @@ Return non-nil if anything was changed."
        ;; Perform other optimizations.
        (dolist (insn (elcomp--basic-block-code bb))
 	 (when (and (elcomp--call-p insn)
-		    (elcomp--func-pure-p (oref insn :func))
+		    (elcomp--func-pure-p (elcomp--func insn))
 		    (elcomp--all-arguments-constant insn))
 	   (let ((new-value
-		  (apply (oref insn :func)
+		  (apply (elcomp--func insn)
 			 (mapcar (lambda (arg)
 				   (oref arg :value))
 				 (oref insn :args)))))

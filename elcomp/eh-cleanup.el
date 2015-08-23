@@ -39,8 +39,8 @@
 A function marked `nothrow' will not throw."
   ;; Note that we can't really be picky about `signal' or `throw'
   ;; tags, due to QUIT and `throw-on-input'.
-  (if (and (symbolp (oref insn :func))
-	   (elcomp--func-nothrow-p (oref insn :func)))
+  (if (and (symbolp (elcomp--func insn))
+	   (elcomp--func-nothrow-p (elcomp--func insn)))
       nil
     t))
 

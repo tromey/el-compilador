@@ -178,7 +178,7 @@ and `nil' is used to mean a typeless instruction.")
   (if (not (oref obj :sym))
       ;; No symbol means no type.
       nil
-    (let ((func (oref obj :func)))
+    (let ((func (elcomp--func obj)))
       (cond
        ;; If the function has a defined type, use it.
        ((elcomp--func-type func)
@@ -253,7 +253,7 @@ Return non-nil if any changes were made."
 (defun elcomp--find-type-predicate (sym)
   "Return type tested by the statement INSN, or nil."
   (when (elcomp--call-p sym)
-    (elcomp--func-type-predicate (oref sym :func))))
+    (elcomp--func-type-predicate (elcomp--func sym))))
 
 (defun elcomp--pretend-eval-type-predicate (predicate-type arg-type)
   (cl-assert (not (memq predicate-type '(:top :bottom))))
