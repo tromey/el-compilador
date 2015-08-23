@@ -239,7 +239,7 @@ argument."
     (while (and (not (eq eh-from eh-to))
 		(elcomp--condition-case-p (car eh-from)))
       (insert "      if (handler_matches (FIXME, ")
-      (elcomp--c-emit-symref eltoc (oref (car eh-from) :condition-name))
+      (elcomp--c-emit-symref eltoc (elcomp--condition-name (car eh-from)))
       (insert "))\n")
       (insert "        goto ")
       (elcomp--c-emit-label (elcomp--handler (car eh-from)))

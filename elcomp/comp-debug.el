@@ -90,7 +90,7 @@ VERBOSE non-nil means to write a more verbose description.")
 
 (cl-defmethod elcomp--pp ((obj elcomp--condition-case) _verbose)
   (princ "condition-case ")
-  (princ (oref obj :condition-name))
+  (princ (elcomp--condition-name obj))
   (princ " => BB ")
   (princ (elcomp--basic-block-number (elcomp--handler obj))))
 

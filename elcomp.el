@@ -187,6 +187,7 @@ taken.")
 
 (defclass elcomp--condition-case (elcomp--exception)
   ((condition-name :initform nil :initarg :condition-name
+		   :accessor elcomp--condition-name
 		   :documentation "The name of the condition being handled.
 
 This is either a symbol or nil.  Note that the variable that can
