@@ -202,7 +202,7 @@ and `nil' is used to mean a typeless instruction.")
     (apply #'elcomp--merge-types arg-list)))
 
 (cl-defmethod elcomp--compute-type ((obj elcomp--argument) _map)
-  (if (oref obj :is-rest)
+  (if (elcomp--is-rest obj)
       'list
     :bottom))
 

@@ -166,6 +166,7 @@ See any good source of information about SSA to understand this.")
 		  :documentation "The original name of this node.
 This is handy for debugging.")
    (is-rest :initform nil :initarg :is-rest
+	    :accessor elcomp--is-rest
 	    :documentation "True if this argument was from `&rest'."))
   "A function argument.  This is only used in SSA form.")
 
