@@ -7,4 +7,4 @@ all:
 		--eval '(byte-recompile-directory "." 0)'
 
 clean:
-	rm *.elc */*.elc
+	-rm *.elc */*.elc
