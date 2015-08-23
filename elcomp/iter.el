@@ -18,8 +18,9 @@
 	(elcomp--do-iterate hash callback (elcomp--block-true obj) postorder)
 	(elcomp--do-iterate hash callback (elcomp--block-false obj) postorder))))
     (dolist (exception (elcomp--basic-block-exceptions bb))
-      (when (oref exception :handler)
-	(elcomp--do-iterate hash callback (oref exception :handler) postorder)))
+      (when (elcomp--handler exception)
+	(elcomp--do-iterate hash callback (elcomp--handler exception)
+			    postorder)))
     (when postorder
       (funcall callback bb))))
 

@@ -205,7 +205,7 @@ argument."
     (insert "    {\n")
     (insert "      handlerlist = handlerlist->next;\n")
     (insert "      goto ")
-    (elcomp--c-emit-label (oref insn :handler))
+    (elcomp--c-emit-label (elcomp--handler insn))
     (insert ";\n")
     (insert "    }\n")))
 
@@ -221,7 +221,7 @@ argument."
     (insert "    {\n")
     (insert "      handlerlist = handlerlist->next;\n")
     (insert "      goto ")
-    (elcomp--c-emit-label (oref insn :handler))
+    (elcomp--c-emit-label (elcomp--handler insn))
     (insert ";\n")
     (insert "    }\n")))
 
@@ -242,7 +242,7 @@ argument."
       (elcomp--c-emit-symref eltoc (oref (car eh-from) :condition-name))
       (insert "))\n")
       (insert "        goto ")
-      (elcomp--c-emit-label (oref (car eh-from) :handler))
+      (elcomp--c-emit-label (elcomp--handler (car eh-from)))
       (insert ";\n")
       (setf eh-from (cdr eh-from)))
     (insert "    }\n"))

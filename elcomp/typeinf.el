@@ -331,7 +331,7 @@ Return non-nil if any changes were made."
 	)
 
        (t
-	(elcomp--type-map-propagate-one infobj (oref exception :handler)
+	(elcomp--type-map-propagate-one infobj (elcomp--handler exception)
 					type-map)
 	(throw 'done nil))))))
 

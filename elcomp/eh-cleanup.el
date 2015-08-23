@@ -61,7 +61,7 @@ function."
 	;; Only the outermost exception edge is eligible for removal.
 	(unless (elcomp--unwind-protect-p exception)
 	  (throw 'done nil))
-	(let ((exc-block (oref exception :handler)))
+	(let ((exc-block (elcomp--handler exception)))
 	  (when exc-block
 	    ;; If the block is just a single instruction, then we know
 	    ;; it is a call to the special :unwind-protect-continue

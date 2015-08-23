@@ -47,9 +47,9 @@ Otherwise, it recreates the links."
      compiler
      (lambda (bb)
        (dolist (exception (elcomp--basic-block-exceptions bb))
-	 (when (oref exception :handler)
+	 (when (elcomp--handler exception)
 	   (puthash bb t
-		    (elcomp--basic-block-parents (oref exception :handler)))))
+		    (elcomp--basic-block-parents (elcomp--handler exception)))))
        (elcomp--add-links (elcomp--last-instruction bb) bb)))
     (setf (elcomp--back-edges-valid compiler) t)))
 

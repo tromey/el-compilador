@@ -171,6 +171,7 @@ This is handy for debugging.")
 
 (defclass elcomp--exception nil
   ((handler :initform nil :initarg :handler
+	    :accessor elcomp--handler
 	    :documentation "The target block of this exception edge."))
   "An exception edge.
 

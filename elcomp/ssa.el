@@ -103,7 +103,7 @@ nil otherwise.")
 (defun elcomp--topmost-exception (bb)
   (catch 'done
     (dolist (topmost-exception (elcomp--basic-block-exceptions bb))
-      (when (oref topmost-exception :handler)
+      (when (elcomp--handler topmost-exception)
 	(throw 'done topmost-exception)))))
 
 (defun elcomp--into-ssa-parse-args (compiler current-map)
@@ -139,7 +139,7 @@ nil otherwise.")
 	(when (and topmost-exception
 		   changed-since-exception
 		   (elcomp--can-throw insn))
-	  (elcomp--ssa-propagate compiler (oref topmost-exception :handler)
+	  (elcomp--ssa-propagate compiler (elcomp--handler topmost-exception)
 				 current-map)
 	  (setf changed-since-exception nil))
 	;; Rename the operands and also see whether the map has

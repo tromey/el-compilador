@@ -100,7 +100,7 @@ TAG is a constant that must be matched by the handler."
 (defun elcomp--get-catch-symbol (exception)
   "Given a `catch' exception object, return the symbol holding the `throw' value."
   (cl-assert (elcomp--catch-p exception))
-  (let ((insn (car (elcomp--basic-block-code (oref exception :handler)))))
+  (let ((insn (car (elcomp--basic-block-code (elcomp--handler exception)))))
     (cl-assert (elcomp--call-p insn))
     (cl-assert (eq (elcomp--func insn) :catch-value))
     (oref insn :sym)))
@@ -108,7 +108,7 @@ TAG is a constant that must be matched by the handler."
 (defun elcomp--get-catch-target (exception)
   "Given a `catch' exception object, return the basic block of the `catch' itself."
   (cl-assert (elcomp--catch-p exception))
-  (let ((insn (cadr (elcomp--basic-block-code (oref exception :handler)))))
+  (let ((insn (cadr (elcomp--basic-block-code (elcomp--handler exception)))))
     (cl-assert (elcomp--goto-p insn))
     (elcomp--block insn)))
 
