@@ -107,6 +107,7 @@ After transformation to SSA, this will be a list of SSA names."))
 
 (defclass elcomp--goto nil
   ((block :initform nil :initarg :block
+	  :accessor elcomp--block
 	  :documentation "The target block."))
   "A `goto' instruction.
 This instruction terminates a block.")

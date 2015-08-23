@@ -29,7 +29,7 @@ outgoing exception edges."
 	 (when ;; If there is just one successor...
 	     (elcomp--goto-p (elcomp--last-instruction bb))
 	   (let ((succ
-		  (oref (elcomp--last-instruction bb) :block)))
+		  (elcomp--block (elcomp--last-instruction bb))))
 	     (when (and
 		    ;; and the successor block has a single predecessor...
 		    (= (hash-table-count (elcomp--basic-block-parents succ)) 1)

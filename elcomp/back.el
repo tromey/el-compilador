@@ -29,7 +29,7 @@ This sets all the back edges to nil."
 
 (cl-defmethod elcomp--add-links ((insn elcomp--goto) block)
   "Add backlinks for a `goto'."
-  (puthash block t (elcomp--basic-block-parents (oref insn :block))))
+  (puthash block t (elcomp--basic-block-parents (elcomp--block insn))))
 
 (cl-defmethod elcomp--add-links ((insn elcomp--if) block)
   "Add backlinks for an `if'."

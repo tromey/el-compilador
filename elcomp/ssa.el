@@ -83,7 +83,7 @@ nil otherwise.")
   (elcomp--ssa-note-lhs insn current-map))
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--goto) compiler current-map)
-  (elcomp--ssa-propagate compiler (oref insn :block) current-map)
+  (elcomp--ssa-propagate compiler (elcomp--block insn) current-map)
   nil)
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--if) compiler current-map)

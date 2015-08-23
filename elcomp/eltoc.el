@@ -178,7 +178,7 @@ argument."
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc)
   (insert "goto ")
-  (elcomp--c-emit-label (oref insn :block)))
+  (elcomp--c-emit-label (elcomp--block insn)))
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--if) eltoc)
   (insert "if (!NILP (")

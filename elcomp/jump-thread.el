@@ -110,7 +110,7 @@ TAG is a constant that must be matched by the handler."
   (cl-assert (elcomp--catch-p exception))
   (let ((insn (cadr (elcomp--basic-block-code (oref exception :handler)))))
     (cl-assert (elcomp--goto-p insn))
-    (oref insn :block)))
+    (elcomp--block insn)))
 
 (defun elcomp--maybe-replace-catch (block insn)
   ;; A `throw' with a constant tag can be transformed into an
@@ -227,12 +227,12 @@ collector."
 	   (when (and (elcomp--goto-p insn)
 		      ;; Exclude a self-goto.
 		      (not (eq block
-			       (oref insn :block)))
+			       (elcomp--block insn)))
 		      (elcomp--nonreturn-terminator-p
-		       (elcomp--first-instruction (oref insn :block))))
+		       (elcomp--first-instruction (elcomp--block insn))))
 	     ;; Note we also set INSN for subsequent optimizations
 	     ;; here.
-	     (setf insn (elcomp--first-instruction (oref insn :block)))
+	     (setf insn (elcomp--first-instruction (elcomp--block insn)))
 	     (setf (elcomp--last-instruction block) insn)
 	     (setf rewrote-one t))
 
@@ -242,15 +242,15 @@ collector."
 		      (elcomp--goto-p (elcomp--first-instruction
 				       (elcomp--block-true insn))))
 	     (setf (elcomp--block-true insn)
-		   (oref (elcomp--first-instruction (elcomp--block-true insn))
-			 :block))
+		   (elcomp--block
+		    (elcomp--first-instruction (elcomp--block-true insn))))
 	     (setf rewrote-one t))
 	   (when (and (elcomp--if-p insn)
 		      (elcomp--goto-p (elcomp--first-instruction
 					     (elcomp--block-false insn))))
 	     (setf (elcomp--block-false insn)
-		   (oref (elcomp--first-instruction (elcomp--block-false insn))
-			 :block))
+		   (elcomp--block
+		    (elcomp--first-instruction (elcomp--block-false insn))))
 	     (setf rewrote-one t))
 
 	   ;; If both branches of an IF point to the same spot, turn

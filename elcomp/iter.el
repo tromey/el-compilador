@@ -13,7 +13,7 @@
       (cond
        ;; FIXME why is the -child- variant needed here?
        ((elcomp--goto-p obj)
-	(elcomp--do-iterate hash callback (oref obj :block) postorder))
+	(elcomp--do-iterate hash callback (elcomp--block obj) postorder))
        ((elcomp--if-p obj)
 	(elcomp--do-iterate hash callback (elcomp--block-true obj) postorder)
 	(elcomp--do-iterate hash callback (elcomp--block-false obj) postorder))))

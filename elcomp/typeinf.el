@@ -248,7 +248,7 @@ Return non-nil if any changes were made."
   nil)
 
 (cl-defmethod elcomp--type-map-propagate ((insn elcomp--goto) infobj type-map)
-  (elcomp--type-map-propagate-one infobj (oref insn :block) type-map))
+  (elcomp--type-map-propagate-one infobj (elcomp--block insn) type-map))
 
 (defun elcomp--find-type-predicate (sym)
   "Return type tested by the statement INSN, or nil."
