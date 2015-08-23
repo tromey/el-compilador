@@ -66,8 +66,7 @@ Return non-nil if anything was changed."
 				   (oref arg :value))
 				 (oref insn :args)))))
 	     (elcomp--cprop-insert rewrites insn
-				   (elcomp--constant "constant"
-						     :value new-value)))))))
+				   (elcomp--constant :value new-value)))))))
 
     (when (> (hash-table-count rewrites) 0)
       (elcomp--rewrite-using-map compiler rewrites)

@@ -34,8 +34,7 @@ the existing phi nodes."
      (lambda (name value)
        (let ((phi (gethash name to-block-phis)))
 	 (unless phi
-	   (setf phi (elcomp--phi "phi"
-				  ;; FIXME "original-" is a misnomer
+	   (setf phi (elcomp--phi ;; FIXME "original-" is a misnomer
 				  :original-name (elcomp--ssa-new-name name)))
 	   (puthash name phi to-block-phis))
 	 (puthash value t (oref phi :args))))
@@ -118,8 +117,7 @@ nil otherwise.")
 	  (setf this-arg (pop arg-list)))
 	 ((eq this-arg '&optional)
 	  (setf this-arg (pop arg-list))))
-	(puthash this-arg (elcomp--argument "argument"
-					    :original-name this-arg
+	(puthash this-arg (elcomp--argument :original-name this-arg
 					    :is-rest is-rest)
 		 current-map)))))
 

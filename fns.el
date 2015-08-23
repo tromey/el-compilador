@@ -1,3 +1,5 @@
+(defvar autoload-queue)
+
 (defun identity (arg)
   "Return the argument unchanged."
   arg)

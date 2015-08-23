@@ -16,8 +16,8 @@
 	      (progn
 		(pop (elcomp--exceptions compiler))
 		(elcomp--fake-unwind-protect
-		 "fake" :count (+ (oref first-exception :count) num)))
-	    (elcomp--fake-unwind-protect "fake" :count num))))
+		 :count (+ (oref first-exception :count) num)))
+	    (elcomp--fake-unwind-protect :count num))))
     (push new-exception (elcomp--exceptions compiler)))
   (elcomp--make-block-current compiler (elcomp--label compiler)))
 
@@ -27,7 +27,7 @@
     (cl-assert (>= (oref first-exception :count) num))
     (if (> (oref first-exception :count) num)
 	(push (elcomp--fake-unwind-protect
-	       "fake" :count (- (oref first-exception :count) num))
+	       :count (- (oref first-exception :count) num))
 	      (elcomp--exceptions compiler))))
   (elcomp--make-block-current compiler (elcomp--label compiler)))
 
@@ -50,7 +50,7 @@ Or REF can be a constant, in which case it is returned unchanged."
     (let ((var (elcomp--new-var compiler)))
       (elcomp--add-call compiler var
 			'symbol-value
-			(list (elcomp--constant "constant" :value ref)))
+			(list (elcomp--constant :value ref)))
       var))
    (t
     (let ((tem (assq ref (elcomp--rewrite-alist compiler))))
@@ -75,7 +75,7 @@ Or REF can be a constant, in which case it is returned unchanged."
   (elcomp--add-to-basic-block (elcomp--current-block compiler) obj))
 
 (defun elcomp--add-set (compiler sym value)
-  (elcomp--add-basic compiler (elcomp--set "set" :sym sym :value value)))
+  (elcomp--add-basic compiler (elcomp--set :sym sym :value value)))
 
 (defun elcomp--add-call (compiler sym func args)
   (if (and (symbolp func)
@@ -85,17 +85,17 @@ Or REF can be a constant, in which case it is returned unchanged."
 	;; -- this block will be discarded later, but that's ok.  Also
 	;; discard the assignment.
 	(elcomp--add-basic compiler
-			   (elcomp--diediedie "diediedie" :sym nil :func func
+			   (elcomp--diediedie :sym nil :func func
 					      :args args))
 	(setf (elcomp--current-block compiler) (elcomp--label compiler)))
-    (elcomp--add-basic compiler (elcomp--call "call" :sym sym :func func
+    (elcomp--add-basic compiler (elcomp--call :sym sym :func func
 					      :args args))))
 
 (defun elcomp--add-return (compiler sym)
-  (elcomp--add-basic compiler (elcomp--return "return" :sym sym)))
+  (elcomp--add-basic compiler (elcomp--return :sym sym)))
 
 (defun elcomp--add-goto (compiler block)
-  (elcomp--add-basic compiler (elcomp--goto "goto" :block block))
+  (elcomp--add-basic compiler (elcomp--goto :block block))
   ;; Push a new block.
   (setf (elcomp--current-block compiler) (elcomp--label compiler)))
 
@@ -108,8 +108,7 @@ Or REF can be a constant, in which case it is returned unchanged."
     (unless block-false
       (setf block-false (elcomp--label compiler))
       (setf next-block block-false))
-    (elcomp--add-basic compiler (elcomp--if "if"
-					    :sym sym
+    (elcomp--add-basic compiler (elcomp--if :sym sym
 					    :block-true block-true
 					    :block-false block-false))
     ;; Push a new block.
@@ -126,7 +125,7 @@ A variable is a symbol that is not a keyword."
   ;; Terminate the previous basic block.
   (let ((insn (elcomp--last-instruction (elcomp--current-block compiler))))
     (if (not (elcomp--terminator-p insn))
-	(elcomp--add-basic compiler (elcomp--goto "goto" :block block)))
+	(elcomp--add-basic compiler (elcomp--goto :block block)))
     (setf (elcomp--current-block compiler) block)))
 
 (defun elcomp--linearize-body (compiler body result-location
@@ -153,9 +152,9 @@ A variable is a symbol that is not a keyword."
    ((elcomp--variable-p form)
     (elcomp--rewrite-one-ref compiler form))
    ((atom form)
-    (elcomp--constant "constant" :value form))
+    (elcomp--constant :value form))
    ((eq (car form) 'quote)
-    (elcomp--constant "constant" :value (cadr form)))
+    (elcomp--constant :value (cadr form)))
    (t
     (let ((var (elcomp--new-var compiler)))
       (elcomp--linearize compiler form var)
@@ -209,8 +208,7 @@ sequence of objects.  FIXME ref the class docs"
 	    (dolist (spec-var spec-vars)
 	      (elcomp--add-call compiler nil :elcomp-specbind
 				(list
-				 (elcomp--constant "constant"
-						   :value (car spec-var))
+				 (elcomp--constant :value (car spec-var))
 				 (cdr spec-var))))
 	    (elcomp--push-fake-unwind-protect compiler (length spec-vars)))
 	  ;; Now evaluate the body of the let.
@@ -220,8 +218,7 @@ sequence of objects.  FIXME ref the class docs"
 	    (elcomp--pop-fake-unwind-protects compiler (length spec-vars))
 	    (elcomp--add-call compiler nil :elcomp-unbind
 			      (list
-			       (elcomp--constant "constant"
-						 :value (length spec-vars)))))))
+			       (elcomp--constant :value (length spec-vars)))))))
 
        ((eq fn 'let*)
 	;; Arrange to reset the rewriting table outside the 'let*'.
@@ -244,7 +241,7 @@ sequence of objects.  FIXME ref the class docs"
 		  (progn
 		    (elcomp--add-call compiler nil :elcomp-specbind
 				      (list
-				       (elcomp--constant "constant" :value sym)
+				       (elcomp--constant :value sym)
 				       sym-result))
 		    (elcomp--push-fake-unwind-protect compiler 1)
 		    (cl-incf num-specbinds))
@@ -256,8 +253,7 @@ sequence of objects.  FIXME ref the class docs"
 	    (elcomp--pop-fake-unwind-protects compiler num-specbinds)
 	    (elcomp--add-call compiler nil :elcomp-unbind
 			      (list
-			       (elcomp--constant "constant"
-						 :value num-specbinds))))))
+			       (elcomp--constant :value num-specbinds))))))
 
        ((eq fn 'setq-default)
 	(setf form (cdr form))
@@ -272,7 +268,7 @@ sequence of objects.  FIXME ref the class docs"
 	    (elcomp--linearize compiler val intermediate)
 	    (elcomp--add-call compiler stored-variable
 			      'set-default
-			      (list (elcomp--constant "constant" :value sym)
+			      (list (elcomp--constant :value sym)
 				    intermediate)))))
 
        ((eq fn 'setq)
@@ -291,8 +287,7 @@ sequence of objects.  FIXME ref the class docs"
 		  (elcomp--linearize compiler val intermediate)
 		  (elcomp--add-call compiler stored-variable
 				    'set
-				    (list (elcomp--constant "constant"
-							    :value sym)
+				    (list (elcomp--constant :value sym)
 					  intermediate)))
 	      ;; An ordinary `setq' is turned into a "set"
 	      ;; instruction.
@@ -325,7 +320,7 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; away as needed.
 	  (when result-location
 	    (elcomp--add-set compiler result-location
-			     (elcomp--constant "constant" :value nil)))
+			     (elcomp--constant :value nil)))
 	  (elcomp--make-block-current compiler label-done)))
 
        ((memq fn '(progn inline))
@@ -368,7 +363,7 @@ sequence of objects.  FIXME ref the class docs"
 	      (elcomp--linearize-body compiler (cl-cdddr form) result-location)
 	    (when result-location
 	      (elcomp--add-set compiler result-location
-			       (elcomp--constant "constant" :value nil))))
+			       (elcomp--constant :value nil))))
 	  ;; The end of the statement.
 	  (elcomp--make-block-current compiler label-done)))
 
@@ -397,8 +392,7 @@ sequence of objects.  FIXME ref the class docs"
 	(let* ((tag (elcomp--operand compiler (cadr form)))
 	       (handler-label (elcomp--label compiler))
 	       (done-label (elcomp--label compiler))
-	       (exception (elcomp--catch "catch"
-					 :handler handler-label
+	       (exception (elcomp--catch :handler handler-label
 					 :tag tag)))
 	  (push exception (elcomp--exceptions compiler))
 	  ;; We need a new block because we have modified the
@@ -420,8 +414,7 @@ sequence of objects.  FIXME ref the class docs"
 	(let ((handler-label (elcomp--label compiler))
 	      (done-label (elcomp--label compiler))
 	      (normal-label (elcomp--label compiler)))
-	  (push (elcomp--unwind-protect "unwind-protect"
-					:handler handler-label
+	  (push (elcomp--unwind-protect :handler handler-label
 					:original-form (cons 'progn
 							     (cddr form)))
 		(elcomp--exceptions compiler))
@@ -459,8 +452,7 @@ sequence of objects.  FIXME ref the class docs"
 	  (elcomp--add-goto compiler body-label)
 	  (dolist (handler (cddr form))
 	    (let ((this-label (elcomp--label compiler)))
-	      (push (elcomp--condition-case "condition-case"
-					    :handler this-label
+	      (push (elcomp--condition-case :handler this-label
 					    :condition-name (car handler))
 		    new-exceptions)
 	      (elcomp--make-block-current compiler this-label)
@@ -497,8 +489,7 @@ sequence of objects.  FIXME ref the class docs"
 							the-function)))
 	  (when result-location
 	    (elcomp--add-set compiler result-location
-			     (elcomp--constant "constant"
-					       :value the-function)))))
+			     (elcomp--constant :value the-function)))))
 
        ((not (symbolp fn))
 	(error "not supported: %S" fn))

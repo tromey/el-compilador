@@ -400,11 +400,9 @@ Update MAP with mappings from old to new instructions."
 	       ;; predicate, so we can replace it with a constant.
 	       (unless (eq branches :both)
 		 (let ((new-insn
-			(elcomp--set "set"
-				     :sym (oref insn :sym)
+			(elcomp--set :sym (oref insn :sym)
 				     :value
-				     (elcomp--constant "constant"
-						       :value branches))))
+				     (elcomp--constant :value branches))))
 		   (setf (car iter) new-insn)
 		   (puthash insn new-insn map))))))
 	 (setf iter (cdr iter)))))))

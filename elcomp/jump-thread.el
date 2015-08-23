@@ -136,12 +136,10 @@ TAG is a constant that must be matched by the handler."
 	    (when (elcomp--fake-unwind-protect-p (car iter))
 	      (elcomp--add-to-basic-block
 	       block
-	       (elcomp--call "call"
-			     :sym nil
+	       (elcomp--call :sym nil
 			     :func :elcomp-unbind
 			     :args (list
-				    (elcomp--constant "constant"
-						      :value
+				    (elcomp--constant :value
 						      (oref (car iter)
 							    :count))))))
 	    (setf iter (cdr iter))))
@@ -149,13 +147,11 @@ TAG is a constant that must be matched by the handler."
 	;; zap the `diediedie' instruction.
 	(elcomp--add-to-basic-block
 	 block
-	 (elcomp--set "set"
-		      :sym (elcomp--get-catch-symbol exception)
+	 (elcomp--set :sym (elcomp--get-catch-symbol exception)
 		      :value (cadr (oref insn :args))))
 	(elcomp--add-to-basic-block
 	 block
-	 (elcomp--goto "goto"
-		       :block (elcomp--get-catch-target exception)))
+	 (elcomp--goto :block (elcomp--get-catch-target exception)))
 	t))))
 
 (defun elcomp--thread-jumps-pass (compiler in-ssa-form)
@@ -262,7 +258,7 @@ collector."
 	   (when (and (elcomp--if-p insn)
 		      (eq (oref insn :block-true)
 			  (oref insn :block-false)))
-	     (setf insn (elcomp--goto "goto" :block (oref insn :block-true)))
+	     (setf insn (elcomp--goto :block (oref insn :block-true)))
 	     (setf (elcomp--last-instruction block) insn)
 	     (setf rewrote-one t))
 
@@ -281,7 +277,7 @@ collector."
 		 (let ((goto-block (if (oref condition :value)
 				       (oref insn :block-true)
 				     (oref insn :block-false))))
-		   (setf insn (elcomp--goto "goto" :block goto-block))
+		   (setf insn (elcomp--goto :block goto-block))
 		   (setf (elcomp--last-instruction block) insn)
 		   (setf rewrote-one t)))))
 
