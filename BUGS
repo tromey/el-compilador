@@ -1,17 +1,9 @@
 can't compile widget-get from fns.el
 
-miscompiles featurep -> constant prop into PHI
-
 C back end writes some bogus symbol names
 
-test (cond)
-(elcomp--do '(defun zzq ()
-	       (cond ((x) (y))
-		     ;; (t t)
-		     )))
--> this fails maybe due to constant prop into PHI??
-
-
+C back end doesn't do out-of-ssa
+we probably need to keep edges after all
 
 ================================================================
 
@@ -22,21 +14,6 @@ test (cond)
     (aref sequence n))))
 
 => error
-
-================================================================
-
-(elcomp--do '(defun zzzq (arg)
-	       (catch 'bob
-		 (something)
-		 (if arg
-		     99
-		   (throw 'bob 72)))))
-
-=>
-
-somewhat better but missing the phi definition
-... coalesce isn't merging phis in SSA mode
-... it propagates constants into a phi
 
 ================================================================
 

@@ -100,7 +100,10 @@
    Possibly sometimes we could optimize away closed-over variables, etc
 
 ** We could convert `elt' to aref or nth if we deduced the type
-   We could perhaps inline nth and nthcdr if the argument is a constant
+   This could just be done with a compiler macro.
+   Or by rewriting 'elt' entirely into a macro
+
+** We could perhaps inline nth and nthcdr if the argument is a constant
 
 * Back Ends
 

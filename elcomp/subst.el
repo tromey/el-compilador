@@ -51,7 +51,13 @@ MAP is a hash table mapping old instructions to new ones.")
   (let ((new-hash (make-hash-table)))
     (maphash
      (lambda (phi _ignore)
-       (puthash (or (gethash phi map) phi) t new-hash))
+       (let ((subst (gethash phi map)))
+	 (puthash
+	  ;; It never makes sense to propagate a constant into a phi.
+	  (if (elcomp--constant-p subst)
+	      phi
+	    (or subst phi))
+	  t new-hash)))
      (elcomp--args insn))
     (setf (elcomp--args insn) new-hash)))
 
