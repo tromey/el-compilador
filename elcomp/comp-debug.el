@@ -28,7 +28,7 @@ VERBOSE non-nil means to write a more verbose description.")
 	(princ "set ")
 	(elcomp--pp (elcomp--sym obj) nil)
 	(princ " = ")
-	(elcomp--pp (oref obj :value) nil))
+	(elcomp--pp (elcomp--value obj) nil))
     (elcomp--pp (elcomp--sym obj) nil)))
 
 (cl-defmethod elcomp--pp ((obj elcomp--call) verbose)
@@ -65,7 +65,7 @@ VERBOSE non-nil means to write a more verbose description.")
 
 (cl-defmethod elcomp--pp ((obj elcomp--constant) _verbose)
   (princ "<< ")
-  (princ (oref obj :value))
+  (princ (elcomp--value obj))
   (princ " >>"))
 
 (cl-defmethod elcomp--pp ((obj elcomp--phi) verbose)

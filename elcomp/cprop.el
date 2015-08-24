@@ -28,7 +28,7 @@ Return non-nil if anything was changed."
 	 (when (elcomp--set-p insn)
 	   (unless rewrites
 	     (setf rewrites (make-hash-table)))
-	   (elcomp--cprop-insert rewrites insn (oref insn :value))))))
+	   (elcomp--cprop-insert rewrites insn (elcomp--value insn))))))
 
     (when rewrites
       (elcomp--rewrite-using-map compiler rewrites)
@@ -63,7 +63,7 @@ Return non-nil if anything was changed."
 	   (let ((new-value
 		  (apply (elcomp--func insn)
 			 (mapcar (lambda (arg)
-				   (oref arg :value))
+				   (elcomp--value arg))
 				 (elcomp--args insn)))))
 	     (elcomp--cprop-insert rewrites insn
 				   (elcomp--constant :value new-value)))))))

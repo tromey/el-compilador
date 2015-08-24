@@ -70,8 +70,8 @@ This returns t if CURRENT-MAP was modified by this renaming, and
 nil otherwise.")
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--set) _compiler current-map)
-  (setf (oref insn :value) (elcomp--ssa-rename-arg (oref insn :value)
-						   current-map))
+  (setf (elcomp--value insn) (elcomp--ssa-rename-arg (elcomp--value insn)
+						     current-map))
   (elcomp--ssa-note-lhs insn current-map))
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--call) _compiler current-map)

@@ -25,7 +25,7 @@ Otherwise return nil."
 (defun elcomp--constant-nil-p (cst)
   "Return t if CST is an `elcomp--constant' whose value is nil."
   (and (elcomp--constant-p cst)
-       (eq (oref cst :value) nil)))
+       (eq (elcomp--value cst) nil)))
 
 (defun elcomp--get-eq-argument (insn)
   "Check if INSN uses an `eq' condition.
@@ -274,7 +274,7 @@ collector."
 	       ;; FIXME could also check for calls known not to return
 	       ;; nil.
 	       (when (elcomp--constant-p condition)
-		 (let ((goto-block (if (oref condition :value)
+		 (let ((goto-block (if (elcomp--value condition)
 				       (elcomp--block-true insn)
 				     (elcomp--block-false insn))))
 		   (setf insn (elcomp--goto :block goto-block))

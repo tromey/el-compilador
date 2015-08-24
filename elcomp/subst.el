@@ -20,9 +20,9 @@ MAP is a hash table mapping old instructions to new ones.")
   (error "unhandled case: %S" insn))
 
 (cl-defmethod elcomp--rewrite-insn ((insn elcomp--set) map)
-  (let ((new-insn (gethash (oref insn :value) map)))
+  (let ((new-insn (gethash (elcomp--value insn) map)))
     (when new-insn
-      (setf (oref insn :value) new-insn))))
+      (setf (elcomp--value insn) new-insn))))
 
 (cl-defmethod elcomp--rewrite-insn ((insn elcomp--call) map)
   ;; FIXME: the :func slot?

@@ -92,7 +92,7 @@ This is used for references to global symbols."
    ((elcomp--argument-p insn)
     (elcomp--c-symbol eltoc (elcomp--original-name insn) t))
    ((elcomp--constant-p insn)
-    (let ((value (oref insn :value)))
+    (let ((value (elcomp--value insn)))
       (cond
        ;; FIXME - in emacs 25 this can be a generic.
        ((symbolp value)
@@ -122,7 +122,7 @@ This is used for references to global symbols."
 (cl-defmethod elcomp--c-emit ((insn elcomp--set) eltoc)
   (elcomp--c-emit-symref eltoc insn)
   (insert " = ")
-  (elcomp--c-emit-symref eltoc (oref insn :value)))
+  (elcomp--c-emit-symref eltoc (elcomp--value insn)))
 
 (defun elcomp--unbind-emitter (insn)
   "Emit a call to :elcomp-unbind.
@@ -132,7 +132,7 @@ argument."
 	 (first-arg (car args)))
   (cl-assert (eq (length args) 1))
   (cl-assert (elcomp--constant-p first-arg))
-  (let ((value (oref first-arg :value)))
+  (let ((value (elcomp--value first-arg)))
     (cl-assert (integerp value))
     (insert "unbind_to (SPECPDL_INDEX - "
 	    (number-to-string value)

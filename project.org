@@ -30,8 +30,6 @@
 ** There are various spots where the :func slot of a call
    is handled improperly
 
-** stop using oref and oset and instead use accessors
-
 ** We need a `lexical-catch' of some kind
 *** Could also mark various subrs as "cannot throw" as a special case
     Except we have Vthrow_on_input ...

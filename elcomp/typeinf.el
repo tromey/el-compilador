@@ -127,7 +127,7 @@ and `nil' is used to mean a typeless instruction.")
   nil)
 
 (cl-defmethod elcomp--compute-type ((obj elcomp--constant) _map)
-  (let ((value (oref obj :value)))
+  (let ((value (elcomp--value obj)))
     (cl-case value
       ;; nil has a type of its own.
       ((nil) 'null)
@@ -136,7 +136,7 @@ and `nil' is used to mean a typeless instruction.")
       (t (type-of value)))))
 
 (cl-defmethod elcomp--compute-type ((obj elcomp--set) map)
-  (elcomp--find-type (oref obj :value) map))
+  (elcomp--find-type (elcomp--value obj) map))
 
 (defun elcomp--merge-math-types (arguments map)
   ;; With no arguments we return integer:

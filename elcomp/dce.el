@@ -67,7 +67,7 @@ its references on the work list."
   ;; A SET is not intrinsically needed, so check which pass this is.
   (unless just-intrinsic
     (puthash insn t (elcomp--dce-hash dce))
-    (elcomp--dce-add (oref insn :value) dce)))
+    (elcomp--dce-add (elcomp--value insn) dce)))
 
 (cl-defmethod elcomp--mark-necessary ((insn elcomp--phi) dce just-intrinsic)
   "Mark a `phi' statement as necessary.

@@ -79,6 +79,7 @@ Initially this is a symbol.
 After transformation to SSA, this will be an SSA name;
 see `elcomp--ssa-name-p'.")
    (value :initform nil :initarg :value
+	  :accessor elcomp--value
 	  :documentation "The value being assigned.
 Initially this is a symbol.
 After transformation to SSA, this will be an SSA name."))
@@ -149,6 +150,7 @@ This can only be for a call to a `nothrow' function.")
 
 (defclass elcomp--constant nil
   ((value :initform nil :initarg :value
+	  :accessor elcomp--value
 	  :documentation "The value of the constant."))
   "This represents a constant after transformation to SSA form.")
 
