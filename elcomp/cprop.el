@@ -78,12 +78,12 @@ Return non-nil if anything was changed."
 This pass operates on COMPILER, performing constant- and
 copy-propagation.  It also evaluates `pure' functions and removes
 unnecessary phis."
-  (let ((keep-going t))
-    (while keep-going
-      (setf keep-going nil)
-      (when (elcomp--cprop-basic compiler)
-	(setf keep-going (elcomp--cprop-pure compiler))
-	(elcomp--dce-pass compiler)))))
+  (while (and (elcomp--cprop-basic compiler)
+	      (prog1
+		  (elcomp--cprop-pure compiler)
+		(elcomp--dce-pass compiler)))
+    ;; Nothing.
+    nil))
 
 (provide 'elcomp/cprop)
 
