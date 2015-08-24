@@ -44,7 +44,7 @@ pushing the instruction's arguments onto the work list.")
   ;; An IF is always needed.
   (puthash insn t (elcomp--dce-hash dce))
   ;; And so is its reference.
-  (elcomp--dce-add (oref insn :sym) dce))
+  (elcomp--dce-add (elcomp--sym insn) dce))
 
 (cl-defmethod elcomp--mark-necessary ((insn elcomp--goto) dce _just-intrinsic)
   "`Goto' statements are marked as needed."
@@ -56,7 +56,7 @@ pushing the instruction's arguments onto the work list.")
   ;; A RETURN is always needed.
   (puthash insn t (elcomp--dce-hash dce))
   ;; And so is its reference.
-  (elcomp--dce-add (oref insn :sym) dce))
+  (elcomp--dce-add (elcomp--sym insn) dce))
 
 (cl-defmethod elcomp--mark-necessary ((insn elcomp--set) dce just-intrinsic)
   "Mark a `set' statement as necessary.
@@ -149,7 +149,7 @@ statement that has not been marked as necessary."
 	      ;; We found a call whose result is not needed.  Drop the
 	      ;; result if it is an SSA name.
 	      (when (elcomp--ssa-name-p (car iter))
-		(setf (oref (car iter) :sym) nil)))
+		(setf (elcomp--sym (car iter)) nil)))
 	     ((nil)
 	      ;; Remove the entire instruction.
 	      (setf (car iter) nil))))

@@ -47,10 +47,10 @@ If the left-hand-side of the assignment instruction INSN is
 non-nil, then the instruction is added to CURRENT-MAP.
 
 Returns t if CURRENT-MAP was updated, or nil if not."
-  (let ((name (oref insn :sym)))
+  (let ((name (elcomp--sym insn)))
     (if name
 	(let ((new-name (elcomp--ssa-new-name name)))
-	  (setf (oref insn :sym) new-name)
+	  (setf (elcomp--sym insn) new-name)
 	  (puthash name insn current-map)
 	  t)
       nil)))
@@ -87,17 +87,20 @@ nil otherwise.")
   nil)
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--if) compiler current-map)
-  (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
+  (setf (elcomp--sym insn) (elcomp--ssa-rename-arg (elcomp--sym insn)
+						   current-map))
   (elcomp--ssa-propagate compiler (elcomp--block-true insn) current-map)
   (elcomp--ssa-propagate compiler (elcomp--block-false insn) current-map)
   nil)
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
-  (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
+  (setf (elcomp--sym insn) (elcomp--ssa-rename-arg (elcomp--sym insn)
+						   current-map))
   nil)
 
 (cl-defmethod elcomp--ssa-rename ((insn elcomp--return) _compiler current-map)
-  (setf (oref insn :sym) (elcomp--ssa-rename-arg (oref insn :sym) current-map))
+  (setf (elcomp--sym insn) (elcomp--ssa-rename-arg (elcomp--sym insn)
+						   current-map))
   nil)
 
 (defun elcomp--topmost-exception (bb)

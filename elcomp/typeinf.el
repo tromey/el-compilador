@@ -175,7 +175,7 @@ and `nil' is used to mean a typeless instruction.")
     result))
 
 (cl-defmethod elcomp--compute-type ((obj elcomp--call) map)
-  (if (not (oref obj :sym))
+  (if (not (elcomp--sym obj))
       ;; No symbol means no type.
       nil
     (let ((func (elcomp--func obj)))
@@ -291,7 +291,7 @@ Return non-nil if any changes were made."
    (t nil)))
 
 (cl-defmethod elcomp--type-map-propagate ((insn elcomp--if) infobj type-map)
-  (let* ((sym (oref insn :sym))
+  (let* ((sym (elcomp--sym insn))
 	 (predicated-type (elcomp--find-type-predicate sym))
 	 (predicate-arg (if predicated-type
 			    (car (elcomp--args sym))
@@ -400,7 +400,7 @@ Update MAP with mappings from old to new instructions."
 	       ;; predicate, so we can replace it with a constant.
 	       (unless (eq branches :both)
 		 (let ((new-insn
-			(elcomp--set :sym (oref insn :sym)
+			(elcomp--set :sym (elcomp--sym insn)
 				     :value
 				     (elcomp--constant :value branches))))
 		   (setf (car iter) new-insn)

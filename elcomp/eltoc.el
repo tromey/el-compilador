@@ -83,9 +83,9 @@ This is used for references to global symbols."
    ((symbolp insn)
     (insert (elcomp--c-name insn)))
    ((elcomp--set-p insn)
-    (elcomp--c-symbol eltoc (oref insn :sym)))
+    (elcomp--c-symbol eltoc (elcomp--sym insn)))
    ((elcomp--call-p insn)
-    (elcomp--c-symbol eltoc (oref insn :sym)))
+    (elcomp--c-symbol eltoc (elcomp--sym insn)))
    ((elcomp--phi-p insn)
     ;; FIXME??
     (elcomp--c-symbol eltoc (elcomp--original-name insn)))
@@ -148,7 +148,7 @@ argument."
     (:unwind-protect-continue . "unwind_protect_continue")))
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
-  (when (oref insn :sym)
+  (when (elcomp--sym insn)
     (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
   (if (eq (elcomp--func insn) :elcomp-unbind)
@@ -182,7 +182,7 @@ argument."
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--if) eltoc)
   (insert "if (!NILP (")
-  (elcomp--c-emit-symref eltoc (oref insn :sym))
+  (elcomp--c-emit-symref eltoc (elcomp--sym insn))
   (insert ")) goto ")
   (elcomp--c-emit-label (elcomp--block-true insn))
   (insert "; else goto ")
@@ -190,7 +190,7 @@ argument."
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--return) eltoc)
   (insert "return ")
-  (elcomp--c-emit-symref eltoc (oref insn :sym)))
+  (elcomp--c-emit-symref eltoc (elcomp--sym insn)))
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--catch) eltoc)
   (let ((name (elcomp--c-declare-handler eltoc)))

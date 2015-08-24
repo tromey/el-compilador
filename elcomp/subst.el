@@ -37,14 +37,14 @@ MAP is a hash table mapping old instructions to new ones.")
   nil)
 
 (cl-defmethod elcomp--rewrite-insn ((insn elcomp--if) map)
-  (let ((new-insn (gethash (oref insn :sym) map)))
+  (let ((new-insn (gethash (elcomp--sym insn) map)))
     (when new-insn
-      (setf (oref insn :sym) new-insn))))
+      (setf (elcomp--sym insn) new-insn))))
 
 (cl-defmethod elcomp--rewrite-insn ((insn elcomp--return) map)
-  (let ((new-insn (gethash (oref insn :sym) map)))
+  (let ((new-insn (gethash (elcomp--sym insn) map)))
     (when new-insn
-      (setf (oref insn :sym) new-insn))))
+      (setf (elcomp--sym insn) new-insn))))
 
 (cl-defmethod elcomp--rewrite-insn ((insn elcomp--phi) map)
   ;; Ugh.

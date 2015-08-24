@@ -73,6 +73,7 @@
 
 (defclass elcomp--set nil
   ((sym :initform nil :initarg :sym
+	:accessor elcomp--sym
 	:documentation "The local variable being assigned to.
 Initially this is a symbol.
 After transformation to SSA, this will be an SSA name;
@@ -87,6 +88,7 @@ This represents a simple assignment to a local variable.")
 
 (defclass elcomp--call nil
   ((sym :initform nil :initarg :sym
+	:accessor elcomp--sym
 	:documentation "The local variable being assigned to.
 This can be `nil' if the result of the call is not used.
 Initially this is a symbol.
@@ -114,6 +116,7 @@ This instruction terminates a block.")
 
 (defclass elcomp--if nil
   ((sym :initform nil :initarg :sym
+	:accessor elcomp--sym
 	:documentation "The condition to check.
 Initially this is a symbol.
 After transformation to SSA, this will be an SSA name;
@@ -131,6 +134,7 @@ argument is `nil'.  This instruction terminates a block.")
 
 (defclass elcomp--return nil
   ((sym :initform nil :initarg :sym
+	:accessor elcomp--sym
 	:documentation "The value to return.
 Initially this is a symbol.
 After transformation to SSA, this will be an SSA name;

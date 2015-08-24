@@ -17,7 +17,7 @@
 INSN is an 'if' instruction.  If the condition was defined by a
 call to 'not' (or 'null'), return the argument to the 'not'.
 Otherwise return nil."
-  (let ((call (oref insn :sym)))
+  (let ((call (elcomp--sym insn)))
     (if (and (elcomp--call-p call)
 	     (memq (elcomp--func call) '(not null)))
 	(car (elcomp--args call)))))
@@ -34,7 +34,7 @@ INSN is an `if' instruction.  If the condition is of the
 form `(eq V nil)' or `(eq nil V)', return V.  Otherwise return
 nil."
   (cl-assert (elcomp--if-p insn))
-  (let ((call (oref insn :sym)))
+  (let ((call (elcomp--sym insn)))
     (if (and (elcomp--call-p call)
 	     (memq (elcomp--func call) '(eq equal)))
 	(let ((args (elcomp--args call)))
@@ -57,12 +57,12 @@ INSN is the variable used by an `if'."
 	  (setf changed-one t)
 	  (cl-rotatef (elcomp--block-true insn)
 		      (elcomp--block-false insn))
-	  (setf (oref insn :sym) arg-to-not)))
+	  (setf (elcomp--sym insn) arg-to-not)))
       ;; Change (eq V nil) or (eq nil V) to plain V.
       (let ((arg-to-eq (elcomp--get-eq-argument insn)))
 	(when arg-to-eq
 	  (setf changed-one t)
-	  (setf (oref insn :sym) arg-to-eq))))))
+	  (setf (elcomp--sym insn) arg-to-eq))))))
 
 (defun elcomp--block-has-catch (block tag)
   "If the block has a `catch' exception handler, return it.
@@ -103,7 +103,7 @@ TAG is a constant that must be matched by the handler."
   (let ((insn (car (elcomp--basic-block-code (elcomp--handler exception)))))
     (cl-assert (elcomp--call-p insn))
     (cl-assert (eq (elcomp--func insn) :catch-value))
-    (oref insn :sym)))
+    (elcomp--sym insn)))
 
 (defun elcomp--get-catch-target (exception)
   "Given a `catch' exception object, return the basic block of the `catch' itself."
@@ -270,7 +270,7 @@ collector."
 	   ;; If the argument to the IF is a constant, turn the IF
 	   ;; into a GOTO.
 	   (when (and in-ssa-form (elcomp--if-p insn))
-	     (let ((condition (oref insn :sym)))
+	     (let ((condition (elcomp--sym insn)))
 	       ;; FIXME could also check for calls known not to return
 	       ;; nil.
 	       (when (elcomp--constant-p condition)
@@ -287,20 +287,18 @@ collector."
 	     ;; Thread the true branch.
 	     (when (and (elcomp--if-p (elcomp--first-instruction
 					     (elcomp--block-true insn)))
-			(eq (oref insn :sym)
-			    (oref (elcomp--first-instruction
-				   (elcomp--block-true insn))
-				  :sym)))
+			(eq (elcomp--sym insn)
+			    (elcomp--sym (elcomp--first-instruction
+					  (elcomp--block-true insn)))))
 	       (setf (elcomp--block-true insn)
 		     (elcomp--block-true (elcomp--first-instruction
 					  (elcomp--block-true insn)))))
 	     ;; Thread the false branch.
 	     (when (and (elcomp--if-p (elcomp--first-instruction
 					     (elcomp--block-false insn)))
-			(eq (oref insn :sym)
-			    (oref (elcomp--first-instruction
-				   (elcomp--block-false insn))
-				  :sym)))
+			(eq (elcomp--sym insn)
+			    (elcomp--sym (elcomp--first-instruction
+					  (elcomp--block-false insn)))))
 	       (setf (elcomp--block-false insn)
 		     (elcomp--block-false (elcomp--first-instruction
 					   (elcomp--block-false insn)))))))))
