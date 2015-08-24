@@ -88,9 +88,9 @@ This is used for references to global symbols."
     (elcomp--c-symbol eltoc (oref insn :sym)))
    ((elcomp--phi-p insn)
     ;; FIXME??
-    (elcomp--c-symbol eltoc (oref insn :original-name)))
+    (elcomp--c-symbol eltoc (elcomp--original-name insn)))
    ((elcomp--argument-p insn)
-    (elcomp--c-symbol eltoc (oref insn :original-name) t))
+    (elcomp--c-symbol eltoc (elcomp--original-name insn) t))
    ((elcomp--constant-p insn)
     (let ((value (oref insn :value)))
       (cond

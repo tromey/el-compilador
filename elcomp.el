@@ -150,6 +150,7 @@ This can only be for a call to a `nothrow' function.")
 
 (defclass elcomp--phi nil
   ((original-name :initform nil :initarg :original-name
+		  :accessor elcomp--original-name
 		  :documentation "The original name of this node.
 This is handy for debugging.")
    (args :initform (make-hash-table) :initarg :args
@@ -163,6 +164,7 @@ See any good source of information about SSA to understand this.")
 
 (defclass elcomp--argument nil
   ((original-name :initform nil :initarg :original-name
+		  :accessor elcomp--original-name
 		  :documentation "The original name of this node.
 This is handy for debugging.")
    (is-rest :initform nil :initarg :is-rest

@@ -70,7 +70,7 @@ VERBOSE non-nil means to write a more verbose description.")
 
 (cl-defmethod elcomp--pp ((obj elcomp--phi) verbose)
   (princ "ϕ:")
-  (princ (oref obj :original-name))
+  (princ (elcomp--original-name obj))
   (when verbose
     (princ " =")
     (maphash (lambda (item _ignore)
@@ -80,7 +80,7 @@ VERBOSE non-nil means to write a more verbose description.")
 
 (cl-defmethod elcomp--pp ((obj elcomp--argument) _verbose)
   (princ "argument ")
-  (princ (oref obj :original-name)))
+  (princ (elcomp--original-name obj)))
 
 (cl-defmethod elcomp--pp ((obj elcomp--catch) _verbose)
   (princ "catch ")

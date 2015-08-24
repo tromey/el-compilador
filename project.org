@@ -2,6 +2,10 @@
 
 * To Do
 
+** make an elcomp-debug-output-mode, derived from special-mode,
+   where "g" re-runs the command; handy for debugging
+   should store the sexp and the backend function
+
 ** need to go through and see what happens to dynamic vars
    it seems like symbol-value should maybe be explicit?
    or...?
