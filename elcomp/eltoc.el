@@ -192,10 +192,6 @@ argument."
   (insert "return ")
   (elcomp--c-emit-symref eltoc (oref insn :sym)))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--argument) _eltoc)
-  (insert "goto ")
-  (elcomp--c-emit-label (oref insn :goto)))
-
 (cl-defmethod elcomp--c-emit ((insn elcomp--catch) eltoc)
   (let ((name (elcomp--c-declare-handler eltoc)))
     (insert "  PUSH_HANDLER (" name ", ")
