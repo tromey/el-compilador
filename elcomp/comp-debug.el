@@ -100,7 +100,7 @@ VERBOSE non-nil means to write a more verbose description.")
 
 (cl-defmethod elcomp--pp ((obj elcomp--fake-unwind-protect) _verbose)
   (princ "fake-unwind-protect ")
-  (princ (oref obj :count)))
+  (princ (elcomp--count obj)))
 
 (defun elcomp--pp-insn (text insn verbose)
   (princ text)

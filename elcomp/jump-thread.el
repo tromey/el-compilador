@@ -140,8 +140,8 @@ TAG is a constant that must be matched by the handler."
 			     :func :elcomp-unbind
 			     :args (list
 				    (elcomp--constant :value
-						      (oref (car iter)
-							    :count))))))
+						      (elcomp--count
+						       (car iter)))))))
 	    (setf iter (cdr iter))))
 	;; Now add an instruction with an assignment and a goto, and
 	;; zap the `diediedie' instruction.

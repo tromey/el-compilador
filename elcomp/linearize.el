@@ -16,7 +16,7 @@
 	      (progn
 		(pop (elcomp--exceptions compiler))
 		(elcomp--fake-unwind-protect
-		 :count (+ (oref first-exception :count) num)))
+		 :count (+ (elcomp--count first-exception) num)))
 	    (elcomp--fake-unwind-protect :count num))))
     (push new-exception (elcomp--exceptions compiler)))
   (elcomp--make-block-current compiler (elcomp--label compiler)))
@@ -24,10 +24,10 @@
 (defun elcomp--pop-fake-unwind-protects (compiler num)
   (let* ((first-exception (pop (elcomp--exceptions compiler))))
     (cl-assert (elcomp--fake-unwind-protect-p first-exception))
-    (cl-assert (>= (oref first-exception :count) num))
-    (if (> (oref first-exception :count) num)
+    (cl-assert (>= (elcomp--count first-exception) num))
+    (if (> (elcomp--count first-exception) num)
 	(push (elcomp--fake-unwind-protect
-	       :count (- (oref first-exception :count) num))
+	       :count (- (elcomp--count first-exception) num))
 	      (elcomp--exceptions compiler))))
   (elcomp--make-block-current compiler (elcomp--label compiler)))
 

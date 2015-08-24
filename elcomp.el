@@ -211,6 +211,7 @@ This is not used now but may be later for `catch' optimization."))
 ;; Here, the `throw' has to unbind "var1".
 (defclass elcomp--fake-unwind-protect (elcomp--exception)
   ((count :initform nil :initarg :count
+	  :accessor elcomp--count
 	  :documentation "The number of unbinds that this represents."))
   "An exception edge representing the unbind operation from a `let'
 of a special variable.  These unbinds are done implicitly, so this
