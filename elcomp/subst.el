@@ -16,7 +16,7 @@
 MAP is a hash table mapping old instructions to new ones.")
 
 (cl-defmethod elcomp--rewrite-insn (insn _map)
-  "Unhandled cases call `error'q."
+  "Unhandled cases call `error'."
   (error "unhandled case: %S" insn))
 
 (cl-defmethod elcomp--rewrite-insn ((insn elcomp--set) map)
