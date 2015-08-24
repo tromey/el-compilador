@@ -72,8 +72,8 @@ TAG is a constant that must be matched by the handler."
     (dolist (exception (elcomp--basic-block-exceptions block))
       (cond
        ((elcomp--catch-p exception)
-	(if (elcomp--constant-p (oref exception :tag))
-	    (if (equal tag (oref exception :tag))
+	(if (elcomp--constant-p (elcomp--tag exception))
+	    (if (equal tag (elcomp--tag exception))
 		(throw 'done exception)
 	      ;; The tag is a different constant, so we can ignore
 	      ;; this one and keep going.

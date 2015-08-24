@@ -84,7 +84,7 @@ VERBOSE non-nil means to write a more verbose description.")
 
 (cl-defmethod elcomp--pp ((obj elcomp--catch) _verbose)
   (princ "catch ")
-  (princ (oref obj :tag))
+  (princ (elcomp--tag obj))
   (princ " => BB ")
   (princ (elcomp--basic-block-number (elcomp--handler obj))))
 

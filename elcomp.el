@@ -184,6 +184,7 @@ taken.")
 
 (defclass elcomp--catch (elcomp--exception)
   ((tag :initform nil :initarg :tag
+	:accessor elcomp--tag
 	:documentation "The tag of the `catch'."))
   "An exception edge representing a `catch'.")
 

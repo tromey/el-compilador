@@ -195,7 +195,7 @@ argument."
 (cl-defmethod elcomp--c-emit ((insn elcomp--catch) eltoc)
   (let ((name (elcomp--c-declare-handler eltoc)))
     (insert "  PUSH_HANDLER (" name ", ")
-    (elcomp--c-emit-symref eltoc (oref insn :tag))
+    (elcomp--c-emit-symref eltoc (elcomp--tag insn))
     (insert ", CATCHER);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
