@@ -148,9 +148,6 @@
    we need our own special hack.  like maybe CL could put a special
    property on the magic symbols it makes
 
-** There doesn't seem to be a way to fetch an object's name
-   (there is - you can inherit from eieio-named)
-
 ** concat and mapconcat don't allow characters
    this seems unfriendly and pointless
 
