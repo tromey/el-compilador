@@ -6,11 +6,6 @@
    where "g" re-runs the command; handy for debugging
    should store the sexp and the backend function
 
-** need to go through and see what happens to dynamic vars
-   it seems like symbol-value should maybe be explicit?
-   or...?
-   at least the docs need updating
-
 ** arguments need types set to :bottom
 
 ** typeinf.el doesn't handle keywordp specially, but should
@@ -67,6 +62,10 @@
 *** (defconst defvar interactive)
 
 *** (Note track-mouse turned into a macro)
+
+*** save-current-buffer
+*** save-restriction
+*** save-excursion
 
 ** can turn throw->catch into a goto
 
