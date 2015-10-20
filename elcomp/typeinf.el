@@ -257,8 +257,14 @@ Return non-nil if any changes were made."
 
 (defun elcomp--pretend-eval-type-predicate (predicate-type arg-type)
   (cl-assert (not (memq predicate-type '(:top :bottom))))
-  (cl-assert (not (eq arg-type :top)))
+  ;; (cl-assert (not (eq arg-type :top)))
   (cond
+   ;; This is a "shouldn't happen", but it does happen when compiling
+   ;; plist-member.  FIXME.  My guess is this is due to not marking
+   ;; arguments as :bottom.
+   ((eq arg-type :top)
+    :both)
+
    ((eq predicate-type arg-type)
     t)
 
