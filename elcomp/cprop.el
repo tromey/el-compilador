@@ -34,12 +34,11 @@ Return non-nil if anything was changed."
       (elcomp--rewrite-using-map compiler rewrites)
       t)))
 
-(defun elcomp--all-arguments-constant (call)
-  (catch 'done
-    (dolist (arg (elcomp--args call))
-      (unless (elcomp--constant-p arg)
-	(throw 'done nil)))
-    t))
+(cl-defun elcomp--all-arguments-constant (call)
+  (dolist (arg (elcomp--args call))
+    (unless (elcomp--constant-p arg)
+      (cl-return-from elcomp--all-arguments-constant nil)))
+  t)
 
 (defun elcomp--cprop-pure (compiler)
   (let ((rewrites (make-hash-table)))

@@ -104,10 +104,9 @@ nil otherwise.")
   nil)
 
 (defun elcomp--topmost-exception (bb)
-  (catch 'done
-    (dolist (topmost-exception (elcomp--basic-block-exceptions bb))
-      (when (elcomp--handler topmost-exception)
-	(throw 'done topmost-exception)))))
+  (cl-dolist (topmost-exception (elcomp--basic-block-exceptions bb))
+    (when (elcomp--handler topmost-exception)
+      (cl-return topmost-exception))))
 
 (defun elcomp--into-ssa-parse-args (compiler current-map)
   (let ((arg-list (cadr (elcomp--defun compiler))))

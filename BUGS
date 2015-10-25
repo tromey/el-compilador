@@ -1,4 +1,45 @@
+plist-member compilation
+C backend generates bogus symbol:
+
+static Lisp_Object Kplist-member;
+
+================================================================
+
+(elcomp--do '(
+	      (defun qqz ()
+		(let ((f  (lambda () 23)))
+		  (funcall f)))
+		)
+	    #'elcomp--c-translate
+	    )
+
+this should not generate code for the lambda but it does
+the equivalent without a binding does not generate it
+
+================================================================
+
+(elcomp--do '(
+	      (defun test-case ()
+		(let ((i 0) (s 0))
+		  (while (<= i 10000000)
+		    (setq s (+ s i))
+		    (setq i (1+ i)))
+		  ))
+
+	      )
+	    ;; #'elcomp--c-translate
+	    )
+
+this should be able to eliminate the loop
+
+also makes this:
+    ϕ:G183_190 = G183_187 ϕ:G183_190 ; TYPE = null
+which is weird and pointless in this case
+
+================================================================
+
 can't compile widget-get from fns.el
+or plist-member
 
 C back end writes some bogus symbol names
 

@@ -7,15 +7,14 @@
 (require 'elcomp)
 (require 'elcomp/back)
 
-(defun elcomp--first-processed-predecessor (bb)
-  (or (catch 'found
-	(maphash
-	 (lambda (pred _ignore)
-	   (if (elcomp--basic-block-immediate-dominator pred)
-	       (throw 'found pred)))
-	 (elcomp--basic-block-parents bb)))
-      (error "couldn't find processed predecessor in %S"
-	     (elcomp--basic-block-number bb))))
+(cl-defun elcomp--first-processed-predecessor (bb)
+  (maphash
+   (lambda (pred _ignore)
+     (if (elcomp--basic-block-immediate-dominator pred)
+	 (cl-return-from elcomp--first-processed-predecessor pred)))
+   (elcomp--basic-block-parents bb))
+  (error "couldn't find processed predecessor in %S"
+	 (elcomp--basic-block-number bb)))
 
 (defun elcomp--predecessors (bb)
   (let ((result nil))

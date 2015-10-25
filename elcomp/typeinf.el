@@ -329,17 +329,16 @@ Return non-nil if any changes were made."
 				      type-map))))
 
 (defun elcomp--type-map-propagate-exception (infobj bb type-map)
-  (catch 'done
-    (dolist (exception (elcomp--basic-block-exceptions bb))
-      (cond
-       ((elcomp--fake-unwind-protect-p exception)
-	;; Keep going.
-	)
+  (cl-dolist (exception (elcomp--basic-block-exceptions bb))
+    (cond
+     ((elcomp--fake-unwind-protect-p exception)
+      ;; Keep going.
+      )
 
-       (t
-	(elcomp--type-map-propagate-one infobj (elcomp--handler exception)
-					type-map)
-	(throw 'done nil))))))
+     (t
+      (elcomp--type-map-propagate-one infobj (elcomp--handler exception)
+				      type-map)
+      (cl-return nil)))))
 
 (defun elcomp--infer-types-for-bb (bb infobj)
   ;; Work on a local copy.  We're consing too much but it's for

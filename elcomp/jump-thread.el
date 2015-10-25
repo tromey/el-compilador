@@ -68,34 +68,33 @@ INSN is the variable used by an `if'."
   "If the block has a `catch' exception handler, return it.
 Otherwise return nil.
 TAG is a constant that must be matched by the handler."
-  (catch 'done
-    (dolist (exception (elcomp--basic-block-exceptions block))
-      (cond
-       ((elcomp--catch-p exception)
-	(if (elcomp--constant-p (elcomp--tag exception))
-	    (if (equal tag (elcomp--tag exception))
-		(throw 'done exception)
-	      ;; The tag is a different constant, so we can ignore
-	      ;; this one and keep going.
-	      nil)
-	  ;; Non-constant tag could match anything.
-	  (throw 'done nil)))
-       ((elcomp--fake-unwind-protect-p exception)
-	;; Keep going; we can handle these properly.
-	)
-       ((elcomp--condition-case-p exception)
-	;; Keep going; we can ignore these.
-	)
-       ;; This requires re-linearizing the unwind-protect
-       ;; original-form.  However we can't do this at present because
-       ;; we've already lost information about the variable
-       ;; remappings.  Perhaps it would be simpler to just go directly
-       ;; into SSA when linearizing?
-       ;; ((elcomp--unwind-protect-p exception)
-       ;; 	;; Keep going.
-       ;; 	)
-       (t
-	(throw 'done nil))))))
+  (cl-dolist (exception (elcomp--basic-block-exceptions block))
+    (cond
+     ((elcomp--catch-p exception)
+      (if (elcomp--constant-p (elcomp--tag exception))
+	  (if (equal tag (elcomp--tag exception))
+	      (cl-return exception)
+	    ;; The tag is a different constant, so we can ignore
+	    ;; this one and keep going.
+	    nil)
+	;; Non-constant tag could match anything.
+	(cl-return nil)))
+     ((elcomp--fake-unwind-protect-p exception)
+      ;; Keep going; we can handle these properly.
+      )
+     ((elcomp--condition-case-p exception)
+      ;; Keep going; we can ignore these.
+      )
+     ;; This requires re-linearizing the unwind-protect
+     ;; original-form.  However we can't do this at present because
+     ;; we've already lost information about the variable
+     ;; remappings.  Perhaps it would be simpler to just go directly
+     ;; into SSA when linearizing?
+     ;; ((elcomp--unwind-protect-p exception)
+     ;; 	;; Keep going.
+     ;; 	)
+     (t
+      (cl-return nil)))))
 
 (defun elcomp--get-catch-symbol (exception)
   "Given a `catch' exception object, return the symbol holding the `throw' value."

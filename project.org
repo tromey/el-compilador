@@ -2,6 +2,12 @@
 
 * To Do
 
+** `car` should be `const`, ditto cdr, car-safe, cdr-safe,
+  aref, etc
+  also, in cprop.el, it seems like a const function could be
+  pre-evaluated when all arguments are constant; not just a pure
+  function
+
 ** make an elcomp-debug-output-mode, derived from special-mode,
    where "g" re-runs the command; handy for debugging
    should store the sexp and the backend function

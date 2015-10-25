@@ -268,10 +268,10 @@ This can be used with `setf'."
       (elcomp--return-p obj)
       (elcomp--diediedie-p obj)))
 
-(defun elcomp--any-hash-key (hash)
+(cl-defun elcomp--any-hash-key (hash)
   "Return any key of the hash table HASH, or nil."
-  (catch 'done
-    (maphash (lambda (key _ignore) (throw 'done key)) hash)))
+  (maphash (lambda (key _ignore) (cl-return-from elcomp--any-hash-key key))
+	   hash))
 
 (defun elcomp--get-name (elcomp)
   "Get the name of the function represented by ELCOMP."
