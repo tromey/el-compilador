@@ -19,6 +19,7 @@
 (require 'elcomp)
 (require 'elcomp/linearize)
 (require 'elcomp/props)
+(require 'elcomp/c-inl)
 
 ;; FIXME - emacs must supply this value
 (defconst elcomp--c-max-args 8)
@@ -113,13 +114,13 @@ This is used for references to global symbols."
 (defun elcomp--c-emit-label (block)
   (insert (format "BB_%d" (elcomp--basic-block-number block))))
 
-(cl-defgeneric elcomp--c-emit (insn eltoc)
+(cl-defgeneric elcomp--c-emit (insn eltoc bb)
   "FIXME")
 
-(cl-defmethod elcomp--c-emit (insn _eltoc)
+(cl-defmethod elcomp--c-emit (insn _eltoc _bb)
   (error "unhandled case: %S" insn))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--set) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--set) eltoc _bb)
   (elcomp--c-emit-symref eltoc insn)
   (insert " = ")
   (elcomp--c-emit-symref eltoc (elcomp--value insn)))
@@ -147,22 +148,30 @@ argument."
     (:save-restriction-restore . "restore_restrction")
     (:unwind-protect-continue . "unwind_protect_continue")))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--call) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--call) eltoc bb)
   (when (elcomp--sym insn)
     (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
   (if (eq (elcomp--func insn) :elcomp-unbind)
       (elcomp--unbind-emitter insn)
-    (let ((arg-list (elcomp--args insn))
-	  (is-direct (elcomp--func-direct-p (elcomp--func insn))))
+    (let* ((function
+	    (or	(elcomp--c-opt insn
+			       (mapcar (lambda (arg)
+					 (elcomp--look-up-type bb arg))
+				       (elcomp--args insn)))
+		(elcomp--func insn)))
+	   (arg-list (elcomp--args insn))
+	   (is-direct (elcomp--func-direct-p function)))
       (cond
-       ((keywordp (elcomp--func insn))
-	(insert (cdr (assq (elcomp--func insn) elcomp--c-direct-renames))
+       ((stringp function)	     ; Was optimized by elcomp--c-opt.
+	(insert function " ("))
+       ((keywordp function)
+	(insert (cdr (assq function elcomp--c-direct-renames))
 		" ("))
        (is-direct
-	(insert "F" (elcomp--c-name (elcomp--func insn)) " ("))
+	(insert "F" (elcomp--c-name function) " ("))
        (t
-	(push (elcomp--func insn) arg-list)
+	(push function arg-list)
 	;; FIXME - what if not a symbol, etc.
 	(insert (format "Ffuncall (%d, ((Lisp_Object[]) { "
 			(length arg-list)))))
@@ -172,15 +181,15 @@ argument."
 	      (setf first nil)
 	    (insert ", "))
 	  (elcomp--c-emit-symref eltoc arg)))
-      (if (or is-direct (keywordp (elcomp--func insn)))
+      (if (or is-direct (stringp function) (keywordp function))
 	  (insert ")")
 	(insert " }))")))))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc _bb)
   (insert "goto ")
   (elcomp--c-emit-label (elcomp--block insn)))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--if) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--if) eltoc _bb)
   (insert "if (!NILP (")
   (elcomp--c-emit-symref eltoc (elcomp--sym insn))
   (insert ")) goto ")
@@ -188,11 +197,11 @@ argument."
   (insert "; else goto ")
   (elcomp--c-emit-label (elcomp--block-false insn)))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--return) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--return) eltoc _bb)
   (insert "return ")
   (elcomp--c-emit-symref eltoc (elcomp--sym insn)))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--catch) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--catch) eltoc _bb)
   (let ((name (elcomp--c-declare-handler eltoc)))
     (insert "  PUSH_HANDLER (" name ", ")
     (elcomp--c-emit-symref eltoc (elcomp--tag insn))
@@ -205,11 +214,11 @@ argument."
     (insert ";\n")
     (insert "    }\n")))
 
-(cl-defmethod elcomp--c-emit ((_insn elcomp--condition-case) _eltoc)
+(cl-defmethod elcomp--c-emit ((_insn elcomp--condition-case) _eltoc _bb)
   ;; This one is handled specially for efficiency.
   (error "should not be called"))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--unwind-protect) eltoc)
+(cl-defmethod elcomp--c-emit ((insn elcomp--unwind-protect) eltoc _bb)
   (let ((name (elcomp--c-declare-handler eltoc)))
     ;; Emacs doesn't actually have anything for this yet.
     (insert "  PUSH_HANDLER (" name ", Qnil, UNWIND_PROTECT);\n")
@@ -221,7 +230,7 @@ argument."
     (insert ";\n")
     (insert "    }\n")))
 
-(cl-defmethod elcomp--c-emit ((_insn elcomp--fake-unwind-protect) _eltoc)
+(cl-defmethod elcomp--c-emit ((_insn elcomp--fake-unwind-protect) _eltoc _bb)
   ;; Nothing.
   )
 
@@ -270,7 +279,7 @@ argument."
 	    (if (elcomp--condition-case-p (car bb-eh))
 		(setf bb-eh (elcomp--c-emit-condition-case eltoc bb-eh
 							   parent-eh))
-	      (elcomp--c-emit (car bb-eh) eltoc)
+	      (elcomp--c-emit (car bb-eh) eltoc block)
 	      (setf bb-eh (cdr bb-eh)))))))))
 
 (defun elcomp--c-emit-block (eltoc bb)
@@ -279,7 +288,7 @@ argument."
   (elcomp--c-emit-exceptions eltoc bb)
   (dolist (insn (elcomp--basic-block-code bb))
     (insert "  ")
-    (elcomp--c-emit insn eltoc)
+    (elcomp--c-emit insn eltoc bb)
     (insert ";\n")))
 
 (defun elcomp--c-parse-args (arg-list)

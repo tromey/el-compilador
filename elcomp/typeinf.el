@@ -256,7 +256,7 @@ Return non-nil if any changes were made."
     (elcomp--func-type-predicate (elcomp--func sym))))
 
 (defun elcomp--pretend-eval-type-predicate (predicate-type arg-type)
-  (cl-assert (not (memq predicate-type '(:top :bottom))))
+  (cl-assert (not (eq predicate-type :top)))
   ;; (cl-assert (not (eq arg-type :top)))
   (cond
    ;; This is a "shouldn't happen", but it does happen when compiling
@@ -294,7 +294,9 @@ Return non-nil if any changes were made."
 	 (elcomp--list-type-p arg-type))
     t)
 
-   (t nil)))
+   (t
+    ;; Anything is compatible with :bottom.
+    (eq predicate-type :bottom))))
 
 (cl-defmethod elcomp--type-map-propagate ((insn elcomp--if) infobj type-map)
   (let* ((sym (elcomp--sym insn))

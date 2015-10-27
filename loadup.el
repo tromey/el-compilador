@@ -9,6 +9,7 @@
     (push elcomp--loadup-dir load-path)
     (dolist (file '("elcomp"
 		    "elcomp/back"
+		    "elcomp/c-inl"
 		    "elcomp/cmacros"
 		    "elcomp/coalesce"
 		    "elcomp/comp-debug"
