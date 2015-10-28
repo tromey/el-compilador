@@ -8,6 +8,9 @@
   pre-evaluated when all arguments are constant; not just a pure
   function
 
+** we should be able to notice NILP(Fconsp) and turn it into
+   CONSP.  This requires unboxing
+
 ** make an elcomp-debug-output-mode, derived from special-mode,
    where "g" re-runs the command; handy for debugging
    should store the sexp and the backend function

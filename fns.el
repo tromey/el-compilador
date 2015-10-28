@@ -12,7 +12,10 @@ The objects mapped (cars and cdrs of elements of the alist)
 are shared, however.
 Elements of ALIST that are not conses are also shared."
   (cl-check-type alist list)
-  (mapcar #'identity alist))
+  (cl-loop for elt in alist
+	   collect (if (consp elt)
+		       (cons (car elt) (cdr elt))
+		     elt)))
 
 (defun nthcdr (num list)
   (cl-check-type num integer)
