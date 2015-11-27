@@ -15,9 +15,6 @@
 OBJ is the object to pretty-print.
 VERBOSE non-nil means to write a more verbose description.")
 
-(cl-defmethod elcomp--pp (_obj _verbose)
-  (error "unrecognized instruction"))
-
 (cl-defmethod elcomp--pp (obj _verbose)
   (princ obj))
 
