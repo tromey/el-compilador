@@ -2,6 +2,9 @@
 
 * To Do
 
+** turn elcomp--iterate-over-bbs into a macro to be more elisp-like.
+   add a declare form to fix the indentation
+
 ** maybe add a dynamic-module-API back end
 
 ** `car` should be `const`, ditto cdr, car-safe, cdr-safe,
