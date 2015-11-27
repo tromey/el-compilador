@@ -54,7 +54,6 @@
   (elcomp--thread-jumps-pass compiler nil)
   (elcomp--eh-cleanup-pass compiler)
   (elcomp--coalesce-pass compiler)
-  (elcomp--compute-dominators compiler)	; don't really need this right now
   (elcomp--into-ssa-pass compiler)
   (elcomp--cprop-pass compiler)
   (elcomp--thread-jumps-pass compiler t)
