@@ -2,6 +2,8 @@
 
 * To Do
 
+** maybe add a dynamic-module-API back end
+
 ** `car` should be `const`, ditto cdr, car-safe, cdr-safe,
   aref, etc
   also, in cprop.el, it seems like a const function could be
