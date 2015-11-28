@@ -2,6 +2,8 @@
 
 * To Do
 
+** need to handle out-of-ssa for exception edges
+
 ** turn elcomp--iterate-over-bbs into a macro to be more elisp-like.
    add a declare form to fix the indentation
 

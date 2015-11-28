@@ -21,6 +21,7 @@
 		    "elcomp/iter"
 		    "elcomp/jump-thread"
 		    "elcomp/linearize"
+		    "elcomp/name-map"
 		    "elcomp/props"
 		    "elcomp/ssa"
 		    "elcomp/subst"

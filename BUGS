@@ -44,6 +44,7 @@ or plist-member
 C back end writes some bogus symbol names
 
 C back end doesn't do out-of-ssa
+[it does but still...]
 we probably need to keep edges after all
 
 ================================================================

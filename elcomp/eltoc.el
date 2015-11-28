@@ -29,6 +29,10 @@
   decl-marker
   ;; Map symbols to their C names.
   interned-symbols
+  ;; Map SSA names to their defining blocks.
+  ;; This is a hack because we don't have a good out-of-ssa approach
+  ;; yet.
+  name-map
   (eh-count 0))
 
 (defun elcomp--c-quote-string (str)
@@ -185,17 +189,50 @@ argument."
 	  (insert ")")
 	(insert " }))")))))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--goto) _eltoc _bb)
-  (insert "goto ")
+(defun elcomp--c-set-phis-on-entry (eltoc this-bb target-bb)
+  (maphash
+   (lambda (_name phi)
+     (insert "      ")
+     (elcomp--c-emit-symref eltoc phi)
+     (insert " = ")
+     (cl-block done
+       ;; This algorithm sucks.
+       (let ((check-bb this-bb))
+	 (while t
+	   (maphash
+	    (lambda (arg _ignore)
+	      (when (eq (gethash arg (elcomp--c-name-map eltoc)) check-bb)
+		(elcomp--c-emit-symref eltoc arg)
+		(insert ";\n")
+		(cl-return-from done)))
+	    (elcomp--args phi))
+	   (when (eq check-bb (elcomp--basic-block-immediate-dominator check-bb))
+	     (cl-return-from done))
+	   (setf check-bb (elcomp--basic-block-immediate-dominator check-bb))))))
+   (elcomp--basic-block-phis target-bb)))
+
+(cl-defmethod elcomp--c-emit ((insn elcomp--goto) eltoc bb)
+  (elcomp--c-set-phis-on-entry eltoc bb (elcomp--block insn))
+  (insert "  goto ")
   (elcomp--c-emit-label (elcomp--block insn)))
 
-(cl-defmethod elcomp--c-emit ((insn elcomp--if) eltoc _bb)
+(cl-defmethod elcomp--c-emit ((insn elcomp--if) eltoc bb)
   (insert "if (!NILP (")
   (elcomp--c-emit-symref eltoc (elcomp--sym insn))
-  (insert ")) goto ")
+  (insert "))\n")
+  (insert "    {\n")
+  (elcomp--c-set-phis-on-entry eltoc bb (elcomp--block-true insn))
+  (insert "      goto ")
   (elcomp--c-emit-label (elcomp--block-true insn))
-  (insert "; else goto ")
-  (elcomp--c-emit-label (elcomp--block-false insn)))
+  (insert ";\n")
+  (insert "    }\n")
+  (insert "  else\n")
+  (insert "    {\n")
+  (elcomp--c-set-phis-on-entry eltoc bb (elcomp--block-false insn))
+  (insert "      goto ")
+  (elcomp--c-emit-label (elcomp--block-false insn))
+  (insert ";\n")
+  (insert "    }"))
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--return) eltoc _bb)
   (insert "return ")
@@ -362,9 +399,11 @@ argument."
 
 (defun elcomp--c-translate-one (compiler symbol-hash)
   (elcomp--require-back-edges compiler)
+  (elcomp--compute-dominators compiler)
   (let ((eltoc (make-elcomp--c :decls (make-hash-table)
 			       :decl-marker (make-marker)
-			       :interned-symbols symbol-hash)))
+			       :interned-symbols symbol-hash
+			       :name-map (elcomp--make-name-map compiler))))
     (elcomp--c-generate-defun compiler)
     (set-marker (elcomp--c-decl-marker eltoc) (point))
     (insert "\n")
