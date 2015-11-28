@@ -35,6 +35,9 @@
   ;; elcomp--get-name, as this is either set lazily from 'defun', or
   ;; generated for lambdas.
   name
+  ;; In SSA mode, a list of the argument objects representing the
+  ;; arguments to the defun.
+  arguments
   ;; A back link to the compilation unit.  This is needed so we can
   ;; push new functions into the compilation unit as we go.
   unit)

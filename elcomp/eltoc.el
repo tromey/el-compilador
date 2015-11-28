@@ -203,12 +203,14 @@ argument."
 	    (lambda (arg _ignore)
 	      (when (eq (gethash arg (elcomp--c-name-map eltoc)) check-bb)
 		(elcomp--c-emit-symref eltoc arg)
-		(insert ";\n")
 		(cl-return-from done)))
 	    (elcomp--args phi))
-	   (when (eq check-bb (elcomp--basic-block-immediate-dominator check-bb))
+	   (when (eq check-bb
+		     (elcomp--basic-block-immediate-dominator check-bb))
 	     (cl-return-from done))
-	   (setf check-bb (elcomp--basic-block-immediate-dominator check-bb))))))
+	   (setf check-bb
+		 (elcomp--basic-block-immediate-dominator check-bb)))))
+     (insert ";\n"))
    (elcomp--basic-block-phis target-bb)))
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--goto) eltoc bb)

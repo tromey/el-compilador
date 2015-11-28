@@ -23,9 +23,8 @@
 
 (defun elcomp--make-name-map (compiler)
   (let ((name-map (make-hash-table)))
-    (dolist (arg (cadr (elcomp--defun compiler)))
-      (unless (memq arg '(&optional &rest))
-	(puthash arg (elcomp--entry-block compiler) name-map)))
+    (dolist (arg (elcomp--arguments compiler))
+      (puthash arg (elcomp--entry-block compiler) name-map))
     (elcomp--iterate-over-bbs
      compiler
      (lambda (bb)

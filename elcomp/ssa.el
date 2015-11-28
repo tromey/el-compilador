@@ -119,9 +119,10 @@ nil otherwise.")
 	  (setf this-arg (pop arg-list)))
 	 ((eq this-arg '&optional)
 	  (setf this-arg (pop arg-list))))
-	(puthash this-arg (elcomp--argument :original-name this-arg
-					    :is-rest is-rest)
-		 current-map)))))
+	(let ((arg-obj (elcomp--argument :original-name this-arg
+					 :is-rest is-rest)))
+	  (push arg-obj (elcomp--arguments compiler))
+	  (puthash this-arg arg-obj current-map))))))
 
 (defun elcomp--block-into-ssa (compiler bb)
   "Convert a single basic block into SSA form."
