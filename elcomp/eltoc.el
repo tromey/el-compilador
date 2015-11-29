@@ -102,7 +102,7 @@ This is used for references to global symbols."
 	;; will optimize the strlen anyhow.
 	(insert "build_string (" (elcomp--c-quote-string value) ")"))
        ((cl-typep value 'elcomp)
-	(insert "K" (symbol-name (elcomp--get-name value))))
+	(insert "K" (elcomp--c-name (elcomp--get-name value))))
        (t
 	(error "unhandled constant of type %S" (type-of value))))))
    (t
@@ -431,7 +431,7 @@ argument."
       (maphash
        (lambda (_ignore compiler)
 	 (let ((name (elcomp--get-name compiler)))
-	   (insert "static Lisp_Object K" (symbol-name name) ";\n")))
+	   (insert "static Lisp_Object K" (elcomp--c-name name) ";\n")))
        (elcomp--compilation-unit-defuns unit))
       (insert "\n"))
     (insert "\n"
