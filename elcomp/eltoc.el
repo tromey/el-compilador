@@ -18,6 +18,7 @@
 
 (require 'elcomp)
 (require 'elcomp/c-inl)
+(require 'elcomp/c-renames)
 (require 'elcomp/dom)
 (require 'elcomp/linearize)
 (require 'elcomp/name-map)
@@ -165,7 +166,9 @@ argument."
 	(insert (cdr (assq function elcomp--c-direct-renames))
 		" ("))
        (is-direct
-	(insert "F" (elcomp--c-name function) " ("))
+	(if-let ((rename (assq function elcomp--c-renames)))
+	    (insert (cdr rename) " (")
+	  (insert "F" (elcomp--c-name function) " (")))
        (t
 	(push function arg-list)
 	;; FIXME - what if not a symbol, etc.
