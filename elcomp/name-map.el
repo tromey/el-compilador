@@ -10,7 +10,7 @@
 
 (require 'elcomp)
 
-(cl-defgeneric elcomp--update-name-map (insn bb map)
+(cl-defgeneric elcomp--update-name-map (_insn _bb _map)
   ;; Ignore most instructions.
   nil)
 

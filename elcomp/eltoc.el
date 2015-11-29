@@ -17,9 +17,11 @@
 ;; (declare (direct FUNC))
 
 (require 'elcomp)
-(require 'elcomp/linearize)
-(require 'elcomp/props)
 (require 'elcomp/c-inl)
+(require 'elcomp/dom)
+(require 'elcomp/linearize)
+(require 'elcomp/name-map)
+(require 'elcomp/props)
 
 ;; FIXME - emacs must supply this value
 (defconst elcomp--c-max-args 8)
