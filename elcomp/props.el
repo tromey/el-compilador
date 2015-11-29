@@ -109,6 +109,7 @@ things, so that advice continues to work."
 
 (elcomp-declare 'cons :elcomp-type 'cons)
 (elcomp-declare 'list :elcomp-type 'list)
+(elcomp-declare 'make-list :elcomp-type 'list)
 (elcomp-declare 'vector :elcomp-type 'vector)
 (elcomp-declare 'vconcat :elcomp-type 'vector)
 (elcomp-declare 'make-vector :elcomp-type 'vector)
