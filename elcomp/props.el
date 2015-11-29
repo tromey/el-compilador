@@ -104,12 +104,13 @@ things, so that advice continues to work."
 		      sqrt))
   (elcomp-declare func :elcomp-const t :elcomp-type 'float))
 
-(dolist (func '(lsh ash logand logior logxor lognot byteorder sxhash))
+(dolist (func '(lsh ash logand logior logxor lognot byteorder sxhash length))
   (elcomp-declare func :elcomp-const t :elcomp-type 'integer))
 
 (elcomp-declare 'cons :elcomp-type 'cons)
 (elcomp-declare 'list :elcomp-type 'list)
 (elcomp-declare 'vector :elcomp-type 'vector)
+(elcomp-declare 'vconcat :elcomp-type 'vector)
 (elcomp-declare 'make-vector :elcomp-type 'vector)
 (elcomp-declare 'string :elcomp-type 'string)
 (elcomp-declare 'make-string :elcomp-type 'string)
