@@ -16,6 +16,7 @@
 ;; call, not allowing symbol redefinition.
 ;; (declare (direct FUNC))
 
+(require 'subr-x)
 (require 'elcomp)
 (require 'elcomp/c-inl)
 (require 'elcomp/c-renames)
