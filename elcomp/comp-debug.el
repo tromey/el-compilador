@@ -9,13 +9,11 @@
 (require 'elcomp)
 (require 'elcomp/typeinf)
 
-(cl-defgeneric elcomp--pp (obj verbose)
+(cl-defgeneric elcomp--pp (obj _verbose)
   "Pretty-print a compiler object.
 
 OBJ is the object to pretty-print.
-VERBOSE non-nil means to write a more verbose description.")
-
-(cl-defmethod elcomp--pp (obj _verbose)
+VERBOSE non-nil means to write a more verbose description."
   (princ obj))
 
 ;; FIXME eldoc for cl-defmethod is messed up

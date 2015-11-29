@@ -115,15 +115,14 @@
 	  (setf result :bottom)))))
     result))
 
-(cl-defgeneric elcomp--compute-type (obj map)
+(cl-defgeneric elcomp--compute-type (_obj _map)
   "Compute the type of OBJ in a basic block, given a type map.
 
 The type is generally the result of `type-of'.
 However `:top' is used to represent the 'top' type,
 `:bottom' is used to represent the 'bottom' type,
-and `nil' is used to mean a typeless instruction.")
-
-(cl-defmethod elcomp--compute-type (_obj _map)
+and `nil' is used to mean a typeless instruction."
+  ;; Default.
   nil)
 
 (cl-defmethod elcomp--compute-type ((obj elcomp--constant) _map)
@@ -241,10 +240,8 @@ Return non-nil if any changes were made."
     (unless (memq bb (elcomp--typeinf-worklist infobj))
       (push bb (elcomp--typeinf-worklist infobj)))))
 
-(cl-defgeneric elcomp--type-map-propagate (insn infobj type-map)
-  "FIXME")
-
-(cl-defmethod elcomp--type-map-propagate (_insn _infobj _type-map)
+(cl-defgeneric elcomp--type-map-propagate (_insn _infobj _type-map)
+  "FIXME"
   nil)
 
 (cl-defmethod elcomp--type-map-propagate ((insn elcomp--goto) infobj type-map)

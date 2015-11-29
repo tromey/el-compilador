@@ -10,12 +10,10 @@
 (require 'elcomp/back)
 (require 'elcomp/props)
 
-(cl-defgeneric elcomp--can-throw (insn)
-  "Return t if INSN can `throw' or `signal', otherwise nil."
-  )
+(cl-defgeneric elcomp--can-throw (_insn)
+  "Return t if INSN can `throw' or `signal', otherwise nil.
 
-(cl-defmethod elcomp--can-throw (_insn)
-  "The base case is to assume any instruction can throw."
+The base case is to assume any instruction can throw."
   t)
 
 (cl-defmethod elcomp--can-throw ((_insn elcomp--set))

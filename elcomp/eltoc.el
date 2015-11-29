@@ -120,10 +120,8 @@ This is used for references to global symbols."
 (defun elcomp--c-emit-label (block)
   (insert (format "BB_%d" (elcomp--basic-block-number block))))
 
-(cl-defgeneric elcomp--c-emit (insn eltoc bb)
-  "FIXME")
-
-(cl-defmethod elcomp--c-emit (insn _eltoc _bb)
+(cl-defgeneric elcomp--c-emit (insn _eltoc _bb)
+  "FIXME"
   (error "unhandled case: %S" insn))
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--set) eltoc _bb)

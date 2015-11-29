@@ -20,10 +20,9 @@ This sets all the back edges to nil."
 	   (if init (make-hash-table) nil)))))
 
 (cl-defgeneric elcomp--add-links (insn block)
-  "Add backlinks for the instruction INSN, which appears in BLOCK.")
+  "Add backlinks for the instruction INSN, which appears in BLOCK.
 
-(cl-defmethod elcomp--add-links (_insn _block)
-  "The base case does nothing.  Most instructions don't have links."
+The base case does nothing.  Most instructions don't have links."
   ;; Do nothing.
   )
 

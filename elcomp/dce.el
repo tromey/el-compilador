@@ -24,7 +24,7 @@ It holds data internal to the pass."
   "Add INSN to the work list of DCE, unless it is already marked."
   (push insn (elcomp--dce-work-list dce)))
 
-(cl-defgeneric elcomp--mark-necessary (insn dce just-intrinsic)
+(cl-defgeneric elcomp--mark-necessary (insn dce _just-intrinsic)
   "Possibly mark the instruction INSN as necessary.
 DCE is the DCE state object for the pass.
 
@@ -33,10 +33,9 @@ it is intrinsically needed.  If it is nil, then mark the
 instruction.
 
 Marking the instruction means adding it to the hash and then
-pushing the instruction's arguments onto the work list.")
+pushing the instruction's arguments onto the work list.
 
-(cl-defmethod elcomp--mark-necessary (insn dce _just-intrinsic)
-  "The default case is to mark a statement as needed."
+The default case is to mark a statement as needed."
   (puthash insn t (elcomp--dce-hash dce)))
 
 (cl-defmethod elcomp--mark-necessary ((insn elcomp--if) dce _just-intrinsic)
