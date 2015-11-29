@@ -156,7 +156,8 @@ argument."
 				       (elcomp--args insn)))
 		(elcomp--func insn)))
 	   (arg-list (elcomp--args insn))
-	   (is-direct (elcomp--func-direct-p function)))
+	   (is-direct (elcomp--func-direct-p function))
+	   (is-vararg nil))
       (cond
        ((stringp function)	     ; Was optimized by elcomp--c-opt.
 	(insert function " ("))
@@ -166,10 +167,17 @@ argument."
        (is-direct
 	(if-let ((rename (assq function elcomp--c-renames)))
 	    (insert (cdr rename) " (")
-	  (insert "F" (elcomp--c-name function) " (")))
+	  (insert "F" (elcomp--c-name function) " ("))
+	(when (and (symbolp function)
+		   (fboundp function)
+		   (subrp (symbol-function function))
+		   (eq (cdr (subr-arity (symbol-function function))) 'many))
+	  (insert (format "%d, ((Lisp_Object[]) { " (length arg-list)))
+	  (setf is-vararg t)))
        (t
 	(push function arg-list)
 	;; FIXME - what if not a symbol, etc.
+	(setf is-vararg t)
 	(insert (format "Ffuncall (%d, ((Lisp_Object[]) { "
 			(length arg-list)))))
       (let ((first t))
@@ -178,9 +186,9 @@ argument."
 	      (setf first nil)
 	    (insert ", "))
 	  (elcomp--c-emit-symref eltoc arg)))
-      (if (or is-direct (stringp function) (keywordp function))
-	  (insert ")")
-	(insert " }))")))))
+      (if is-vararg
+	  (insert " }))")
+	(insert ")")))))
 
 (defun elcomp--c-set-phis-on-entry (eltoc this-bb target-bb)
   (maphash
