@@ -48,15 +48,7 @@
 
 (defun elcomp--c-name (symbol)
   "Compute the C name for a symbol."
-  (mapconcat
-   (lambda (char)
-     (char-to-string
-      (cond
-       ((eq char ?-) ?_)
-       ;; FIXME reject bad stuff
-       ;; FIXME check for dups!
-       (t char))))
-   (symbol-name symbol) ""))
+  (replace-regexp-in-string "-" "_" (symbol-name symbol)))
 
 (defun elcomp--c-intern-symbol (eltoc symbol)
   "Mark a symbol for init-time interning and return its name.
