@@ -79,7 +79,7 @@ This is used for references to global symbols."
 (defun elcomp--c-emit-symref (eltoc insn)
   (cond
    ((symbolp insn)
-    (insert (elcomp--c-name insn)))
+    (insert (elcomp--c-intern-symbol eltoc insn)))
    ((elcomp--set-p insn)
     (elcomp--c-symbol eltoc (elcomp--sym insn)))
    ((elcomp--call-p insn)
