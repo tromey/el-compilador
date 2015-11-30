@@ -362,8 +362,10 @@ Return non-nil if any changes were made."
     (elcomp--type-map-propagate-exception infobj bb local-types)))
 
 (defun elcomp--look-up-type (bb var)
-  (when (elcomp--basic-block-final-type-map bb)
-    (gethash var (elcomp--basic-block-final-type-map bb))))
+  (if (elcomp--constant-p var)
+      (elcomp--compute-type var nil)
+    (when (elcomp--basic-block-final-type-map bb)
+      (gethash var (elcomp--basic-block-final-type-map bb)))))
 
 (defun elcomp--do-infer-types (compiler)
   (let ((infobj (make-elcomp--typeinf)))

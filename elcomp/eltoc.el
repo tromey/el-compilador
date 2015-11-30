@@ -143,12 +143,96 @@ argument."
     (:save-restriction-restore . "restore_restrction")
     (:unwind-protect-continue . "unwind_protect_continue")))
 
+(defconst elcomp--c-numeric-comparisons '(> >= < <= =))
+
+(defun elcomp--c-numeric-comparison-p (function args bb)
+  (and (memq function elcomp--c-numeric-comparisons)
+       (> (length args) 1)
+       (cl-every (lambda (arg)
+		   (let ((type (elcomp--look-up-type bb arg)))
+		     (or (eq type 'integer)
+			 (eq type 'float))))
+		 args)))
+
+(defun elcomp--c-numeric-comparison (function args eltoc bb)
+  (let* ((operator (if (eq function '=)
+		       "=="
+		     (symbol-name function)))
+	 (unwrapper (lambda (arg)
+		      (if (elcomp--constant-p arg)
+			  (insert (format "%s" (elcomp--value arg)))
+			(insert
+			 (if (eq (elcomp--look-up-type bb arg) 'integer)
+			     "XINT"
+			   "XFLOAT_DATA")
+			 " (")
+			(elcomp--c-emit-symref eltoc arg)
+			(insert ")"))))
+	 (prev (car args))
+	 (first t))
+    (insert "(")
+    (dolist (arg (cdr args))
+      (if first
+	  (setf first nil)
+	(insert " && "))
+      (funcall unwrapper prev)
+      (insert " " operator " ")
+      (funcall unwrapper arg)
+      (setf prev arg))
+    (insert ") ? Qt : Qnil")))
+
+(defun elcomp--c-unary-numeric-op-p (function args bb)
+  (and (memq function '(1+ 1- -))
+       (eq (length args) 1)
+       (cl-every (lambda (arg)
+		   (let ((type (elcomp--look-up-type bb arg)))
+		     (or (eq type 'integer)
+			 (eq type 'float))))
+		 args)))
+
+(defun elcomp--c-unary-numeric-op (function args eltoc bb)
+  (cl-assert (eq (length args) 1))
+  (let* ((arg (car args))
+	 (type (elcomp--look-up-type bb arg))
+	 (maker (if (eq type 'integer)
+		    "make_number"
+		  "make_float"))
+	 (unwrapper (if (eq type 'integer)
+		    "XINT"
+		    "XFLOAT_DATA")))
+    (cl-case function
+      ((1+)
+       (insert maker " (" unwrapper " (")
+       (elcomp--c-emit-symref eltoc arg)
+       (insert ") + 1)"))
+      ((1-)
+       (insert maker " (" unwrapper " (")
+       (elcomp--c-emit-symref eltoc arg)
+       (insert ") - 1)"))
+      ((-)
+       (insert maker " (-" unwrapper " (")
+       (elcomp--c-emit-symref eltoc arg)
+       (insert "))"))
+      (t
+       (error "whoops %S" function)))))
+
 (cl-defmethod elcomp--c-emit ((insn elcomp--call) eltoc bb)
   (when (elcomp--sym insn)
     (elcomp--c-emit-symref eltoc insn)
     (insert " = "))
-  (if (eq (elcomp--func insn) :elcomp-unbind)
-      (elcomp--unbind-emitter insn)
+  (cond
+   ((eq (elcomp--func insn) :elcomp-unbind)
+    (elcomp--unbind-emitter insn))
+
+   ((elcomp--c-numeric-comparison-p (elcomp--func insn) (elcomp--args insn) bb)
+    (elcomp--c-numeric-comparison (elcomp--func insn) (elcomp--args insn)
+				  eltoc bb))
+
+   ((elcomp--c-unary-numeric-op-p (elcomp--func insn) (elcomp--args insn) bb)
+    (elcomp--c-unary-numeric-op (elcomp--func insn) (elcomp--args insn)
+				eltoc bb))
+
+   (t
     (let* ((function
 	    (or	(elcomp--c-opt insn
 			       (mapcar (lambda (arg)
@@ -188,7 +272,7 @@ argument."
 	  (elcomp--c-emit-symref eltoc arg)))
       (if is-vararg
 	  (insert " }))")
-	(insert ")")))))
+	(insert ")"))))))
 
 (defun elcomp--c-set-phis-on-entry (eltoc this-bb target-bb)
   (maphash
