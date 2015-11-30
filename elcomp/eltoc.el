@@ -545,8 +545,8 @@ argument."
 	   (insert "  XSETPVECTYPE (&S"
 		   (symbol-name (elcomp--get-name compiler))
 		   ", PVEC_SUBR);\n"))
-	 (insert "  XSETSUBR (K" (symbol-name (elcomp--get-name compiler))
-		 ", &S" (symbol-name (elcomp--get-name compiler))
+	 (insert "  XSETSUBR (K" (elcomp--c-name (elcomp--get-name compiler))
+		 ", &S" (elcomp--c-name (elcomp--get-name compiler))
 		 ");\n")))
      (elcomp--compilation-unit-defuns unit))
     (insert "}\n")))
