@@ -8,7 +8,7 @@ http://www.emacswiki.org/emacs/EmacsLispBenchmark (with the list
 bumped to 1000 elements), with 100 runs, I got some timings:
 
 Approach | Seconds
-----------------
+:-------- | -------:
 interpreted | 54.874574673000005
 byte-compiled | 13.390510359999999
 el-compilador | 4.312016277000001
