@@ -1,5 +1,18 @@
 Welcome to El Compilador, a compiler for Emacs Lisp.
 
+## Breaking News
+
+The compiler can now generate C code that can be compiled as part of
+Emacs.  Using the bubble sort benchmark from
+http://www.emacswiki.org/emacs/EmacsLispBenchmark (with the list
+bumped to 1000 elements), with 100 runs, I got some timings:
+
+Approach | Seconds
+----------------
+interpreted | 54.874574673000005
+byte-compiled | 13.390510359999999
+el-compilador | 4.312016277000001
+
 ## Dreams
 
 I've long wanted to write a compiler for Emacs Lisp.  Here it is.
@@ -34,11 +47,8 @@ goal.
 
 ## Use
 
-Currently the compiler can't generate useful code.  Alpha software
-hurray!
-
-Meanwhile, you can use the function in `loadup.el` to load the
-compiler and then use the two handy entry points:
+You can use the function in `loadup.el` to load the compiler and then
+use the two handy entry points:
 
 * `elcomp--do`.  The debugging entry point.  This takes a form,
   compiles it, and then dumps the resulting IR into a buffer.  For
@@ -56,8 +66,10 @@ compiler and then use the two handy entry points:
 ```
 
 * You can pass `elcomp--c-translate` as the third argument to
-  `elcomp--do` to use the "C" back end.  You will note that while the
-  output is vaguely C-like, it will not compile.
+  `elcomp--do` to use the "C" back end.  At least some forms of the
+  output will compile.  It targets the API used by the Emacs source
+  tree (not the Emacs dynamic module API).  Some constructs don't have
+  the needed back end support yet, so not everything will work.
 
 ## Implementation
 
@@ -92,8 +104,9 @@ The compiler provides a number of optimization passes:
 There are any number of bugs.  There are some notes about them in
 various files.
 
-The C back end is incomplete.  There's no out-of-ssa pass and the
-results of type inferencing aren't fully used.
+The C back end is incomplete.  The Emacs core doesn't have the
+primitives needed to implement some of the special calls the compiler
+generates, like `:elcomp-specbind`.
 
 The into-SSA pass is written in the stupidest possible way.  Making
 this smarter would be nice.
