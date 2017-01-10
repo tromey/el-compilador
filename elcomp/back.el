@@ -24,7 +24,7 @@ This sets all the back edges to nil."
 
 The base case does nothing.  Most instructions don't have links."
   ;; Do nothing.
-  )
+  nil)
 
 (cl-defmethod elcomp--add-links ((insn elcomp--goto) block)
   "Add backlinks for a `goto'."
