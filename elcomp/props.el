@@ -138,7 +138,9 @@ things, so that advice continues to work."
 		(symbolp . symbol)
 		(vectorp . vector)
 		(wholenump . integer)))
-  (elcomp-declare (car iter) :elcomp-predicate (cdr iter)))
+  (elcomp-declare (car iter)
+		  :elcomp-predicate (cdr iter)
+		  :elcomp-type 'boolean))
 
 (dolist (iter '(throw signal error user-error :unwind-protect-continue))
   (elcomp-declare iter :elcomp-noreturn t))
