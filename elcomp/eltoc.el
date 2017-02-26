@@ -104,7 +104,11 @@ This is used for references to global symbols."
        ((cl-typep value 'elcomp)
 	(insert "K" (elcomp--c-name (elcomp--get-name value))))
        (t
-	(error "unhandled constant of type %S" (type-of value))))))
+	;: FIXME why does calling error here cause problems?
+	;; Anyway this ought to emit some initialization code to
+	;; construct non-primitve constants.
+	;; (error "unhandled constant of type %S" (type-of value))
+	(insert "BUG in elcomp--c-emit-symref")))))
    (t
     (error "unhandled case: %S" insn))))
 
