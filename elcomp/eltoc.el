@@ -141,7 +141,8 @@ argument."
     (:save-excursion-restore . "restore_excursion")
     (:save-restriction-save . "save_restriction")
     (:save-restriction-restore . "restore_restrction")
-    (:unwind-protect-continue . "unwind_protect_continue")))
+    (:unwind-protect-continue . "unwind_protect_continue")
+    (:catch-value . "catch_value")))
 
 (defconst elcomp--c-numeric-comparisons '(> >= < <= =))
 
@@ -246,7 +247,8 @@ argument."
        ((stringp function)	     ; Was optimized by elcomp--c-opt.
 	(insert function " ("))
        ((keywordp function)
-	(insert (cdr (assq function elcomp--c-direct-renames))
+	(insert (or (cdr (assq function elcomp--c-direct-renames))
+		    (format "BUG<<%S>>" function))
 		" ("))
        (is-direct
 	(if-let ((rename (assq function elcomp--c-renames)))
