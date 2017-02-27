@@ -71,48 +71,47 @@
 (defun elcomp--merge-types (&rest types)
   ;; Start with Top type.
   (let ((result :top))
-    (while types
-      (let ((type (pop types)))
-	(cond
-	 ((eq result :top)
-	  ;; Top + TYPE = TYPE.
-	  (setf result type))
+    (dolist (type types)
+      (cond
+       ((eq result :top)
+	;; Top + TYPE = TYPE.
+	(setf result type))
 
-	 ((eq type :top)
-	  ;; TYPE + Top = TYPE.
-	  )
+       ((eq type :top)
+	;; TYPE + Top = TYPE.
+	)
 
-	 ((eq result :bottom)
-	  ;; Nothing - already at bottom.
-	  )
+       ((eq result :bottom)
+	;; Nothing - already at bottom.
+	)
 
-	 ((eq type :bottom)
-	  (setf result :bottom))
+       ((eq type :bottom)
+	(setf result :bottom))
 
-	 ((eq result type)
-	  ;; Already the same.
-	  )
+       ((eq result type)
+	;; Already the same.
+	)
 
-	 ((and (elcomp--sequence-type-p result)
-	       (elcomp--sequence-type-p type))
-	  (setf result 'sequence))
+       ((and (elcomp--sequence-type-p result)
+	     (elcomp--sequence-type-p type))
+	(setf result 'sequence))
 
-	 ((and (elcomp--numeric-type-p result)
-	       (elcomp--numeric-type-p type))
-	  (setf result 'number))
+       ((and (elcomp--numeric-type-p result)
+	     (elcomp--numeric-type-p type))
+	(setf result 'number))
 
-	 ((and (elcomp--boolean-type-p result)
-	       (elcomp--boolean-type-p type))
-	  ;; does this even matter?
-	  (setf result 'boolean))
+       ((and (elcomp--boolean-type-p result)
+	     (elcomp--boolean-type-p type))
+	;; does this even matter?
+	(setf result 'boolean))
 
-	 ((and (elcomp--list-type-p result)
-	       (elcomp--list-type-p type))
-	  (setf result 'list))
+       ((and (elcomp--list-type-p result)
+	     (elcomp--list-type-p type))
+	(setf result 'list))
 
-	 (t
-	  ;; Merging any two random types results in bottom.
-	  (setf result :bottom)))))
+       (t
+	;; Merging any two random types results in bottom.
+	(setf result :bottom))))
     result))
 
 (cl-defgeneric elcomp--compute-type (_obj _map)
@@ -195,8 +194,12 @@ and `nil' is used to mean a typeless instruction."
   (let ((arg-list nil))
     (maphash (lambda (var _ignore)
 	       ;; We treat phis specially: any input that isn't found
-	       ;; is just defaulted to :top.
-	       (push (gethash var map :top) arg-list))
+	       ;; is just defaulted to :top, except for arguments,
+	       ;; which are :bottom.
+	       (push (if (elcomp--argument-p var)
+			 :bottom
+		       (gethash var map :top))
+		     arg-list))
 	     (elcomp--args obj))
     (apply #'elcomp--merge-types arg-list)))
 
@@ -220,14 +223,21 @@ Return non-nil if any changes were made."
   (if (elcomp--basic-block-type-map bb)
       ;; Merge.
       (let ((to-map (elcomp--basic-block-type-map bb))
-	    (changed nil))
+	    (changed nil)
+	    phi-set)
+	;; First make a list of all the phis.  We don't update phis
+	;; defined locally by direct propagation.  FIXME this is not
+	;; super efficient.
+	(maphash (lambda (_name phi) (push phi phi-set))
+		 (elcomp--basic-block-phis bb))
 	(maphash
 	 (lambda (name type)
-	   (let* ((to-type (gethash name to-map :top))
-		  (merge-type (elcomp--merge-types to-type type)))
-	     (unless (eq to-type merge-type)
-	       (puthash name merge-type to-map)
-	       (setf changed t))))
+	   (when (not (memq name phi-set))
+	     (let* ((to-type (gethash name to-map :top))
+		    (merge-type (elcomp--merge-types to-type type)))
+	       (unless (eq to-type merge-type)
+		 (puthash name merge-type to-map)
+		 (setf changed t)))))
 	 from)
 	changed)
     ;; Else.
@@ -314,8 +324,7 @@ Return non-nil if any changes were made."
     (when (memq branches '(t :both))
       (if predicated-type
 	  (let ((predicate-arg (car (elcomp--args sym))))
-	    (cl-letf (((gethash predicate-arg type-map)))
-	      (puthash predicate-arg predicated-type type-map)
+	    (cl-letf (((gethash predicate-arg type-map) predicated-type))
 	      (elcomp--type-map-propagate-one infobj (elcomp--block-true insn)
 					      type-map)))
 	(elcomp--type-map-propagate-one infobj (elcomp--block-true insn)
@@ -369,11 +378,12 @@ Return non-nil if any changes were made."
 
 (defun elcomp--do-infer-types (compiler)
   (let ((infobj (make-elcomp--typeinf)))
-    ;; Make sure the entry block has an initial type map.  FIXME
-    ;; probably it should hold all the arguments.
+    ;; Make sure the entry block has an initial type map.
     (let ((entry-block (elcomp--entry-block compiler)))
       (cl-assert (not (elcomp--basic-block-type-map entry-block)))
       (setf (elcomp--basic-block-type-map entry-block) (make-hash-table))
+      (dolist (arg (elcomp--arguments compiler))
+	(puthash arg :bottom (elcomp--basic-block-type-map entry-block)))
       (push entry-block (elcomp--typeinf-worklist infobj)))
     ;; Now keep inferring types until we're out of blocks.
     ;; FIXME where do we store the final maps?
