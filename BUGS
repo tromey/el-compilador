@@ -38,24 +38,11 @@ which is weird and pointless in this case
 
 ================================================================
 
-can't compile widget-get from fns.el
-or plist-member
-
 C back end writes some bogus symbol names
 
 C back end doesn't do out-of-ssa
 [it does but still...]
 we probably need to keep edges after all
-
-================================================================
-
-(elcomp--do '(defun elt (sequence n)
-  (cl-check-type n integer)
-  (if (listp sequence)
-      (car (nthcdr n sequence))
-    (aref sequence n))))
-
-=> error
 
 ================================================================
 
