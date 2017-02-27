@@ -141,8 +141,10 @@ VERBOSE non-nil means to write a more verbose description."
 	(princ type)))
     (princ "\n")))
 
-(defun elcomp--pp-compiler (compiler)
+(defun elcomp--pp-compiler (compiler &optional title)
   "Pretty-print the contents of COMPILER into the current buffer."
+  (when title
+    (insert "==== " title "\n"))
   (elcomp--iterate-over-bbs compiler #'elcomp--pp-basic-block)
   (insert "\n=============================================================\n"))
 
