@@ -11,26 +11,6 @@ the equivalent without a binding does not generate it
 
 ================================================================
 
-(elcomp--do '(
-	      (defun test-case ()
-		(let ((i 0) (s 0))
-		  (while (<= i 10000000)
-		    (setq s (+ s i))
-		    (setq i (1+ i)))
-		  ))
-
-	      )
-	    ;; #'elcomp--c-translate
-	    )
-
-this should be able to eliminate the loop
-
-also makes this:
-    ϕ:G183_190 = G183_187 ϕ:G183_190 ; TYPE = null
-which is weird and pointless in this case
-
-================================================================
-
 C back end writes some bogus symbol names
 
 C back end doesn't do out-of-ssa
