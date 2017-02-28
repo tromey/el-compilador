@@ -22,9 +22,6 @@
     result))
 
 (defun elcomp--read-forms-from-file (lisp-file)
-  ;; This is a hack but it usually ensures we have the macros we need.
-  ;; FIXME should handle eval-when-compile.
-  ;; (load lisp-file)
   (save-excursion
     (find-file lisp-file)
     (goto-char (point-min))
@@ -36,7 +33,7 @@
     (setq-local backup-inhibited t)
     (erase-buffer)
     (let ((unit (make-elcomp--compilation-unit)))
-      ;; FIXME for now we only handle a file full of defuns, defmacro,
+      ;; FIXME for now we only handle a file full of defuns
       ;; and eval-when-compile.
       (dolist (form forms)
 	(cl-case (car form)
