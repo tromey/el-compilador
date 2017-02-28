@@ -27,4 +27,4 @@
 		    "elcomp/subst"
 		    "elcomp/toplevel"
 		    "elcomp/typeinf"))
-      (load file))))
+      (load file nil t))))

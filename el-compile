@@ -1,5 +1,6 @@
 #!/bin/sh
-:; exec emacs --script $0 --
+:; exec emacs --quick --script $0 -- "$@"
+"FIXME: lexical binding"
 
 (setq debug-on-error t)
 ;; FIXME debug.el says it tries to preserve the start of the stack
@@ -8,7 +9,7 @@
 
 (defconst elcomp--dir (file-name-directory load-file-name))
 
-(load (expand-file-name "loadup.el" elcomp--dir))
+(load (expand-file-name "loadup.el" elcomp--dir) nil t)
 (elcomp--loadup)
 
 (defun elcomp--skip-comments ()
@@ -28,11 +29,8 @@
     (goto-char (point-min))
     (elcomp--read-forms)))
 
-(defun elcomp--driver-convert-one (lisp-file output-file)
+(defun elcomp--driver-convert-one (lisp-file)
   (let ((forms (elcomp--read-forms-from-file lisp-file)))
-    (find-file output-file)
-    (setq-local backup-inhibited t)
-    (erase-buffer)
     (let ((unit (make-elcomp--compilation-unit)))
       ;; FIXME for now we only handle a file full of defuns
       ;; and eval-when-compile.
@@ -45,14 +43,31 @@
 	  (t
 	   (message "Skipping form %S" (car form)))))
       (elcomp--translate-all unit)
-      (elcomp--c-translate unit)
-      (save-buffer))))
+      (elcomp--c-translate unit))))
 
-;; FIXME argument parsing, etc.
-(elcomp--driver-convert-one (pop argv) "OUTPUT")
+;; FIXME
+(defconst elcomp--driver-output-file "OUTPUT")
+
+(defun elcomp--driver-compile (files)
+  (find-file elcomp--driver-output-file)
+  (setq-local backup-inhibited t)
+  (erase-buffer)
+  (dolist (file files)
+    (elcomp--driver-convert-one file))
+  (save-buffer))
+
+;; FIXME it would be nice to have an argument parsing library in
+;; elisp.
+(when (equal (car argv) "--")
+  (pop argv))
+
+(if (equal (car argv) "--help")
+    (message "Usage: el-compile FILE...")
+  ;; FIXME argument parsing, etc.
+  (elcomp--driver-compile argv))
+
+(setf argv nil)
 
 ;; Local variables:
 ;; Mode: emacs-lisp
 ;; End:
-
-
