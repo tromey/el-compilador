@@ -1,4 +1,5 @@
-#!/bin/emacs --script
+#!/bin/sh
+:; exec emacs --script $0 --
 
 (setq debug-on-error t)
 ;; FIXME debug.el says it tries to preserve the start of the stack
