@@ -252,7 +252,7 @@ argument."
 	(insert function " ("))
        ((keywordp function)
 	(insert (or (cdr (assq function elcomp--c-direct-renames))
-		    (format "BUG<<%S>>" function))
+		    (format "BUG«%S»" function))
 		" ("))
        (is-direct
 	(if-let ((rename (assq function elcomp--c-renames)))
