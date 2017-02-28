@@ -102,11 +102,7 @@ The compiler provides a number of optimization passes:
 ## To-Do
 
 There are any number of bugs.  There are some notes about them in
-various files.
-
-The C back end is incomplete.  The Emacs core doesn't have the
-primitives needed to implement some of the special calls the compiler
-generates, like `:elcomp-specbind`.
+various files.  Some are filed in the github issues.
 
 The into-SSA pass is written in the stupidest possible way.  Making
 this smarter would be nice.
