@@ -366,8 +366,9 @@ argument."
 
 (defun elcomp--c-emit-condition-case (eltoc eh-from eh-to)
   (let ((name (elcomp--c-declare-handler eltoc)))
-    ;; FIXME - not really correct for Emacs, we'll have to fix that.
-    (insert "  " name " = push_handler (Qnil, CONDITION_CASE);\n")
+    ;; The magic Qt means to stop on all conditions; see
+    ;; eval.c:find_handler_clause.
+    (insert "  " name " = push_handler (Qt, CONDITION_CASE);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
     (insert "      handlerlist = handlerlist->next;\n")
