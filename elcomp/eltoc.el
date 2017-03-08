@@ -333,7 +333,7 @@ argument."
 
 (cl-defmethod elcomp--c-emit ((insn elcomp--catch) eltoc _bb)
   (let ((name (elcomp--c-declare-handler eltoc)))
-    (insert "  PUSH_HANDLER (" name ", ")
+    (insert "  " name " = push_handler (")
     (elcomp--c-emit-symref eltoc (elcomp--tag insn))
     (insert ", CATCHER);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
@@ -351,7 +351,7 @@ argument."
 (cl-defmethod elcomp--c-emit ((insn elcomp--unwind-protect) eltoc _bb)
   (let ((name (elcomp--c-declare-handler eltoc)))
     ;; Emacs doesn't actually have anything for this yet.
-    (insert "  PUSH_HANDLER (" name ", Qnil, UNWIND_PROTECT);\n")
+    (insert "  " name " = push_handler (Qnil, UNWIND_PROTECT);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
     (insert "      handlerlist = handlerlist->next;\n")
@@ -367,7 +367,7 @@ argument."
 (defun elcomp--c-emit-condition-case (eltoc eh-from eh-to)
   (let ((name (elcomp--c-declare-handler eltoc)))
     ;; FIXME - not really correct for Emacs, we'll have to fix that.
-    (insert "  PUSH_HANDLER (" name ", Qnil, CONDITION_CASE);\n")
+    (insert "  " name " = push_handler (Qnil, CONDITION_CASE);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
     (insert "      handlerlist = handlerlist->next;\n")
