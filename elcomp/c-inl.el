@@ -31,6 +31,10 @@
 		 (setcar (cons :bottom) "XSETCAR")
 		 (setcdr (cons :bottom) "XSETCDR")
 		 (length (vector) "ASIZE")
+		 (length (string) "SCHARS")
+		 (length (bool-vector) "bool_vector_size")
+		 ;; not a function: (length (char-table) "MAX_CHAR")
+		 ;; Also: (length (null) 0)
 		 (symbol-name (symbol) "SYMBOL_NAME")))
   (apply #'elcomp--define-c-substitution entry))
 
