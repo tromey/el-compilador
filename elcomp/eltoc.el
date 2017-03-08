@@ -141,10 +141,10 @@ argument."
 (defconst elcomp--c-direct-renames
   '((:elcomp-specbind . "specbind")
     (:elcomp-fetch-condition . "fetch_condition")
-    (:save-excursion-save . "save_excursion")
-    (:save-excursion-restore . "restore_excursion")
-    (:save-restriction-save . "save_restriction")
-    (:save-restriction-restore . "restore_restrction")
+    (:save-excursion-save . "save_excursion_save")
+    (:save-excursion-restore . "save_excursion_restore")
+    (:save-restriction-save . "save_restriction_save")
+    (:save-restriction-restore . "save_restriction_restore")
     (:unwind-protect-continue . "unwind_protect_continue")
     (:catch-value . "catch_value")))
 
