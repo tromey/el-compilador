@@ -40,9 +40,6 @@ Defined properties are:
   :elcomp-direct t|nil       If t, generated C code can call this directly."
   ;; add more?
   ;; :malloc - allocates new object
-  ;; :primitive - assume this can never be rewritten, e.g. car
-  ;; ... though if a function has any properties then we're already
-  ;; assuming that.
   ;; :commutative - then we could sort arguments somehow and
   ;;         have more CSE opportunities
   (while props
