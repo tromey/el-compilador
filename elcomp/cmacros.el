@@ -36,22 +36,22 @@ nil."
     `(let ((,sym (current-buffer)))
        (unwind-protect
 	   (progn ,@body)
-	 (if (buffer-live-p sym)
-	     (set-buffer sym))))))
+	 (if (buffer-live-p ,sym)
+	     (set-buffer ,sym))))))
 
 (defun elcomp--macro-save-excursion (&rest body)
   (let ((sym (cl-gensym)))
     `(let ((,sym (:save-excursion-save)))
        (unwind-protect
 	   (progn ,@body)
-	 (:save-excursion-restore sym)))))
+	 (:save-excursion-restore ,sym)))))
 
 (defun elcomp--macro-save-restriction (&rest body)
   (let ((sym (cl-gensym)))
     `(let ((,sym (:save-restriction-save)))
        (unwind-protect
 	   (progn ,@body)
-	 (:save-restriction-restore sym)))))
+	 (:save-restriction-restore ,sym)))))
 
 (defvar elcomp--compiler-macros
   '((declare . elcomp--macro-declare)
