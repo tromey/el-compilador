@@ -253,7 +253,10 @@ argument."
        ((keywordp function)
 	(insert (or (cdr (assq function elcomp--c-direct-renames))
 		    (format "BUG«%S»" function))
-		" ("))
+		" (")
+	;; FIXME hack
+	(when (eq function :catch-value)
+	  (insert "handlerlist")))
        (is-direct
 	(if-let ((rename (assq function elcomp--c-renames)))
 	    (insert (cdr rename) " (")
