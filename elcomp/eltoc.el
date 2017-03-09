@@ -140,7 +140,7 @@ argument."
 
 (defconst elcomp--c-direct-renames
   '((:elcomp-specbind . "specbind")
-    (:elcomp-fetch-condition . "catch_value")
+    (:elcomp-fetch-condition . "signal_value")
     (:save-excursion-save . "save_excursion_save")
     (:save-excursion-restore . "save_excursion_restore")
     (:save-restriction-save . "save_restriction_save")
@@ -378,9 +378,9 @@ argument."
     (insert "      handlerlist = handlerlist->next;\n")
     (while (and (not (eq eh-from eh-to))
 		(elcomp--condition-case-p (car eh-from)))
-      (insert "      if (handler_matches (FIXME, ")
+      (insert "      if (!NILP (find_handler_clause (")
       (elcomp--c-emit-symref eltoc (elcomp--condition-name (car eh-from)))
-      (insert "))\n")
+      (insert ", signal_conditions (handlerlist))))\n")
       (insert "        goto ")
       (elcomp--c-emit-label (elcomp--handler (car eh-from)))
       (insert ";\n")
@@ -523,7 +523,9 @@ argument."
       (goto-char (point-min))
       (insert "#include <config.h>\n"
 	      "#include <lisp.h>\n\n"
-	      "#define catch_value(H) ((H)->val)\n\n"
+	      "#define catch_value(H) ((H)->val)\n"
+	      "#define signal_conditions(H) (XCAR ((H)->val))\n"
+	      "#define signal_value(H) (XCDR ((H)->val))\n\n"
 	      "int plugin_is_GPL_compatible;\n\n")
       (maphash (lambda (_symbol c-name)
 		 (insert "static Lisp_Object " c-name ";\n"))
