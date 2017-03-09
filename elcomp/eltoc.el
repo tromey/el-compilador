@@ -355,7 +355,7 @@ argument."
 (cl-defmethod elcomp--c-emit ((insn elcomp--unwind-protect) eltoc _bb)
   (let ((name (elcomp--c-declare-handler eltoc)))
     ;; Emacs doesn't actually have anything for this yet.
-    (insert "  " name " = push_handler (Qnil, UNWIND_PROTECT);\n")
+    (insert "  " name " = push_handler (Qnil, CATCHER_ALL);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
     (insert "      handlerlist = handlerlist->next;\n")
