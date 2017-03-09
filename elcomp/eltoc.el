@@ -404,13 +404,16 @@ argument."
 	  ;; we may need to pop some items.
 	  (while (not (eq bb-eh parent-eh))
 	    ;; Ignore fake unwind-protects.
-	    (unless (elcomp--fake-unwind-protect-p (car parent-eh))
+	    (unless (or (elcomp--fake-unwind-protect-p (car parent-eh))
+			;; catch handlers pop when resuming the normal
+			;; flow of control.
+			(elcomp--catch-p (car parent-eh)))
 	      (insert "  handlerlist = handlerlist->next;\n"))
 	    (setf parent-eh (cdr parent-eh)))
 	(when bb-eh
 	  ;; If our first exception does not appear in the parent
 	  ;; list, then we have to push at least one.
-	  (while (not (eq bb-eh parent-eh))
+	  (while (and bb-eh (not (eq bb-eh parent-eh)))
 	    (if (elcomp--condition-case-p (car bb-eh))
 		(setf bb-eh (elcomp--c-emit-condition-case eltoc bb-eh
 							   parent-eh))
