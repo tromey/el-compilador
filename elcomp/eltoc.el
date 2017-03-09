@@ -140,7 +140,7 @@ argument."
 
 (defconst elcomp--c-direct-renames
   '((:elcomp-specbind . "specbind")
-    (:elcomp-fetch-condition . "fetch_condition")
+    (:elcomp-fetch-condition . "catch_value")
     (:save-excursion-save . "save_excursion_save")
     (:save-excursion-restore . "save_excursion_restore")
     (:save-restriction-save . "save_restriction_save")
@@ -255,7 +255,8 @@ argument."
 		    (format "BUG«%S»" function))
 		" (")
 	;; FIXME hack
-	(when (eq function :catch-value)
+	(when (memq function '(:catch-value :elcomp-fetch-condition
+					    :unwind-protect-continue))
 	  (insert "handlerlist")))
        (is-direct
 	(if-let ((rename (assq function elcomp--c-renames)))
@@ -522,6 +523,7 @@ argument."
       (goto-char (point-min))
       (insert "#include <config.h>\n"
 	      "#include <lisp.h>\n\n"
+	      "#define catch_value(H) ((H)->val)\n\n"
 	      "int plugin_is_GPL_compatible;\n\n")
       (maphash (lambda (_symbol c-name)
 		 (insert "static Lisp_Object " c-name ";\n"))
