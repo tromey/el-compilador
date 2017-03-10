@@ -7,14 +7,13 @@
 ;; TO DO:
 ;; emit constants properly
 ;; handle phi nodes
-;; GCPRO (if that is still needed?)
 ;; emit lambdas without using DEFUN; call them directly
-
-;;; Code:
-
+;;
 ;; We should also allow a declaration that allows a direct C
 ;; call, not allowing symbol redefinition.
 ;; (declare (direct FUNC))
+
+;;; Code:
 
 (require 'subr-x)
 (require 'elcomp)
