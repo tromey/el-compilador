@@ -402,6 +402,8 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; The catch doesn't cover the handler; but pop before the
 	  ;; "goto" so the new block has the correct exception list.
 	  (pop (elcomp--exceptions compiler))
+	  ;; And make sure to pop the exception handler at runtime.
+	  (elcomp--add-call compiler nil :pop-exception-handler nil)
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler handler-label)
 	  ;; A magic call to get the value.
@@ -424,6 +426,8 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; The catch doesn't cover the handler; but pop before the
 	  ;; "goto" so the new block has the correct exception list.
 	  (pop (elcomp--exceptions compiler))
+	  ;; And make sure to pop the exception handler at runtime.
+	  (elcomp--add-call compiler nil :pop-exception-handler nil)
 	  (elcomp--add-goto compiler normal-label)
 	  (elcomp--make-block-current compiler normal-label)
 	  ;; We double-linearize the handlers because this is simpler
@@ -473,6 +477,8 @@ sequence of objects.  FIXME ref the class docs"
 	  ;; The catch doesn't cover the handler; but pop before the
 	  ;; "goto" so the new block has the correct exception list.
 	  (setf (elcomp--exceptions compiler) saved-exceptions)
+	  ;; And make sure to pop the exception handler at runtime.
+	  (elcomp--add-call compiler nil :pop-exception-handler nil)
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler done-label)))
 

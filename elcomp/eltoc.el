@@ -146,7 +146,8 @@ argument."
     (:save-restriction-save . "save_restriction_save")
     (:save-restriction-restore . "save_restriction_restore")
     (:unwind-protect-continue . "unwind_protect_continue")
-    (:catch-value . "catch_value")))
+    (:catch-value . "catch_value")
+    (:pop-exception-handler . "pop_exception_handler")))
 
 (defconst elcomp--c-numeric-comparisons '(> >= < <= =))
 
@@ -257,7 +258,7 @@ argument."
 	;; FIXME hack
 	(when (memq function '(:catch-value :elcomp-fetch-condition
 					    :unwind-protect-continue))
-	  (insert "handlerlist")))
+	  (insert "&prev_handler")))
        (is-direct
 	(if-let ((rename (assq function elcomp--c-renames)))
 	    (insert (cdr rename) " (")
@@ -342,7 +343,8 @@ argument."
     (insert ", CATCHER);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
-    (insert "      handlerlist = handlerlist->next;\n")
+    (insert "      eassert (handlerlist == " name ");\n")
+    (insert "      exit_exception_handler ();\n")
     (insert "      goto ")
     (elcomp--c-emit-label (elcomp--handler insn))
     (insert ";\n")
@@ -358,7 +360,8 @@ argument."
     (insert "  " name " = push_handler (Qnil, CATCHER_ALL);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
-    (insert "      handlerlist = handlerlist->next;\n")
+    (insert "      eassert (handlerlist == " name ");\n")
+    (insert "      exit_exception_handler ();\n")
     (insert "      goto ")
     (elcomp--c-emit-label (elcomp--handler insn))
     (insert ";\n")
@@ -375,12 +378,13 @@ argument."
     (insert "  " name " = push_handler (Qt, CONDITION_CASE);\n")
     (insert "  if (sys_setjmp (" name "->jmp))\n")
     (insert "    {\n")
-    (insert "      handlerlist = handlerlist->next;\n")
+    (insert "      eassert (handlerlist == " name ");\n")
+    (insert "      exit_exception_handler ();\n")
     (while (and (not (eq eh-from eh-to))
 		(elcomp--condition-case-p (car eh-from)))
       (insert "      if (!NILP (find_handler_clause (")
       (elcomp--c-emit-symref eltoc (elcomp--condition-name (car eh-from)))
-      (insert ", signal_conditions (handlerlist))))\n")
+      (insert ", signal_conditions (&prev_handler))))\n")
       (insert "        goto ")
       (elcomp--c-emit-label (elcomp--handler (car eh-from)))
       (insert ";\n")
@@ -398,27 +402,17 @@ argument."
 		      ;; No parent means it is the first block.
 		      nil)))
     (let ((bb-eh (elcomp--basic-block-exceptions block)))
-      (if (or (memq (car bb-eh) parent-eh)
-	      (and parent-eh (not bb-eh)))
-	  ;; If our first exception appears in the parent list, then
-	  ;; we may need to pop some items.
-	  (while (not (eq bb-eh parent-eh))
-	    ;; Ignore fake unwind-protects.
-	    (unless (or (elcomp--fake-unwind-protect-p (car parent-eh))
-			;; catch handlers pop when resuming the normal
-			;; flow of control.
-			(elcomp--catch-p (car parent-eh)))
-	      (insert "  handlerlist = handlerlist->next;\n"))
-	    (setf parent-eh (cdr parent-eh)))
-	(when bb-eh
-	  ;; If our first exception does not appear in the parent
-	  ;; list, then we have to push at least one.
-	  (while (and bb-eh (not (eq bb-eh parent-eh)))
-	    (if (elcomp--condition-case-p (car bb-eh))
-		(setf bb-eh (elcomp--c-emit-condition-case eltoc bb-eh
-							   parent-eh))
-	      (elcomp--c-emit (car bb-eh) eltoc block)
-	      (setf bb-eh (cdr bb-eh)))))))))
+      (when (and (not (or (memq (car bb-eh) parent-eh)
+			  (and parent-eh (not bb-eh))))
+		 bb-eh)
+	;; If our first exception does not appear in the parent
+	;; list, then we have to push at least one.
+	(while (and bb-eh (not (eq bb-eh parent-eh)))
+	  (if (elcomp--condition-case-p (car bb-eh))
+	      (setf bb-eh (elcomp--c-emit-condition-case eltoc bb-eh
+							 parent-eh))
+	    (elcomp--c-emit (car bb-eh) eltoc block)
+	    (setf bb-eh (cdr bb-eh))))))))
 
 (defun elcomp--c-emit-block (eltoc bb)
   (elcomp--c-emit-label bb)
@@ -506,6 +500,8 @@ argument."
 			       :interned-symbols symbol-hash
 			       :name-map (elcomp--make-name-map compiler))))
     (elcomp--c-generate-defun compiler)
+    ;; This approach is pretty hacky.
+    (insert "  struct handler prev_handler;\n")
     (set-marker (elcomp--c-decl-marker eltoc) (point))
     (insert "\n")
     (set-marker-insertion-type (elcomp--c-decl-marker eltoc) t)
@@ -526,6 +522,10 @@ argument."
       (goto-char (point-min))
       (insert "#include <config.h>\n"
 	      "#include <lisp.h>\n\n"
+	      ;; FIXME this is less efficient than it could be.
+	      ;; We only need a couple of fields from this.
+	      "#define exit_exception_handler() (prev_handler = *handlerlist, handlerlist = handlerlist->next)\n"
+	      "#define pop_exception_handler() handlerlist = handlerlist->next\n"
 	      "#define catch_value(H) ((H)->val)\n"
 	      "#define signal_conditions(H) (XCAR ((H)->val))\n"
 	      "#define signal_value(H) (XCDR ((H)->val))\n\n"
