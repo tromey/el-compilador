@@ -405,8 +405,7 @@ sequence of objects.  FIXME ref the class docs"
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler handler-label)
 	  ;; A magic call to get the value.
-	  (elcomp--add-call compiler result-location
-			    :catch-value nil)
+	  (elcomp--add-call compiler result-location :catch-value nil)
 	  (elcomp--add-goto compiler done-label)
 	  (elcomp--make-block-current compiler done-label)))
 
