@@ -99,10 +99,10 @@ things, so that advice continues to work."
 		      ffloor fceiling ftruncate fround
 		      sin cos tan asin acos atan exp log
 		      sqrt))
-  (elcomp-declare func :elcomp-const t :elcomp-type 'float))
+  (elcomp-declare func :elcomp-const t :elcomp-type 'float :elcomp-direct t))
 
 (dolist (func '(lsh ash logand logior logxor lognot byteorder sxhash length))
-  (elcomp-declare func :elcomp-const t :elcomp-type 'integer))
+  (elcomp-declare func :elcomp-const t :elcomp-type 'integer :elcomp-direct t))
 
 (elcomp-declare 'cons :elcomp-type 'cons)
 (elcomp-declare 'list :elcomp-type 'list)
