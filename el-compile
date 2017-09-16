@@ -1,6 +1,6 @@
 #!/bin/sh
+;; -*- lexical-binding: t -*-
 :; exec emacs --quick --script $0 -- "$@"
-"FIXME: lexical binding"
 
 (setq debug-on-error t)
 ;; FIXME debug.el says it tries to preserve the start of the stack
