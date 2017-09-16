@@ -41,7 +41,16 @@
 (defun elcomp--c-quote-string (str)
   "Quote a Lisp string according to C rules."
   (concat "\""
-	  (replace-regexp-in-string "[\\\\\"\n]" "\\\\\\&" str)
+	  (mapconcat (lambda (c)
+		       ;; Not really complete yet.
+		       (cl-case c
+			 ((?\\ ?\")
+			  (string ?\\ c))
+			 (?\n "\\n")
+			 (?\r "\\r")
+			 (?\t "\\t")
+			 (t (string c))))
+		     str "")
 	  "\""))
 
 (defun elcomp--c-name (symbol)
