@@ -223,7 +223,9 @@ collector."
 	       (setf rewrote-one t)))
 	   ;; A GOTO to a block holding just another branch (of any kind)
 	   ;; can be replaced by the instruction at the target.
-	   (when (and (elcomp--goto-p insn)
+	   ;; FIXME In SSA mode we would have to deal with the phis.
+	   (when (and (not in-ssa-form)
+		      (elcomp--goto-p insn)
 		      ;; Exclude a self-goto.
 		      (not (eq block
 			       (elcomp--block insn)))
