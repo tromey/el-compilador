@@ -1,5 +1,5 @@
 #!/bin/sh
-;; -*- lexical-binding: t -*-
+:; -*- lexical-binding: t -*-
 :; exec emacs --quick --script $0 -- "$@"
 
 (setq debug-on-error t)
