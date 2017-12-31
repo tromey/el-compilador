@@ -519,7 +519,10 @@ argument."
     (insert "}\n\n")
     (set-marker (elcomp--c-decl-marker eltoc) nil)))
 
-(defun elcomp--c-translate (unit)
+;; If BASE-FILENAME is nil, a module-like file is generated.  (But of
+;; course this doesn't work since modules use a JNI-like thing.)
+;; Otherwise, the generated code looks more like the Emacs internals.
+(defun elcomp--c-translate (unit &optional base-filename)
   (let ((symbol-hash (make-hash-table)))
     (maphash
      (lambda (_ignore compiler)
@@ -536,8 +539,9 @@ argument."
 	      "#define pop_exception_handler() handlerlist = handlerlist->next\n"
 	      "#define catch_value(H) ((H)->val)\n"
 	      "#define signal_conditions(H) (XCAR ((H)->val))\n"
-	      "#define signal_value(H) (XCDR ((H)->val))\n\n"
-	      "int plugin_is_GPL_compatible;\n\n")
+	      "#define signal_value(H) (XCDR ((H)->val))\n\n")
+      (unless base-filename
+	(insert "int plugin_is_GPL_compatible;\n\n"))
       (maphash (lambda (_symbol c-name)
 		 (insert "static Lisp_Object " c-name ";\n"))
 	       symbol-hash)
@@ -552,7 +556,11 @@ argument."
        (elcomp--compilation-unit-defuns unit))
       (insert "\n"))
     (insert "\n"
-	    "void\ninit (void)\n{\n")
+	    "void\n"
+	    (if base-filename
+		(concat "syms_of_" base-filename)
+	      "init")
+	    " (void)\n{\n")
     ;; Intern all the symbols we refer to.
     (maphash (lambda (symbol c-name)
 	       (insert "  " c-name " = intern_c_string (" 

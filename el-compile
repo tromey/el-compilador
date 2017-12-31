@@ -28,7 +28,8 @@
     (goto-char (point-min))
     (elcomp--read-forms)))
 
-(defun elcomp--driver-convert-one (lisp-file)
+(defun elcomp--driver-convert-one (output-file lisp-file)
+  (message "Reading %s..." lisp-file)
   (let ((forms (elcomp--read-forms-from-file lisp-file)))
     (let ((unit (make-elcomp--compilation-unit)))
       ;; FIXME for now we only handle a file full of defuns
@@ -42,17 +43,18 @@
 	  (t
 	   (message "Skipping form %S" (car form)))))
       (elcomp--translate-all unit)
-      (elcomp--c-translate unit))))
+      (elcomp--c-translate unit
+			   (if output-file
+			       (file-name-sans-extension
+				(file-name-nondirectory output-file)))))))
 
-;; FIXME
-(defconst elcomp--driver-output-file "OUTPUT")
-
-(defun elcomp--driver-compile (files)
-  (find-file elcomp--driver-output-file)
+(defun elcomp--driver-compile (output-file files)
+  (find-file (or output-file "OUTPUT"))
   (setq-local backup-inhibited t)
   (erase-buffer)
   (dolist (file files)
-    (elcomp--driver-convert-one file))
+    ;; FIXME this only works for a single file
+    (elcomp--driver-convert-one output-file file))
   (save-buffer))
 
 ;; FIXME it would be nice to have an argument parsing library in
@@ -62,8 +64,12 @@
 
 (if (equal (car argv) "--help")
     (message "Usage: el-compile FILE...")
-  ;; FIXME argument parsing, etc.
-  (elcomp--driver-compile argv))
+  (let ((filename nil))
+    (when (equal (car argv) "--output")
+      (pop argv)
+      (setf filename (pop argv)))
+    (elcomp--driver-compile filename
+			    (mapcar #'expand-file-name argv))))
 
 (setf argv nil)
 
