@@ -56,7 +56,12 @@ Or REF can be a constant, in which case it is returned unchanged."
     (let ((tem (assq ref (elcomp--rewrite-alist compiler))))
       (if tem
 	  (cdr tem)
-	ref)))))
+	;; If there is no rewrite for the name, then it is a global.
+	(let ((var (elcomp--new-var compiler)))
+	  (elcomp--add-call compiler var
+			    'symbol-value
+			    (list (elcomp--constant :value ref)))
+	  var))))))
 
 (defun elcomp--label (compiler)
   (prog1
@@ -510,6 +515,16 @@ sequence of objects.  FIXME ref the class docs"
 		       (cdr form))))
 	  ;; Make the call.
 	  (elcomp--add-call compiler result-location fn these-args)))))))
+
+(defun elcomp--linearize-defun (compiler form result-location)
+  (let ((arg-list (cl-copy-list (cadr (elcomp--defun compiler)))))
+    (cl-delete-if (lambda (elt) (memq elt '(&rest &optional)))
+		  arg-list)
+    ;; Let each argument map to itself.
+    (cl-letf (((elcomp--rewrite-alist compiler)
+	       (mapcar (lambda (elt) (cons elt elt))
+		       arg-list)))
+      (elcomp--linearize compiler form result-location))))
 
 (provide 'elcomp/linearize)
 

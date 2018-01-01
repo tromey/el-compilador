@@ -76,7 +76,7 @@
      (setf (elcomp--entry-block compiler) (elcomp--label compiler))
      (setf (elcomp--current-block compiler) (elcomp--entry-block compiler))
      (setf form (elcomp--extract-defun compiler form))
-     (elcomp--linearize
+     (elcomp--linearize-defun
       compiler
       (byte-optimize-form (macroexpand-all form
 					   byte-compile-macro-environment))
