@@ -61,7 +61,9 @@
   "Mark a symbol for init-time interning and return its name.
 This is used for references to global symbols."
   (or (gethash symbol (elcomp--c-interned-symbols eltoc))
-      (puthash symbol (concat "Q" (elcomp--c-name symbol))
+      ;; Use LQsym, not Qsym, to avoid clashes with things Emacs
+      ;; defines itself.
+      (puthash symbol (concat "LQ" (elcomp--c-name symbol))
 	       (elcomp--c-interned-symbols eltoc))))
 
 (defun elcomp--c-declare (eltoc sym)
