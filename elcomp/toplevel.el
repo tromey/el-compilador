@@ -31,7 +31,7 @@
 	 (error "defalias form missing lambda"))
        (setf (elcomp--defun compiler)
 	     (list name (cadr body)))
-       (setf form (cons 'defun (elcomp--defun compiler))))
+       (setf form (cddr body)))
       (_ (error "unrecognized defalias form"))))
    ((eq (car form) 'lambda)
     (setf (elcomp--defun compiler)
