@@ -22,12 +22,23 @@
     (setf (elcomp--defun compiler)
 	  (list (cadr form) (cl-caddr form)))
     (setf form (cl-cdddr form)))
+   ((eq (car form) 'defalias)
+    (pcase form
+      ;; Lame but I couldn't find a way to get pcase to match the
+      ;; contents of the lambda as well.
+      (`(defalias (quote ,name) (function ,body))
+       (unless (eq (car body) 'lambda)
+	 (error "defalias form missing lambda"))
+       (setf (elcomp--defun compiler)
+	     (list name (cadr body)))
+       (setf form (cons 'defun (elcomp--defun compiler))))
+      (_ (error "unrecognized defalias form"))))
    ((eq (car form) 'lambda)
     (setf (elcomp--defun compiler)
 	  (list nil (cadr form)))
     (setf form (cddr form)))
    (t
-    (error "neither defun nor lambda")))
+    (error "invalid form: currently only defalias, defun, lambda supported")))
 
   ;; The doc string.
   (if (stringp (car form))
@@ -72,14 +83,14 @@
 	   (append elcomp--compiler-macros
 		   byte-compile-macro-environment))
 	  (result-var (elcomp--new-var compiler)))
+     (setf form (macroexpand-all form byte-compile-macro-environment))
      (setf (elcomp--unit compiler) unit)
      (setf (elcomp--entry-block compiler) (elcomp--label compiler))
      (setf (elcomp--current-block compiler) (elcomp--entry-block compiler))
      (setf form (elcomp--extract-defun compiler form))
      (elcomp--linearize-defun
       compiler
-      (byte-optimize-form (macroexpand-all form
-					   byte-compile-macro-environment))
+      (byte-optimize-form form)
       result-var)
      (elcomp--add-return compiler result-var)
      (elcomp--optimize compiler))))

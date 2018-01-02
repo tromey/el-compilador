@@ -38,7 +38,7 @@
 	(cl-case (car form)
 	  (eval-when-compile
 	    (eval (cons 'progn (cdr form))))
-	  (defun
+	  ((defun define-ffi-library define-ffi-function)
 	   (elcomp--plan-to-compile unit form))
 	  (t
 	   (message "Skipping form %S" (car form)))))
@@ -67,7 +67,9 @@
   (let ((filename nil))
     (when (equal (car argv) "--output")
       (pop argv)
-      (setf filename (pop argv)))
+      (setf filename (pop argv))
+      ;; Arrange for FFI to be available.
+      (elcomp--use-ffi))
     (elcomp--driver-compile filename
 			    (mapcar #'expand-file-name argv))))
 

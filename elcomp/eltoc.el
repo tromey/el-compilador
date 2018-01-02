@@ -157,7 +157,9 @@ argument."
     (:save-restriction-restore . "save_restriction_restore")
     (:unwind-protect-continue . "unwind_protect_continue")
     (:catch-value . "catch_value")
-    (:pop-exception-handler . "pop_exception_handler")))
+    (:pop-exception-handler . "pop_exception_handler")
+    ;; FIXME
+    (:ffi-call . "FFI_CALL")))
 
 (defconst elcomp--c-numeric-comparisons '(> >= < <= =))
 

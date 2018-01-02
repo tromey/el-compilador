@@ -18,6 +18,7 @@
 		    "elcomp/dom"
 		    "elcomp/eh-cleanup"
 		    "elcomp/eltoc"
+		    "elcomp/ffi"
 		    "elcomp/iter"
 		    "elcomp/jump-thread"
 		    "elcomp/linearize"
