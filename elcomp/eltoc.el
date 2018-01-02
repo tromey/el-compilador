@@ -55,7 +55,8 @@
 
 (defun elcomp--c-name (symbol)
   "Compute the C name for a symbol."
-  (replace-regexp-in-string "-" "_" (symbol-name symbol)))
+  ;; FIXME there can be name clashes, and leading number is not handled.
+  (replace-regexp-in-string "[^a-zA-Z0-9_]" "_" (symbol-name symbol)))
 
 (defun elcomp--c-intern-symbol (eltoc symbol)
   "Mark a symbol for init-time interning and return its name.
